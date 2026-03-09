@@ -18,4 +18,8 @@ Parth (parth762) - pbhatnagar746@gmail.com
 Christian (chriscross664) - christian.vourgoutzis@hotmail.com
 
 Nam (TheGoldfish11) - namqtran11@gmail.com
+
+Anita (applecee) - chao.nita1@gmail.com
+
+De-arne (dbaker1206) - dbak0009@student.monash.edu
 Dakshina (dakshina5206) - dakshina.alahakoon@gmail.com
