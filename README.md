@@ -8,3 +8,5 @@ Oskar (Oskskskar) - oskarc3n@gmail.com
 Carissa (ckhong04) - carissa.a.khong@gmail.com
 
 Tom (TomLovesAi) - thomas.dumoff@gmail.com
+
+Ethan (ethantse26) - ethan.tse26@gmail.com
