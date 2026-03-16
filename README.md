@@ -26,3 +26,5 @@ De-arne (dbaker1206) - dbak0009@student.monash.edu
 Dakshina (dakshina5206) - dakshina.alahakoon@gmail.com
 
 Rohan (reeohan) - rsur0015@student.monash.edu
+
+Michael (m_dig_63965) - mdig0003@student.monash.edu
