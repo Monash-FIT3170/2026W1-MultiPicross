@@ -1,0 +1,60 @@
+services:
+  db:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-todochat}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./api
+    environment:
+      DB_HOST: db
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: ${POSTGRES_DB:-todochat}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    develop:
+      watch:
+        - action: sync
+          path: ./api/src
+          target: /app/src
+        - action: rebuild
+          path: ./api/package.json
+
+  colyseus:
+    build:
+      context: ./colyseus
+    ports:
+      - "2567:2567"
+    develop:
+      watch:
+        - action: sync
+          path: ./colyseus/src
+          target: /app/src
+        - action: rebuild
+          path: ./colyseus/package.json
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "5173:5173"
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/src
+          target: /app/src
+        - action: rebuild
+          path: ./frontend/package.json
+
+volumes:
+  pgdata:
