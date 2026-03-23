@@ -1,0 +1,36 @@
+# Dev overrides — auto-loaded by `docker compose up`
+services:
+  api:
+    build:
+      target: dev
+    develop:
+      watch:
+        - action: sync
+          path: ./api/src
+          target: /app/src
+        - action: rebuild
+          path: ./api/package.json
+
+  gameserver:
+    build:
+      target: dev
+    develop:
+      watch:
+        - action: sync
+          path: ./gameserver/src
+          target: /app/src
+        - action: rebuild
+          path: ./gameserver/package.json
+
+  frontend:
+    build:
+      target: dev
+    labels:
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
+    develop:
+      watch:
+        - action: sync
+          path: ./frontend/src
+          target: /app/src
+        - action: rebuild
+          path: ./frontend/package.json
