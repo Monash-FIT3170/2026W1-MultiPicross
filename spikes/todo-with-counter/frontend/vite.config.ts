@@ -12,5 +12,11 @@ export default defineConfig({
   ],
   server: {
     host: "0.0.0.0",
+    proxy: {
+      "/todos": {
+        target: "http://api:3000",
+        changeOrigin: true,
+      },
+    },
   },
 });

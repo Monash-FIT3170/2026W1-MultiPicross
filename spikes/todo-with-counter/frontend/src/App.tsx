@@ -11,10 +11,10 @@ function App() {
   // - [ ] Implement Counter UI & functionality
 
   return (
-    <>
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-start gap-6 p-8">
       <Todo />
       <Counter />
-    </>
+    </div>
   );
 }
 
