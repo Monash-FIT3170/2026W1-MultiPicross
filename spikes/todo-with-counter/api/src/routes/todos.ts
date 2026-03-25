@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { eq } from "drizzle-orm";
 import { db } from "../db/index.js";
 import { todos as todosTable } from "../db/schema.js";
 
@@ -10,12 +11,26 @@ todos.get("/", async (c) => {
 });
 
 todos.post("/", async (c) => {
-  // TODO: parse and validate request body
-  return c.json({ message: "created" }, 201);
+  const { title } = await c.req.json();
+  const [created] = await db.insert(todosTable).values({ title }).returning();
+  return c.json(created, 201);
 });
 
-// TODO: implement DELETE /todos/:id
+todos.delete("/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  await db.delete(todosTable).where(eq(todosTable.id, id));
+  return c.json({ message: "deleted" }, 200);
+});
 
-// TODO: implement PATCH /todos/:id (e.g. to mark as completed)
+todos.patch("/:id", async (c) => {
+  const id = Number(c.req.param("id"));
+  const { completed } = await c.req.json();
+  const [updated] = await db
+    .update(todosTable)
+    .set({ completed })
+    .where(eq(todosTable.id, id))
+    .returning();
+  return c.json(updated);
+});
 
 export default todos;

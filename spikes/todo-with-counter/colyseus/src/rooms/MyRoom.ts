@@ -13,11 +13,11 @@ export class MyRoom extends Room {
   // with type "yourMessageType".
   // You can define the structure of the `message` parameter in ./schema/MyRoomState.ts using @type decorators.
   messages = {
-    yourMessageType: (client: Client, message: any) => {
-      /**
-       * Handle "yourMessageType" message.
-       */
-      console.log(client.sessionId, "sent a message:", message);
+    increment: (_client: Client) => {
+      this.state.counter++;
+    },
+    decrement: (_client: Client) => {
+      this.state.counter--;
     },
   };
 
