@@ -11,23 +11,23 @@ export class MyRoom extends Room {
        * Handle "yourMessageType" message.
        */
       console.log(client.sessionId, "sent a message:", message);
-    }
-  }
+    },
+  };
 
-  onCreate (options: any) {
+  onCreate(options: any) {
     /**
      * Called when a new room is created.
      */
   }
 
-  onJoin (client: Client, options: any) {
+  onJoin(client: Client, options: any) {
     /**
      * Called when a client joins the room.
      */
     console.log(client.sessionId, "joined!");
   }
 
-  onLeave (client: Client, code: CloseCode) {
+  onLeave(client: Client, code: CloseCode) {
     /**
      * Called when a client leaves the room.
      */
@@ -40,5 +40,4 @@ export class MyRoom extends Room {
      */
     console.log("room", this.roomId, "disposing...");
   }
-
 }
