@@ -1,0 +1,13 @@
+# Production overrides — use with: docker compose -f compose.yaml -f compose.prod.yaml up
+services:
+  api:
+    build:
+      target: prod
+
+  gameserver:
+    build:
+      target: prod
+
+  frontend:
+    build:
+      target: prod

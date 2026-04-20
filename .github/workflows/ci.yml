@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    name: Format & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 25
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install root tooling
+        run: npm install
+
+      - name: Check formatting with Prettier
+        run: npx prettier --check .
+
+      - name: Run ESLint
+        run: npx eslint .
+
+  build:
+    name: Build (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api, gameserver, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 25
+          cache: npm
+          cache-dependency-path: ${{ matrix.service }}/package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ${{ matrix.service }}
+
+      - name: Build
+        run: npm run build
+        working-directory: ${{ matrix.service }}
+
+  # test:
+  #   name: Test (${{ matrix.service }})
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       service: [gameserver, frontend]
+  #   steps:
+  #     - uses: actions/checkout@v4
+
+  #     - uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 25
+  #         cache: npm
+  #         cache-dependency-path: ${{ matrix.service }}/package-lock.json
+
+  #     - name: Install dependencies
+  #       run: npm install
+  #       working-directory: ${{ matrix.service }}
+
+  #     - name: Run tests
+  #       run: npm test
+  #       working-directory: ${{ matrix.service }}
+  #       env:
+  #         CI: true
