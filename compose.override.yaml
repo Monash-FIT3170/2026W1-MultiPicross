@@ -3,6 +3,8 @@ services:
   api:
     build:
       target: dev
+    ports:
+      - "3001:3000"
     develop:
       watch:
         - action: sync
@@ -14,6 +16,8 @@ services:
   gameserver:
     build:
       target: dev
+    ports:
+      - "2567:2567"
     develop:
       watch:
         - action: sync
@@ -25,6 +29,8 @@ services:
   frontend:
     build:
       target: dev
+    ports:
+      - "3000:3000"
     labels:
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
     develop:
