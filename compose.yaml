@@ -44,9 +44,9 @@ services:
       context: ./gameserver
     environment:
       DB_HOST: db
-      DB_USER: ${POSTGRES_USER:-postgres}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      DB_NAME: ${POSTGRES_DB:-multipicross}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_NAME: ${POSTGRES_DB}
     depends_on:
       - db
     labels:
