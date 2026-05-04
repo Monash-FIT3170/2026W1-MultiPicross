@@ -133,7 +133,6 @@ function App() {
         </div>
         <div>
           <h1>MultiPicross</h1>
-
         </div>
       </section>
 
@@ -142,9 +141,7 @@ function App() {
       <section id="next-steps">
         <div id="docs">
           <h2>Board desc</h2>
-          <p>
-            Left click to fill/unfill. Right click to place/remove a cross.
-          </p>
+          <p>Left click to fill/unfill. Right click to place/remove a cross.</p>
         </div>
         <div id="social">
           <Board />

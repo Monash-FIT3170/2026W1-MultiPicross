@@ -29,7 +29,7 @@
 
 //   function handleRightClick(event: React.MouseEvent<HTMLButtonElement>,
 //     row: number,
-//     col: number,) 
+//     col: number,)
 //     {
 //         event.preventDefault();
 
@@ -42,8 +42,7 @@
 //     }
 
 //     setGrid(newGrid);
-  
-    
+
 //   }
 
 //   return (
@@ -83,7 +82,9 @@ export default function Board() {
   const rows = 5;
   const cols = 5;
   const [grid, setGrid] = useState<CellState[][]>(
-    Array.from({ length: rows }, () => Array.from({ length: cols }, () => "empty" as CellState)),
+    Array.from({ length: rows }, () =>
+      Array.from({ length: cols }, () => "empty" as CellState),
+    ),
   );
 
   function handleLeftClick(row: number, col: number) {
@@ -111,19 +112,21 @@ export default function Board() {
       </div>
 
       {/* Tailwind Grid Container */}
-      <div 
+      <div
         className="grid gap-px bg-gray-400 border-2 border-gray-800 shadow-xl"
         style={{ gridTemplateColumns: `repeat(${cols}, 40px)` }}
       >
-        {grid.map((row, rowIndex) => 
+        {grid.map((row, rowIndex) =>
           row.map((cell, colIndex) => (
-            <Cell 
-              key={`${rowIndex}-${colIndex}`} 
-              state={cell} 
-              onClick={() => handleLeftClick(rowIndex, colIndex)} 
-              onRightClick={(event) => handleRightClick(event, rowIndex, colIndex)} 
+            <Cell
+              key={`${rowIndex}-${colIndex}`}
+              state={cell}
+              onClick={() => handleLeftClick(rowIndex, colIndex)}
+              onRightClick={(event) =>
+                handleRightClick(event, rowIndex, colIndex)
+              }
             />
-          ))
+          )),
         )}
       </div>
     </section>
