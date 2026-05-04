@@ -1,24 +1,3 @@
-// import type { CellState } from "./Board";
-
-// type CellProps = {
-//   state: CellState;
-//   onClick: () => void;
-//   onRightClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
-// };
-
-// export default function Cell({ state, onClick, onRightClick }: CellProps) {
-//   return (
-//     <button
-//       className={`cell ${state}`}
-//       onClick={onClick}
-//       onContextMenu={onRightClick}
-//       aria-label={`Cell is ${state}`}
-//     >
-//       {state === "cross" ? "✕" : ""}
-//     </button>
-//   );
-// }
-
 import type { CellState } from "./Board";
 
 type CellProps = {
