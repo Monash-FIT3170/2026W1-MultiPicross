@@ -3,8 +3,10 @@ import reactLogo from "./assets/react.svg";
 import viteLogo from "./assets/vite.svg";
 import heroImg from "./assets/hero.png";
 import "./App.css";
+import { Link, Route, Routes } from "react-router-dom";
+import AccountCreationPage from "./AccountCreationPage";
 
-function App() {
+function HomePage() {
   const [count, setCount] = useState(0);
 
   return (
@@ -36,20 +38,14 @@ function App() {
           <svg className="icon" role="presentation" aria-hidden="true">
             <use href="/icons.svg#documentation-icon"></use>
           </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
+          <h2>Account Creation</h2>
+          <p>Go to account creation</p>
           <ul>
             <li>
-              <a href="https://vite.dev/" target="_blank">
+              <Link to="/create-account">
                 <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
+                Create Account
+              </Link>
             </li>
           </ul>
         </div>
@@ -115,6 +111,16 @@ function App() {
       <div className="ticks"></div>
       <section id="spacer"></section>
     </>
+  );
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/create-account" element={<AccountCreationPage />} />
+      <Route path="/account-creation" element={<AccountCreationPage />} />
+    </Routes>
   );
 }
 
