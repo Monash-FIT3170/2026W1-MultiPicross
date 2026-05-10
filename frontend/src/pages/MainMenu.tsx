@@ -1,23 +1,3 @@
-
-/* export default function MainMenu({ navigate }: any) {
-  return (
-    <div style={{ textAlign: "center", marginTop: "50px" }}>
-      <h1>Main Menu</h1>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "200px", margin: "0 auto" }}>
-        <button onClick={() => navigate("singleplayer")}>Singleplayer</button>
-        <button onClick={() => navigate("multiplayer")}>Multiplayer</button>
-        <button onClick={() => navigate("signin")}>Sign In</button>
-        <button onClick={() => navigate("signup")}>Sign Up</button>
-        <button onClick={() => navigate("tutorial")}>Tutorial</button>
-        <button onClick={() => navigate("settings")}>Settings</button>
-        <button onClick={() => navigate("stats")}>Statistics</button>
-      </div>
-    </div>
-  );
-} */
-
-import "./MainMenu.css";
 import singleplayerIcon from "../assets/singleplayer.png";
 import multiIcon from "../assets/multiplayer.png";
 import statsIcon from "../assets/stats.png";
@@ -26,54 +6,72 @@ import settingsIcon from "../assets/settings.png";
 
 export default function MainMenu({ navigate }: any) {
   return (
-    <div className="menu-container">
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#fcfcfd]">
 
       {/* Top Right Auth Buttons */}
-      <div className="menu-top-right">
-        <button className="btn-outline" onClick={() => navigate("signin")}>
+      <div className="absolute right-5 top-5 flex gap-3">
+        <button
+          className="rounded-xl border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-100"
+          onClick={() => navigate("signin")}
+        >
           Sign In
         </button>
-        <button className="btn-filled" onClick={() => navigate("signup")}>
+
+        <button
+          className="rounded-xl bg-gray-900 px-4 py-2 font-semibold text-white hover:bg-black"
+          onClick={() => navigate("signup")}
+        >
           Sign Up
         </button>
       </div>
 
-      <h1 className="menu-title">  MultiPicross</h1>
+      {/* Title */}
+      <h1 className="mb-10 text-5xl font-bold text-gray-900">
+        MultiPicross
+      </h1>
 
-      {/* Main Grid */}
-      <div className="menu-grid">
+      {/* Grid */}
+      <div className="flex gap-10">
 
-        {/* Left Column */}
-        <div className="menu-column">
-          <button className="menu-card large" onClick={() => navigate("singleplayer")}>
-            <img src={singleplayerIcon} className="menu-icon large" />
-            <span>Singleplayer</span>
+        {/* LEFT */}
+        <div className="flex flex-col gap-5">
+
+          <button
+            onClick={() => navigate("singleplayer")}
+            className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-sm transition duration-200 hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg"
+          >
+            <img src={singleplayerIcon} className="mb-2 h-12 w-12" />
+            Singleplayer
           </button>
 
-          <button className="menu-card large" onClick={() => navigate("multiplayer")}>
-            <img src={multiIcon} className="menu-icon large" />
-            <span>Multiplayer</span>
-          </button>
-        </div>
-
-        {/* Right Column */}
-        <div className="menu-column">
-          <button className="menu-card" onClick={() => navigate("stats")}>
-            <img src={statsIcon} className="menu-icon" />
-            <span>Statistics</span>
-          </button>
-
-          <button className="menu-card" onClick={() => navigate("tutorial")}>
-            <img src={tutorialIcon} className="menu-icon" />
-            <span>Tutorial</span>
-          </button>
-
-          <button className="menu-card" onClick={() => navigate("settings")}>
-            <img src={settingsIcon} className="menu-icon" />
-            <span>Settings</span>
+          <button
+            onClick={() => navigate("multiplayer")}
+            className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-sm transition duration-200 hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg"
+          >
+            <img src={multiIcon} className="mb-2 h-12 w-12" />
+            Multiplayer
           </button>
         </div>
 
+        {/* RIGHT */}
+        <div className="flex flex-col gap-5">
+
+          <button className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-sm hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg">
+            <img src={statsIcon} className="h-7 w-7" />
+            Statistics
+          </button>
+
+          <button className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-sm hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg">
+            <img src={tutorialIcon} className="h-7 w-7" />
+            Tutorial
+          </button>
+
+          <button className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-sm hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg">
+            <img src={settingsIcon} className="h-7 w-7" />
+            Settings
+          </button>
+
+        </div>
       </div>
     </div>
   );
