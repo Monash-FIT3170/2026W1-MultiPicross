@@ -38,7 +38,7 @@ export default function MainMenu({ navigate }: any) {
 
           <button
             onClick={() => navigate("singleplayer")}
-            className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-sm transition duration-200 hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg"
+            className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-xs transition duration-200 hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg"
           >
             <img src={singleplayerIcon} className="mb-2 h-12 w-12" />
             Singleplayer
@@ -46,7 +46,7 @@ export default function MainMenu({ navigate }: any) {
 
           <button
             onClick={() => navigate("multiplayer")}
-            className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-sm transition duration-200 hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg"
+            className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-xs transition duration-200 hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg"
           >
             <img src={multiIcon} className="mb-2 h-12 w-12" />
             Multiplayer
@@ -56,17 +56,17 @@ export default function MainMenu({ navigate }: any) {
         {/* RIGHT */}
         <div className="flex flex-col gap-5">
 
-          <button className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-sm hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg">
+          <button className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg">
             <img src={statsIcon} className="h-7 w-7" />
             Statistics
           </button>
 
-          <button className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-sm hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg">
+          <button className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg">
             <img src={tutorialIcon} className="h-7 w-7" />
             Tutorial
           </button>
 
-          <button className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-sm hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg">
+          <button className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg">
             <img src={settingsIcon} className="h-7 w-7" />
             Settings
           </button>
