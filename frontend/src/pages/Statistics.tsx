@@ -1,11 +1,22 @@
-import './PagePlaceholder.css';
+import React from "react";
 
-export function Statistics() {
+type StatisticsProps = {
+  navigate: React.Dispatch<React.SetStateAction<string>>;
+};
+
+export function Statistics({ navigate }: StatisticsProps) {
   return (
     <div className="page-placeholder">
       <h1>Statistics</h1>
       <p>Your puzzle stats and achievements.</p>
-    
+
+      <button
+          className="rounded-xl bg-gray-900 px-4 py-2 font-semibold text-white hover:bg-black"
+          onClick={() => navigate("mainmenu")}
+        >
+          Main Menu
+        </button>
+
     </div>
   );
 }

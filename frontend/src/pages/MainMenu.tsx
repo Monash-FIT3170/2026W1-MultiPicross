@@ -1,3 +1,4 @@
+import React from "react";
 import singleplayerIcon from "../assets/singleplayer.svg";
 import multiIcon from "../assets/multiplayer.svg";
 import statsIcon from "../assets/stats.svg";
@@ -5,7 +6,11 @@ import tutorialIcon from "../assets/tutorial.svg";
 import settingsIcon from "../assets/settings.svg";
 import "../index.css";
 
-export default function MainMenu({ navigate }: any) {
+type MainMenuProps = {
+  navigate: React.Dispatch<React.SetStateAction<string>>;
+};
+
+export default function MainMenu({ navigate }: MainMenuProps) {
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#fcfcfd]">
 

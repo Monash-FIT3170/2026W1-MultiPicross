@@ -4,7 +4,7 @@ import { Singleplayer } from "./pages/Singleplayer";
 import { Multiplayer } from "./pages/Multiplayer";
 import { Statistics } from "./pages/Statistics";
 import { Login } from "./pages/Login";
-import { SignUp } from "./pages/Signup";
+import { Signup } from "./pages/Signup"; 
 import { Tutorial } from "./pages/Tutorial";
 import { Settings } from "./pages/Settings";  
 
@@ -26,13 +26,12 @@ function App() {
       case "login":
         return <Login navigate={setPage} />;
       case "signup":
-        return <SignUp navigate={setPage} />;
+        return <Signup navigate={setPage} />;
       case "tutorial":
         return <Tutorial navigate={setPage} />;
       case "settings":
         return <Settings navigate={setPage} />;
       }
-      
       }
 
     return <>{renderPage()}</>;
