@@ -4,14 +4,13 @@ import { Singleplayer } from "./pages/Singleplayer";
 import { Multiplayer } from "./pages/Multiplayer";
 import { Statistics } from "./pages/Statistics";
 import { Login } from "./pages/Login";
-import { Signup } from "./pages/Signup"; 
+import { Signup } from "./pages/Signup";
 import { Tutorial } from "./pages/Tutorial";
-import { Settings } from "./pages/Settings";  
-
+import { Settings } from "./pages/Settings";
 
 function App() {
   const [page, setPage] = useState("menu");
-  
+
   function renderPage() {
     switch (page) {
       case "menu":
@@ -31,10 +30,10 @@ function App() {
         return <Tutorial navigate={setPage} />;
       case "settings":
         return <Settings navigate={setPage} />;
-      }
-      }
+    }
+  }
 
-    return <>{renderPage()}</>;
+  return <>{renderPage()}</>;
 }
 
 export default App;
