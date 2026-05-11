@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Cell from "./Cell";
 
 export type CellState = "empty" | "filled" | "cross";
 
 export default function Board() {
+  const [time, setTime] = useState(0);
   const rows = 5;
   const cols = 5;
   const [grid, setGrid] = useState<CellState[][]>(
@@ -11,6 +12,13 @@ export default function Board() {
       Array.from({ length: cols }, () => "empty" as CellState),
     ),
   );
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTime((t) => t + 1);
+    },1000);
+    return () => clearInterval(interval);
+  }, []);
 
   function handleLeftClick(row: number, col: number) {
     const newGrid = grid.map((r) => [...r]);
@@ -34,8 +42,12 @@ export default function Board() {
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Game Board</h2>
         <p className="text-gray-600">Click to fill, Right-click to cross.</p>
-      </div>
+          <div className='timer'>
+            {String(Math.floor(time / 60)).padStart(2, "0")}:
+            {String(time % 60).padStart(2, "0")}
+          </div>
 
+      </div>
       {/* Tailwind Grid Container */}
       <div
         className="grid gap-px bg-gray-400 border-2 border-gray-800 shadow-xl"
