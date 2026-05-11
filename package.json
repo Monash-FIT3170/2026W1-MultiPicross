@@ -11,9 +11,5 @@
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "lint:fix": "eslint --fix ."
-  },
-  "dependencies": {
-    "@tailwindcss/vite": "^4.3.0",
-    "tailwindcss": "^4.3.0"
   }
 }
