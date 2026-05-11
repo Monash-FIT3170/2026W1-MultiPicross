@@ -1,4 +1,4 @@
-import singleplayerIcon from "../assets/singleplayer.png";
+import singleplayerIcon from "../assets/singleplayer.svg";
 import multiIcon from "../assets/multiplayer.png";
 import statsIcon from "../assets/stats.png";
 import tutorialIcon from "../assets/tutorial.png";
@@ -38,9 +38,9 @@ export default function MainMenu({ navigate }: any) {
 
           <button
             onClick={() => navigate("singleplayer")}
-            className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-xs transition duration-200 hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg"
+            className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-xs transition duration-200 hover:-translate-y-1 hover:bg-[#C2A57F]\ hover:shadow-lg hover:invert"
           >
-            <img src={singleplayerIcon} className="mb-2 h-12 w-12" />
+            <img src={singleplayerIcon} className="mb-2 h-12 w-12 " />
             Singleplayer
           </button>
 
