@@ -11,7 +11,7 @@ def png_to_array(picture, colour):
     png: path to PNG file
     colour: tuple, e.g. (0, 0, 0) or (255, 0, 0, 255)
     """
-    png = "../images/" + picture + ".puzzle.png"
+    png = "images/" + picture + ".puzzle.png"
     img = Image.open(png).convert("RGBA")
     pixels = np.array(img)
 
@@ -32,7 +32,7 @@ def array_to_png(arr, picture_name):
     img[arr == 0] = [255, 255, 255, 255] # white
 
     image = Image.fromarray(img)
-    image.save(f"../images/{picture_name}.generated.png")
+    image.save(f"images/{picture_name}.generated.png")
 
 
 def line_to_hints(line):
@@ -248,8 +248,8 @@ def check_unique_solution_fast(row_hints, column_hints):
 
 
 def mono_to_colour_converter(picture):
-    bw_png = "../images/" + picture + ".puzzle.png"
-    colour_png = "../images/" + picture + ".picture.png"
+    bw_png = "images/" + picture + ".puzzle.png"
+    colour_png = "images/" + picture + ".picture.png"
 
     bw_img = Image.open(bw_png).convert("RGBA")
     colour_img = Image.open(colour_png).convert("RGBA")
