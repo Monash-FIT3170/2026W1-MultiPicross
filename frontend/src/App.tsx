@@ -1,8 +1,12 @@
 import { useState } from "react";
 import MainMenu from "./pages/MainMenu";
-import heroImg from "./assets/hero.png";
-import Board from "./components/Board";
 import { Singleplayer } from "./pages/Singleplayer";
+import { Multiplayer } from "./pages/Multiplayer";
+import { Statistics } from "./pages/Statistics";
+import { Login } from "./pages/Login";
+import { SignUp } from "./pages/Signup";
+import { Tutorial } from "./pages/Tutorial";
+import { Settings } from "./pages/Settings";  
 
 
 function App() {
@@ -15,8 +19,21 @@ function App() {
         return <MainMenu navigate={setPage} />;
       case "singleplayer":
         return <Singleplayer navigate={setPage} />;
+      case "multiplayer":
+        return <Multiplayer navigate={setPage} />;
+      case "statistics":
+        return <Statistics navigate={setPage} />;
+      case "login":
+        return <Login navigate={setPage} />;
+      case "signup":
+        return <SignUp navigate={setPage} />;
+      case "tutorial":
+        return <Tutorial navigate={setPage} />;
+      case "settings":
+        return <Settings navigate={setPage} />;
       }
-    }
+      
+      }
 
     return <>{renderPage()}</>;
 }

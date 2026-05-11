@@ -1,8 +1,9 @@
 import singleplayerIcon from "../assets/singleplayer.svg";
-import multiIcon from "../assets/multiplayer.png";
-import statsIcon from "../assets/stats.png";
-import tutorialIcon from "../assets/tutorial.png";
-import settingsIcon from "../assets/settings.png";
+import multiIcon from "../assets/multiplayer.svg";
+import statsIcon from "../assets/stats.svg";
+import tutorialIcon from "../assets/tutorial.svg";
+import settingsIcon from "../assets/settings.svg";
+import "../index.css";
 
 export default function MainMenu({ navigate }: any) {
   return (
@@ -12,9 +13,9 @@ export default function MainMenu({ navigate }: any) {
       <div className="absolute right-5 top-5 flex gap-3">
         <button
           className="rounded-xl border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-100"
-          onClick={() => navigate("signin")}
+          onClick={() => navigate("login")}
         >
-          Sign In
+          Login
         </button>
 
         <button
@@ -38,7 +39,7 @@ export default function MainMenu({ navigate }: any) {
 
           <button
             onClick={() => navigate("singleplayer")}
-            className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-xs transition duration-200 hover:-translate-y-1 hover:bg-[#C2A57F]\ hover:shadow-lg hover:invert"
+            className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-xs transition hover:-translate-y-1 hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
           >
             <img src={singleplayerIcon} className="mb-2 h-12 w-12 " />
             Singleplayer
@@ -46,7 +47,7 @@ export default function MainMenu({ navigate }: any) {
 
           <button
             onClick={() => navigate("multiplayer")}
-            className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-xs transition duration-200 hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg"
+            className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-xs transition hover:-translate-y-1 hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
           >
             <img src={multiIcon} className="mb-2 h-12 w-12" />
             Multiplayer
@@ -56,17 +57,26 @@ export default function MainMenu({ navigate }: any) {
         {/* RIGHT */}
         <div className="flex flex-col gap-5">
 
-          <button className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg">
+          <button 
+            onClick={() => navigate("statistics")}
+            className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs hover:-translate-y-1 hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
+          >
             <img src={statsIcon} className="h-7 w-7" />
             Statistics
           </button>
 
-          <button className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg">
+          <button 
+            onClick={() => navigate("tutorial")}
+            className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs hover:-translate-y-1 hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
+          >
             <img src={tutorialIcon} className="h-7 w-7" />
             Tutorial
           </button>
 
-          <button className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs hover:-translate-y-1 hover:bg-[#3D5A80] hover:text-white hover:shadow-lg">
+          <button 
+            onClick={() => navigate("settings")}
+            className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs hover:-translate-y-1 hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
+          >
             <img src={settingsIcon} className="h-7 w-7" />
             Settings
           </button>

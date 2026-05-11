@@ -1,13 +1,11 @@
 import Board from '../components/Board';
 import './PagePlaceholder.css';
-import React from 'react';
 
 export function Singleplayer() {
   return (
     <div className="page-placeholder">
       <h1>Singleplayer</h1>
       <p>Puzzle selection will go here.</p>
-      <button to="/" variant="secondary">Back to Menu</button>
 
        <div className="ticks"></div>
       

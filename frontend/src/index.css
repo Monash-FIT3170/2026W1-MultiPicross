@@ -4,13 +4,14 @@
 @theme {
   /*Custom colours for the main app*/
   --color-background: #f7f6f2;
-  --color-surface: #fffffff;
+  --color-surface: #ffffff;
   --color-cell-unknown: #f0eee9;
   --color-cell-filled: #3d5a80;
   --color-cell-filled-opponent: #3d5a8040;
   --color-cell-marked-empty: #c9c5bc;
   --color-cell-hover: #d8d5cc;
   --color-accent-primary: #3d5a80;
+  --color-accent-primary-inverted: #c2a57f;
   --color-accent-win: #4caf78;
   --color-accent-error: #e07a5f;
   --color-text-primary: #1c1c1e;
