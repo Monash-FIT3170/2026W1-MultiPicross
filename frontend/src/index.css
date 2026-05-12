@@ -86,9 +86,9 @@
     }
   }
 
- .timer {
-  @apply border rounded-lg bg-white m-2 mx-auto py-1 px-5 text-center text-xl font-mono text-gray-800 w-fit;
-}
+  .timer {
+    @apply border rounded-lg bg-white m-2 mx-auto py-1 px-5 text-center text-xl font-mono text-gray-800 w-fit;
+  }
 
   :root {
     --text: #6b6375;

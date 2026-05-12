@@ -16,7 +16,7 @@ export default function Board() {
   useEffect(() => {
     const interval = setInterval(() => {
       setTime((t) => t + 1);
-    },1000);
+    }, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -42,11 +42,10 @@ export default function Board() {
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Game Board</h2>
         <p className="text-gray-600">Click to fill, Right-click to cross.</p>
-          <div className='timer'>
-            {String(Math.floor(time / 60)).padStart(2, "0")}:
-            {String(time % 60).padStart(2, "0")}
-          </div>
-
+        <div className="timer">
+          {String(Math.floor(time / 60)).padStart(2, "0")}:
+          {String(time % 60).padStart(2, "0")}
+        </div>
       </div>
       {/* Tailwind Grid Container */}
       <div
