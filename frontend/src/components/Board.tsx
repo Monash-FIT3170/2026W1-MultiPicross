@@ -45,8 +45,8 @@ export default function Board() {
   return (
     <section className="flex flex-col items-center py-8">
       <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">Game Board</h2>
-        <p className="text-gray-600">Click to fill, Right-click to cross.</p>
+        <h2>Game Board</h2>
+        <p>Click to fill, Right-click to cross.</p>
       </div>
 
       <div
