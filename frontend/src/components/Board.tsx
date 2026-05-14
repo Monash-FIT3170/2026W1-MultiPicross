@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import useSound from "use-sound";
 import Cell from "./Cell";
 import cellClickSound from "../assets/sounds/cell-click.mp3";
 import cellCrossSound from "../assets/sounds/cell-cross.mp3";
