@@ -1,68 +1,70 @@
 import { Link } from "react-router-dom";
+import heroImg from "./assets/hero.png";
+import "./AccountCreationPage.css";
 
 function AccountCreationPage() {
   return (
-    <main className="grid min-h-svh place-items-center bg-[var(--bg)] px-5 py-8">
-      <section className="w-full max-w-[420px]">
-        <div className="mb-7 text-left">
-          <p className="mb-2 text-sm font-bold uppercase text-[var(--accent)]">
-            MultiPicross
-          </p>
-          <h1 className="m-0 mb-2.5 text-[42px] font-medium text-[var(--text-h)]">
-            Create account
-          </h1>
-          <p className="m-0 text-[var(--text)]">
-            Create a game to play with friends.
-          </p>
+    <>
+      <section id="center" className="account-hero">
+        <div className="hero">
+          <img src={heroImg} className="base" width="170" height="179" alt="" />
         </div>
+        <div className="account-title">
+          <h1>Create Account</h1>
+          <p>Start a MultiPicross profile for saving games and playing online.</p>
+        </div>
+        <Link className="account-link secondary" to="/">
+          Back to Main Page
+        </Link>
+      </section>
 
-        <form className="grid gap-4">
-          <label className="grid gap-2 text-left text-[15px] font-semibold text-[var(--text-h)]">
-            Display name
+      <div className="ticks"></div>
+
+      <section id="next-steps" className="account-create-section">
+        <div id="docs">
+          <h2>Account Details</h2>
+          <p>Choose your display name and sign-in details.</p>
+        </div>
+        <div id="social">
+          <form className="account-form" action="#" method="POST">
+            <label htmlFor="username">Display name</label>
             <input
-              className="min-h-11 rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 font-[inherit] text-[var(--text-h)] outline-offset-2 focus:border-[var(--accent)] focus:outline-2 focus:outline-[var(--accent-border)]"
-              name="displayName"
+              id="username"
+              name="username"
               type="text"
-              autoComplete="nickname"
+              autoComplete="username"
+              required
+              placeholder="PuzzlePlayer"
             />
-          </label>
 
-          <label className="grid gap-2 text-left text-[15px] font-semibold text-[var(--text-h)]">
-            Email
+            <label htmlFor="email">Email address</label>
             <input
-              className="min-h-11 rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 font-[inherit] text-[var(--text-h)] outline-offset-2 focus:border-[var(--accent)] focus:outline-2 focus:outline-[var(--accent-border)]"
+              id="email"
               name="email"
               type="email"
               autoComplete="email"
+              required
+              placeholder="you@example.com"
             />
-          </label>
 
-          <label className="grid gap-2 text-left text-[15px] font-semibold text-[var(--text-h)]">
-            Password
+            <label htmlFor="password">Password</label>
             <input
-              className="min-h-11 rounded-md border border-[var(--border)] bg-[var(--bg)] px-3 font-[inherit] text-[var(--text-h)] outline-offset-2 focus:border-[var(--accent)] focus:outline-2 focus:outline-[var(--accent-border)]"
+              id="password"
               name="password"
               type="password"
               autoComplete="new-password"
+              required
+              placeholder="Choose a password"
             />
-          </label>
 
-          <button
-            className="inline-flex cursor-pointer items-center justify-center gap-2 rounded-md border-2 border-transparent bg-[var(--accent)] px-3.5 py-2.5 text-base font-semibold leading-tight text-white hover:shadow-[var(--shadow)]"
-            type="submit"
-          >
-            Create account
-          </button>
-        </form>
-
-        <Link
-          className="mt-5 inline-flex font-semibold text-[var(--accent)] no-underline"
-          to="/"
-        >
-          Back home
-        </Link>
+            <button type="submit">Create Account</button>
+          </form>
+        </div>
       </section>
-    </main>
+
+      <div className="ticks"></div>
+      <section id="spacer"></section>
+    </>
   );
 }
 

@@ -1,8 +1,11 @@
 import heroImg from "./assets/hero.png";
+import { Link } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import "./App.css";
+import AccountCreationPage from "./AccountCreationPage";
 import Board from "./components/Board";
 
-function App() {
+function HomePage() {
   return (
     <>
       <section id="center">
@@ -12,6 +15,9 @@ function App() {
         <div>
           <h1>MultiPicross</h1>
         </div>
+        <Link className="account-link" to="/create-account">
+          Create Account
+        </Link>
       </section>
 
       <div className="ticks"></div>
