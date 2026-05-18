@@ -1,0 +1,19 @@
+.page-placeholder {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+  color: white;
+}
+
+.page-placeholder h1 {
+  font-size: 2.5rem;
+  margin: 0;
+}
+
+.page-placeholder p {
+  color: #a5b4fc;
+}

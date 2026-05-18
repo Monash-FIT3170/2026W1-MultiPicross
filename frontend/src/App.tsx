@@ -1,35 +1,39 @@
-import heroImg from "./assets/hero.png";
-import "./App.css";
-import Board from "./components/Board";
+import { useState } from "react";
+import MainMenu from "./pages/MainMenu";
+import { Singleplayer } from "./pages/Singleplayer";
+import { Multiplayer } from "./pages/Multiplayer";
+import { Statistics } from "./pages/Statistics";
+import { Login } from "./pages/Login";
+import { Signup } from "./pages/Signup";
+import { Tutorial } from "./pages/Tutorial";
+import { Settings } from "./pages/Settings";
 
 function App() {
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-        </div>
-        <div>
-          <h1>MultiPicross</h1>
-        </div>
-      </section>
+  const [page, setPage] = useState("menu");
 
-      <div className="ticks"></div>
+  function renderPage() {
+    switch (page) {
+      case "menu":
+      default:
+        return <MainMenu navigate={setPage} />;
+      case "singleplayer":
+        return <Singleplayer navigate={setPage} />;
+      case "multiplayer":
+        return <Multiplayer navigate={setPage} />;
+      case "statistics":
+        return <Statistics navigate={setPage} />;
+      case "login":
+        return <Login navigate={setPage} />;
+      case "signup":
+        return <Signup navigate={setPage} />;
+      case "tutorial":
+        return <Tutorial navigate={setPage} />;
+      case "settings":
+        return <Settings navigate={setPage} />;
+    }
+  }
 
-      <section id="next-steps">
-        <div id="docs">
-          <h2>Board desc</h2>
-          <p>Left click to fill/unfill. Right click to place/remove a cross.</p>
-        </div>
-        <div id="social">
-          <Board />
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  );
+  return <>{renderPage()}</>;
 }
 
 export default App;
