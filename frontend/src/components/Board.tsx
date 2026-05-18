@@ -63,7 +63,7 @@ export default function Board() {
       {/* Tailwind Grid Container */}
       <div
         className="grid gap-px bg-gray-400 border-2 border-gray-800 shadow-xl"
-        style={{ gridTemplateColumns: `repeat(${cols}, 40px)` }}
+        style={{ gridTemplateColumns: `repeat(${cols}, 45px)` }}
       >
         {grid.map((row, rowIndex) =>
           row.map((cell, colIndex) => (
