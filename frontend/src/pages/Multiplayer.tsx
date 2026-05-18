@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 
-
 export function Multiplayer() {
   const navigate = useNavigate();
   return (
