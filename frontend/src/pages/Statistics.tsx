@@ -1,10 +1,7 @@
-import React from "react";
+import { useNavigate } from "react-router-dom";
 
-type StatisticsProps = {
-  navigate: React.Dispatch<React.SetStateAction<string>>;
-};
-
-export function Statistics({ navigate }: StatisticsProps) {
+export function Statistics() {
+  const navigate = useNavigate();
   return (
     <div className="page-placeholder">
       <h1>Statistics</h1>
@@ -12,10 +9,11 @@ export function Statistics({ navigate }: StatisticsProps) {
 
       <button
         className="rounded-xl bg-gray-900 px-4 py-2 font-semibold text-white hover:bg-black"
-        onClick={() => navigate("mainmenu")}
+        onClick={() => navigate("")}
       >
         Main Menu
       </button>
     </div>
+
   );
 }

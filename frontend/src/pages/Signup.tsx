@@ -1,10 +1,7 @@
-import React from "react";
+import { useNavigate } from "react-router-dom";
 
-type SignupProps = {
-  navigate: React.Dispatch<React.SetStateAction<string>>;
-};
-
-export function Signup({ navigate }: SignupProps) {
+export function Signup() {
+  const navigate = useNavigate();
   return (
     <div className="page-placeholder">
       <h1>Sign Up</h1>
@@ -12,7 +9,7 @@ export function Signup({ navigate }: SignupProps) {
 
       <button
         className="rounded-xl bg-gray-900 px-4 py-2 font-semibold text-white hover:bg-black"
-        onClick={() => navigate("mainmenu")}
+        onClick={() => navigate("")}
       >
         Main Menu
       </button>

@@ -1,30 +1,27 @@
-import React from "react";
 import singleplayerIcon from "../assets/singleplayer.svg";
 import multiIcon from "../assets/multiplayer.svg";
 import statsIcon from "../assets/stats.svg";
 import tutorialIcon from "../assets/tutorial.svg";
 import settingsIcon from "../assets/settings.svg";
 import "../index.css";
+import { useNavigate } from "react-router-dom";
 
-type MainMenuProps = {
-  navigate: React.Dispatch<React.SetStateAction<string>>;
-};
-
-export default function MainMenu({ navigate }: MainMenuProps) {
+export default function MainMenu() {
+  const navigate = useNavigate();
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#fcfcfd]">
       {/* Top Right Auth Buttons */}
       <div className="absolute right-5 top-5 flex gap-3">
         <button
           className="rounded-xl border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-100"
-          onClick={() => navigate("login")}
+          onClick={() => navigate("/login")}
         >
           Login
         </button>
 
         <button
           className="rounded-xl bg-gray-900 px-4 py-2 font-semibold text-white hover:bg-black"
-          onClick={() => navigate("signup")}
+          onClick={() => navigate("/signup")}
         >
           Sign Up
         </button>
@@ -38,7 +35,7 @@ export default function MainMenu({ navigate }: MainMenuProps) {
         {/* LEFT */}
         <div className="flex flex-col gap-5">
           <button
-            onClick={() => navigate("singleplayer")}
+            onClick={() => navigate("/singleplayer")}
             className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-xs transition hover:-translate-y-1 hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
           >
             <img src={singleplayerIcon} className="mb-2 h-12 w-12 " />
@@ -46,7 +43,7 @@ export default function MainMenu({ navigate }: MainMenuProps) {
           </button>
 
           <button
-            onClick={() => navigate("multiplayer")}
+            onClick={() => navigate("/multiplayer")}
             className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-xs transition hover:-translate-y-1 hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
           >
             <img src={multiIcon} className="mb-2 h-12 w-12" />
@@ -57,7 +54,7 @@ export default function MainMenu({ navigate }: MainMenuProps) {
         {/* RIGHT */}
         <div className="flex flex-col gap-5">
           <button
-            onClick={() => navigate("statistics")}
+            onClick={() => navigate("/statistics")}
             className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs hover:-translate-y-1 hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
           >
             <img src={statsIcon} className="h-7 w-7" />
@@ -65,7 +62,7 @@ export default function MainMenu({ navigate }: MainMenuProps) {
           </button>
 
           <button
-            onClick={() => navigate("tutorial")}
+            onClick={() => navigate("/tutorial")}
             className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs hover:-translate-y-1 hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
           >
             <img src={tutorialIcon} className="h-7 w-7" />
@@ -73,7 +70,7 @@ export default function MainMenu({ navigate }: MainMenuProps) {
           </button>
 
           <button
-            onClick={() => navigate("settings")}
+            onClick={() => navigate("/settings")}
             className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs hover:-translate-y-1 hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
           >
             <img src={settingsIcon} className="h-7 w-7" />
