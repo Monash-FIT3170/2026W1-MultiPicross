@@ -152,46 +152,42 @@ def check_unique_solution_fast(row_hints, column_hints):
 
     solutions = []
 
-    def reduce_options(row_opts, col_opts):
+    def propagate(row_opts, col_opts):
         changed = True
-
         while changed:
             changed = False
 
-            # filter row options using column possibilities
+            # Precompute which values each column allows at each row position.
+            # col_allowed[c][r] is a set — O(1) lookup instead of scanning all col options per cell.
+            col_allowed = [
+                [set(col[r] for col in col_opts[c]) for r in range(height)]
+                for c in range(width)
+            ]
+
             for r in range(height):
-                new_rows = []
-                for row in row_opts[r]:
-                    ok = True
-                    for c in range(width):
-                        if not any(col[r] == row[c] for col in col_opts[c]):
-                            ok = False
-                            break
-                    if ok:
-                        new_rows.append(row)
-
-                if len(new_rows) == 0:
+                new_rows = [
+                    row for row in row_opts[r]
+                    if all(row[c] in col_allowed[c][r] for c in range(width))
+                ]
+                if not new_rows:
                     return None, None
-
                 if len(new_rows) != len(row_opts[r]):
                     row_opts[r] = new_rows
                     changed = True
 
-            # filter column options using row possibilities
+            # Precompute which values each row allows at each column position.
+            row_allowed = [
+                [set(row[c] for row in row_opts[r]) for c in range(width)]
+                for r in range(height)
+            ]
+
             for c in range(width):
-                new_cols = []
-                for col in col_opts[c]:
-                    ok = True
-                    for r in range(height):
-                        if not any(row[c] == col[r] for row in row_opts[r]):
-                            ok = False
-                            break
-                    if ok:
-                        new_cols.append(col)
-
-                if len(new_cols) == 0:
+                new_cols = [
+                    col for col in col_opts[c]
+                    if all(col[r] in row_allowed[r][c] for r in range(height))
+                ]
+                if not new_cols:
                     return None, None
-
                 if len(new_cols) != len(col_opts[c]):
                     col_opts[c] = new_cols
                     changed = True
@@ -205,44 +201,128 @@ def check_unique_solution_fast(row_hints, column_hints):
         row_opts = [list(x) for x in row_opts]
         col_opts = [list(x) for x in col_opts]
 
-        row_opts, col_opts = reduce_options(row_opts, col_opts)
+        row_opts, col_opts = propagate(row_opts, col_opts)
 
         if row_opts is None:
             return
 
-        # solved
         if all(len(opts) == 1 for opts in row_opts):
             grid = np.array([opts[0] for opts in row_opts])
+            # Explicit column verification: propagation can have gaps where all
+            # row options are individually consistent but jointly produce a bad column.
+            for c in range(width):
+                if line_to_hints(grid[:, c]) != list(column_hints[c]):
+                    return
             solutions.append(grid)
             return
 
-        # choose row with fewest options greater than 1
-        best_row = None
-        best_count = 999999
+        best_row = min(
+            (r for r in range(height) if len(row_opts[r]) > 1),
+            key=lambda r: len(row_opts[r])
+        )
 
-        for r in range(height):
-            if 1 < len(row_opts[r]) < best_count:
-                best_count = len(row_opts[r])
-                best_row = r
-
-        # try each possible version of that row
         for option in row_opts[best_row]:
             new_row_opts = [list(x) for x in row_opts]
             new_row_opts[best_row] = [option]
-
-            search(new_row_opts, col_opts)
-
+            # Pass an explicit col_opts copy so each branch is fully isolated.
+            search(new_row_opts, [list(x) for x in col_opts])
             if len(solutions) > 1:
                 return
 
     search(row_options, col_options)
 
-    # if len(solutions) == 1:
-    #     return True, 1, solutions[0]
-    # elif len(solutions) == 0:
-    #     return False, 0, None
-    # else:
-    #     return False, len(solutions), None
+    return len(solutions) == 1, len(solutions), solutions
+
+
+def check_unique_solution_fast_v2(row_hints, column_hints):
+    height = len(row_hints)
+    width = len(column_hints)
+
+    row_options = [possible_lines(width, hint) for hint in row_hints]
+    col_options = [possible_lines(height, hint) for hint in column_hints]
+
+    # Stores flattened tuples of each found grid so identical grids found via
+    # different search paths are counted only once.
+    found_signatures = set()
+    solutions = []
+
+    def propagate(row_opts, col_opts):
+        changed = True
+        while changed:
+            changed = False
+
+            col_allowed = [
+                [set(col[r] for col in col_opts[c]) for r in range(height)]
+                for c in range(width)
+            ]
+
+            for r in range(height):
+                new_rows = [
+                    row for row in row_opts[r]
+                    if all(row[c] in col_allowed[c][r] for c in range(width))
+                ]
+                if not new_rows:
+                    return None, None
+                if len(new_rows) != len(row_opts[r]):
+                    row_opts[r] = new_rows
+                    changed = True
+
+            row_allowed = [
+                [set(row[c] for row in row_opts[r]) for c in range(width)]
+                for r in range(height)
+            ]
+
+            for c in range(width):
+                new_cols = [
+                    col for col in col_opts[c]
+                    if all(col[r] in row_allowed[r][c] for r in range(height))
+                ]
+                if not new_cols:
+                    return None, None
+                if len(new_cols) != len(col_opts[c]):
+                    col_opts[c] = new_cols
+                    changed = True
+
+        return row_opts, col_opts
+
+    def search(row_opts, col_opts):
+        if len(solutions) > 1:
+            return
+
+        row_opts = [list(x) for x in row_opts]
+        col_opts = [list(x) for x in col_opts]
+
+        row_opts, col_opts = propagate(row_opts, col_opts)
+
+        if row_opts is None:
+            return
+
+        if all(len(opts) == 1 for opts in row_opts):
+            grid = np.array([opts[0] for opts in row_opts])
+
+            for c in range(width):
+                if line_to_hints(grid[:, c]) != column_hints[c]:
+                    return
+
+            sig = tuple(grid.flatten())
+            if sig not in found_signatures:
+                found_signatures.add(sig)
+                solutions.append(grid)
+            return
+
+        best_row = min(
+            (r for r in range(height) if len(row_opts[r]) > 1),
+            key=lambda r: len(row_opts[r])
+        )
+
+        for option in row_opts[best_row]:
+            new_row_opts = [list(x) for x in row_opts]
+            new_row_opts[best_row] = [option]
+            search(new_row_opts, [list(x) for x in col_opts])
+            if len(solutions) > 1:
+                return
+
+    search(row_options, col_options)
 
     return len(solutions) == 1, len(solutions), solutions
 
@@ -277,9 +357,9 @@ def mono_to_colour_converter(picture):
     
 
 if __name__ == "__main__":
-    arr = png_to_array("repo", (0, 0, 0))
+    arr = png_to_array("kirby", (0, 0, 0))
 
-    array_to_png(arr, f"repo_test_regenerate")
+    array_to_png(arr, f"repo_test_regenerate_v4")
 
     row_hints = get_row_hints(arr)
     column_hints = get_column_hints(arr)
@@ -292,7 +372,7 @@ if __name__ == "__main__":
 
     start = time.time()
 
-    is_unique, count, solution = check_unique_solution_fast(row_hints, column_hints)
+    is_unique, count, solution = check_unique_solution_fast_v2(row_hints, column_hints)
 
     print("Unique:", is_unique)
     print("Number of solutions:", count)
