@@ -11,9 +11,5 @@
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "lint:fix": "eslint --fix ."
-  },
-  "dependencies": {
-    "react-router-dom": "^7.14.2",
-    "tailwindcss": "^4.3.0"
   }
 }
