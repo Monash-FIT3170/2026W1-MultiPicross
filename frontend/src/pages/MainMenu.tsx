@@ -36,7 +36,7 @@ export default function MainMenu() {
         <div className="flex flex-col gap-5">
           <button
             onClick={() => navigate("/singleplayer")}
-            className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-xs transition hover:-translate-y-1 hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
+            className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-xs transition hover:scale-[1.02] hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
           >
             <img src={singleplayerIcon} className="mb-2 h-12 w-12 " />
             Singleplayer
@@ -44,7 +44,7 @@ export default function MainMenu() {
 
           <button
             onClick={() => navigate("/multiplayer")}
-            className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-xs transition hover:-translate-y-1 hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
+            className="flex h-[120px] w-[360px] flex-col items-center justify-center rounded-2xl border bg-white font-bold text-gray-900 shadow-xs transition hover:scale-[1.02] hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
           >
             <img src={multiIcon} className="mb-2 h-12 w-12" />
             Multiplayer
@@ -55,7 +55,7 @@ export default function MainMenu() {
         <div className="flex flex-col gap-5">
           <button
             onClick={() => navigate("/statistics")}
-            className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs hover:-translate-y-1 hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
+            className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs transition hover:scale-[1.02] hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
           >
             <img src={statsIcon} className="h-7 w-7" />
             Statistics
@@ -63,7 +63,7 @@ export default function MainMenu() {
 
           <button
             onClick={() => navigate("/tutorial")}
-            className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs hover:-translate-y-1 hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
+            className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs transition hover:scale-[1.02] hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
           >
             <img src={tutorialIcon} className="h-7 w-7" />
             Tutorial
@@ -71,7 +71,7 @@ export default function MainMenu() {
 
           <button
             onClick={() => navigate("/settings")}
-            className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs hover:-translate-y-1 hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
+            className="flex h-[80px] w-[360px] items-center justify-center gap-3 rounded-2xl border bg-white font-bold shadow-xs transition hover:scale-[1.02] hover:text-black hover:bg-accent-primary-inverted hover:shadow-lg hover:invert"
           >
             <img src={settingsIcon} className="h-7 w-7" />
             Settings
