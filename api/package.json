@@ -4,14 +4,24 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.11",
-    "hono": "^4.12.15"
+    "@hono/standard-validator": "^0.2.2",
+    "@node-rs/argon2": "^2.0.2",
+    "@scalar/hono-api-reference": "^0.10.16",
+    "@valibot/to-json-schema": "^1.7.0",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.15",
+    "hono-openapi": "^0.4.8",
+    "postgres": "^3.4.9",
+    "valibot": "^1.4.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.17",
+    "drizzle-kit": "^0.31.10",
     "tsx": "^4.7.1",
     "typescript": "^5.8.3"
   }
