@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { Routes, Route } from "react-router-dom";
+
 import MainMenu from "./pages/MainMenu";
 import { Singleplayer } from "./pages/Singleplayer";
 import { Multiplayer } from "./pages/Multiplayer";
@@ -8,32 +9,19 @@ import { Signup } from "./pages/Signup";
 import { Tutorial } from "./pages/Tutorial";
 import { Settings } from "./pages/Settings";
 
-function App() {
-  const [page, setPage] = useState("menu");
-
-  function renderPage() {
-    switch (page) {
-      case "menu":
-      default:
-        return <MainMenu navigate={setPage} />;
-      case "singleplayer":
-        return <Singleplayer navigate={setPage} />;
-      case "multiplayer":
-        return <Multiplayer navigate={setPage} />;
-      case "statistics":
-        return <Statistics navigate={setPage} />;
-      case "login":
-        return <Login navigate={setPage} />;
-      case "signup":
-        return <Signup navigate={setPage} />;
-      case "tutorial":
-        return <Tutorial navigate={setPage} />;
-      case "settings":
-        return <Settings navigate={setPage} />;
-    }
-  }
-
-  return <>{renderPage()}</>;
+export default function App() {
+  return (
+    <div>
+      <Routes>
+        <Route path="/" element={<MainMenu />} />
+        <Route path="/singleplayer" element={<Singleplayer />} />
+        <Route path="/multiplayer" element={<Multiplayer />} />
+        <Route path="/statistics" element={<Statistics />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/tutorial" element={<Tutorial />} />
+        <Route path="/settings" element={<Settings />} />
+      </Routes>
+    </div>
+  );
 }
-
-export default App;
