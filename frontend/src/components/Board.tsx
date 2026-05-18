@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import useSound from "use-sound";
 import Cell from "./Cell";
-import cellClickSound from "../assets/sounds/cell-click.mp3";
-import cellCrossSound from "../assets/sounds/cell-cross.mp3";
+import cellClickSound from "../assets/sounds/cell-click.wav";
+import cellCrossSound from "../assets/sounds/cell-cross.wav";
 
 export type CellState = "empty" | "filled" | "cross";
 
