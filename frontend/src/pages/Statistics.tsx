@@ -14,6 +14,5 @@ export function Statistics() {
         Main Menu
       </button>
     </div>
-
   );
 }
