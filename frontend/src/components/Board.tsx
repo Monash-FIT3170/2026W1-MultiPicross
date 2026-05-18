@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import useSound from "use-sound";
 import Cell from "./Cell";
-import cellClickSound from "../assets/sounds/cell-click.mp3";
-import cellCrossSound from "../assets/sounds/cell-cross.mp3";
+import cellClickSound from "../assets/sounds/cell-click.wav";
+import cellCrossSound from "../assets/sounds/cell-cross.wav";
 
 export type CellState = "empty" | "filled" | "cross";
 
@@ -63,7 +63,7 @@ export default function Board() {
       {/* Tailwind Grid Container */}
       <div
         className="grid gap-px bg-gray-400 border-2 border-gray-800 shadow-xl"
-        style={{ gridTemplateColumns: `repeat(${cols}, 40px)` }}
+        style={{ gridTemplateColumns: `repeat(${cols}, 45px)` }}
       >
         {grid.map((row, rowIndex) =>
           row.map((cell, colIndex) => (
