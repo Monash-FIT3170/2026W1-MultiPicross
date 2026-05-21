@@ -1,6 +1,8 @@
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
 import { sValidator } from "@hono/standard-validator";
+import { jwt } from "hono/jwt";
+import { getCookie } from "hono/cookie";
 import { and, eq } from "drizzle-orm";
 import * as v from "valibot";
 import { toJsonSchema } from "@valibot/to-json-schema";
@@ -16,6 +18,14 @@ import {
   hashToken,
   refreshExpiresAt,
 } from "./helpers.js";
+import {
+  ACCESS_COOKIE,
+  REFRESH_COOKIE,
+  setAuthCookies,
+  clearAuthCookies,
+  newCsrfToken,
+} from "./cookies.js";
+import { csrf } from "./csrf.js";
 
 const RegisterBody = v.object({
   username: v.pipe(
@@ -33,11 +43,6 @@ const LoginBody = v.object({
   password: v.string(),
 });
 
-const TokenBody = v.object({
-  refreshToken: v.string(),
-});
-
-// toJsonSchema returns a superset type; cast to satisfy hono-openapi's OpenAPIV3.SchemaObject
 function schema<T extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(
   s: T,
 ): OpenAPIV3.SchemaObject {
@@ -61,11 +66,13 @@ const validationErrorContent = {
 };
 const errorContent = { "application/json": { schema: errorSchema } };
 
-async function issueTokenPair(
+async function issueSession(
+  c: Parameters<typeof setAuthCookies>[0],
   accountId: string,
   username: string,
-): Promise<{ accessToken: string; refreshToken: string }> {
+): Promise<void> {
   const jti = crypto.randomUUID();
+  const csrfToken = newCsrfToken();
   const [refreshToken, accessToken] = await Promise.all([
     signRefreshToken({ sub: accountId, jti }),
     signAccessToken({ sub: accountId, username }),
@@ -76,7 +83,7 @@ async function issueTokenPair(
     tokenHash: hashToken(refreshToken),
     expiresAt: refreshExpiresAt(),
   });
-  return { accessToken, refreshToken };
+  setAuthCookies(c, { accessToken, refreshToken, csrfToken });
 }
 
 const auth = new Hono();
@@ -134,8 +141,6 @@ auth.post(
             schema: {
               type: "object",
               properties: {
-                accessToken: { type: "string" },
-                refreshToken: { type: "string" },
                 username: { type: "string" },
               },
             },
@@ -164,59 +169,54 @@ auth.post(
     const valid = await verifyPassword(password, account.passwordHash);
     if (!valid) return invalid();
 
-    const tokens = await issueTokenPair(account.id, account.username);
-    return c.json({ ...tokens, username: account.username });
+    await issueSession(c, account.id, account.username);
+    return c.json({ username: account.username });
   },
 );
 
 auth.post(
   "/refresh",
+  csrf,
   describeRoute({
     tags: ["Auth"],
     summary: "Rotate refresh token and issue a new access token",
-    requestBody: {
-      required: true,
-      content: { "application/json": { schema: schema(TokenBody) } },
-    },
     responses: {
       200: {
-        description: "New token pair",
+        description: "Session refreshed",
         content: {
           "application/json": {
             schema: {
               type: "object",
-              properties: {
-                accessToken: { type: "string" },
-                refreshToken: { type: "string" },
-              },
+              properties: { username: { type: "string" } },
             },
           },
         },
       },
-      400: { description: "Validation error", content: validationErrorContent },
       401: {
         description: "Invalid or expired refresh token",
         content: errorContent,
       },
+      403: { description: "Invalid CSRF token", content: errorContent },
     },
   }),
-  sValidator("json", TokenBody, (result, c) => {
-    if (!result.success)
-      return c.json({ error: result.error.map((i) => i.message) }, 400);
-  }),
   async (c) => {
-    const { refreshToken } = c.req.valid("json") as v.InferOutput<
-      typeof TokenBody
-    >;
+    const refreshToken = getCookie(c, REFRESH_COOKIE);
+    if (!refreshToken) {
+      clearAuthCookies(c);
+      return c.json({ error: "Invalid or expired refresh token" }, 401);
+    }
 
     let payload: { sub: string; jti: string; type: string };
     try {
       payload = await verifyRefreshToken(refreshToken);
     } catch {
+      clearAuthCookies(c);
       return c.json({ error: "Invalid or expired refresh token" }, 401);
     }
-    if (payload.type !== "refresh")
+    if (payload.type !== "refresh") {
+      clearAuthCookies(c);
       return c.json({ error: "Invalid token type" }, 401);
+    }
 
     const tokenHash = hashToken(refreshToken);
     const [[deleted], account] = await Promise.all([
@@ -231,22 +231,22 @@ auth.post(
         .returning({ accountId: refreshTokens.accountId }),
       db.query.accounts.findFirst({ where: eq(accounts.id, payload.sub) }),
     ]);
-    if (!deleted || !account)
+    if (!deleted || !account) {
+      clearAuthCookies(c);
       return c.json({ error: "Invalid or expired refresh token" }, 401);
+    }
 
-    return c.json(await issueTokenPair(account.id, account.username));
+    await issueSession(c, account.id, account.username);
+    return c.json({ username: account.username });
   },
 );
 
 auth.post(
   "/logout",
+  csrf,
   describeRoute({
     tags: ["Auth"],
-    summary: "Invalidate a refresh token",
-    requestBody: {
-      required: true,
-      content: { "application/json": { schema: schema(TokenBody) } },
-    },
+    summary: "Invalidate session and clear cookies",
     responses: {
       200: {
         description: "Logged out",
@@ -259,23 +259,51 @@ auth.post(
           },
         },
       },
+      403: { description: "Invalid CSRF token", content: errorContent },
     },
   }),
-  sValidator("json", TokenBody, (result, c) => {
-    if (!result.success)
-      return c.json({ error: result.error.map((i) => i.message) }, 400);
-  }),
   async (c) => {
-    const { refreshToken } = c.req.valid("json") as v.InferOutput<
-      typeof TokenBody
-    >;
-    try {
-      const payload = await verifyRefreshToken(refreshToken);
-      await db.delete(refreshTokens).where(eq(refreshTokens.id, payload.jti));
-    } catch {
-      // silently ignore invalid tokens on logout
+    const refreshToken = getCookie(c, REFRESH_COOKIE);
+    if (refreshToken) {
+      try {
+        const payload = await verifyRefreshToken(refreshToken);
+        await db.delete(refreshTokens).where(eq(refreshTokens.id, payload.jti));
+      } catch {
+        // silently ignore invalid tokens on logout
+      }
     }
+    clearAuthCookies(c);
     return c.json({ success: true });
+  },
+);
+
+auth.get(
+  "/me",
+  jwt({ secret: process.env.JWT_ACCESS_SECRET!, cookie: ACCESS_COOKIE, alg: "HS256" }),
+  describeRoute({
+    tags: ["Auth"],
+    summary: "Get the currently authenticated user",
+    responses: {
+      200: {
+        description: "Authenticated user",
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                id: { type: "string" },
+                username: { type: "string" },
+              },
+            },
+          },
+        },
+      },
+      401: { description: "Not authenticated", content: errorContent },
+    },
+  }),
+  (c) => {
+    const payload = c.get("jwtPayload") as { sub: string; username: string };
+    return c.json({ id: payload.sub, username: payload.username });
   },
 );
 
