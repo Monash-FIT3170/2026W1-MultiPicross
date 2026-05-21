@@ -5,26 +5,41 @@ import tutorialIcon from "../assets/tutorial.svg";
 import settingsIcon from "../assets/settings.svg";
 import "../index.css";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../auth/AuthContext";
 
 export default function MainMenu() {
   const navigate = useNavigate();
+  const { status, username, logout } = useAuth();
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#fcfcfd]">
       {/* Top Right Auth Buttons */}
-      <div className="absolute right-5 top-5 flex gap-3">
-        <button
-          className="rounded-xl border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-100"
-          onClick={() => navigate("/login")}
-        >
-          Login
-        </button>
-
-        <button
-          className="rounded-xl bg-gray-900 px-4 py-2 font-semibold text-white hover:bg-black"
-          onClick={() => navigate("/signup")}
-        >
-          Sign Up
-        </button>
+      <div className="absolute right-5 top-5 flex items-center gap-3">
+        {status === "authenticated" ? (
+          <>
+            <span className="text-sm font-medium text-gray-600">{username}</span>
+            <button
+              className="rounded-xl border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-100"
+              onClick={() => void logout()}
+            >
+              Log out
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              className="rounded-xl border border-gray-300 bg-white px-4 py-2 font-semibold text-gray-700 hover:bg-gray-100"
+              onClick={() => navigate("/login")}
+            >
+              Login
+            </button>
+            <button
+              className="rounded-xl bg-gray-900 px-4 py-2 font-semibold text-white hover:bg-black"
+              onClick={() => navigate("/register")}
+            >
+              Sign Up
+            </button>
+          </>
+        )}
       </div>
 
       {/* Title */}
