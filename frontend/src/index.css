@@ -2,6 +2,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Cairo:wght@200..1000&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
 @import "tailwindcss";
 
+
 @theme {
   /*Custom colours for the main app*/
   --color-background: #f7f6f2;
