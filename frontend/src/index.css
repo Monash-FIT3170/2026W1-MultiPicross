@@ -31,6 +31,266 @@
   --font-clue: "Cairo", "Montserrat", monospace;
 }
 
+/* ──── Design system tokens (defined above @layer so they win over layered styles) ──── */
+:root {
+  --color-paper: #f7f6f2;
+  --color-surface: #ffffff;
+  --color-surface-sunk: #f0eee9;
+  --color-ink: #1c1c1e;
+  --color-ink-soft: #4a4a52;
+  --color-ink-muted: #6b6b6b;
+  --color-ink-faint: #9a9892;
+  --color-ink-clue: #3d3d3d;
+  --color-line: #e7e4dc;
+  --color-line-strong: #c9c5bc;
+
+  --color-blue-50: #eaf2fb;
+  --color-blue-100: #d6e4f5;
+  --color-blue-200: #b8d0ec;
+  --color-blue-500: #3d5a80;
+  --color-blue-600: #2f4868;
+
+  --color-coral-50: #fdf0eb;
+  --color-coral-100: #fadbcf;
+  --color-coral-200: #f4baa6;
+  --color-coral-400: #e07a5f;
+  --color-coral-500: #c45f44;
+
+  --color-sage-50: #ecf6f0;
+  --color-sage-100: #d4ebde;
+  --color-sage-400: #4caf78;
+  --color-sage-500: #3a8e60;
+
+  --color-butter-50: #fbf6e8;
+  --color-butter-100: #f6ecc8;
+  --color-butter-300: #d8b977;
+
+  --color-lavender-50: #f1eef8;
+  --color-lavender-100: #ddd5ed;
+  --color-lavender-200: #beb0db;
+  --color-lavender-300: #9a86c4;
+
+  --shadow-xs: 0 1px 2px rgba(61, 90, 128, 0.06);
+  --shadow-sm:
+    0 1px 3px rgba(61, 90, 128, 0.08), 0 1px 2px rgba(61, 90, 128, 0.04);
+  --shadow-md:
+    0 6px 16px -4px rgba(61, 90, 128, 0.12), 0 2px 6px rgba(61, 90, 128, 0.06);
+  --shadow-lg:
+    0 18px 38px -12px rgba(61, 90, 128, 0.18),
+    0 6px 12px -4px rgba(61, 90, 128, 0.08);
+  --shadow-focus: 0 0 0 3px rgba(61, 90, 128, 0.18);
+
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Override the constrained #root from @layer below — unlayered styles win */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--color-paper);
+}
+#root {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  text-align: left;
+  border-inline: none;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: var(--color-paper);
+}
+
+/* ──── Tile (main menu nav cards) ──── */
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px;
+  background: #fff;
+  border: 1px solid var(--color-line);
+  border-radius: 18px;
+  cursor: pointer;
+  transition:
+    transform var(--dur-base) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+  box-shadow: var(--shadow-xs);
+  font-family: var(--font-ui);
+  text-align: left;
+}
+.tile:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-blue-200);
+}
+.tile:active:not(:disabled) {
+  transform: scale(0.99) translateY(0);
+}
+.tile:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ──── Surface card ──── */
+.mp-surface {
+  background: #fff;
+  border: 1px solid var(--color-line);
+  border-radius: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ──── Eyebrow label ──── */
+.mp-eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-ink-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: var(--font-ui);
+}
+
+/* ──── Toast notification ──── */
+.mp-toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  background: #fff;
+  border: 1px solid var(--color-coral-100);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  font-size: 13px;
+  color: var(--color-ink);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 100;
+  white-space: nowrap;
+  animation: mp-toast-in var(--dur-base) var(--ease-out);
+}
+
+/* ──── Animations ──── */
+@keyframes mp-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes mp-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+.mp-shake {
+  animation: mp-shake 380ms var(--ease-out) forwards;
+}
+
+@keyframes mp-pop {
+  0% {
+    transform: scale(0.72);
+  }
+  55% {
+    transform: scale(1.14);
+  }
+  80% {
+    transform: scale(0.97);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.mp-pop {
+  animation: mp-pop 320ms var(--ease-out) forwards;
+}
+
+/* Dropdown spring — expands outward in both axes then oscillates back (entry) */
+@keyframes mp-dropdown-spring {
+  0% {
+    transform: scaleX(0.88) scaleY(0);
+    opacity: 0;
+  }
+  26% {
+    transform: scaleX(1.07) scaleY(1.14);
+    opacity: 1;
+  }
+  50% {
+    transform: scaleX(0.98) scaleY(0.94);
+  }
+  70% {
+    transform: scaleX(1.02) scaleY(1.04);
+  }
+  86% {
+    transform: scaleX(0.99) scaleY(0.98);
+  }
+  100% {
+    transform: scaleX(1) scaleY(1);
+    opacity: 1;
+  }
+}
+/* Dropdown close — brief swell then contract to nothing */
+@keyframes mp-dropdown-close {
+  0% {
+    transform: scaleX(1) scaleY(1);
+    opacity: 1;
+  }
+  22% {
+    transform: scaleX(1.04) scaleY(1.07);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scaleX(0.9) scaleY(0);
+    opacity: 0;
+  }
+}
+/* Trigger breathe — squish-then-spring when panel opens */
+@keyframes mp-trigger-open {
+  0% {
+    transform: scaleX(1) scaleY(1);
+  }
+  18% {
+    transform: scaleX(1.02) scaleY(0.92);
+  }
+  50% {
+    transform: scaleX(0.99) scaleY(1.05);
+  }
+  75% {
+    transform: scaleX(1) scaleY(0.97);
+  }
+  100% {
+    transform: scaleX(1) scaleY(1);
+  }
+}
+.mp-trigger-open {
+  animation: mp-trigger-open 600ms ease-out;
+}
+
 @layer components {
   /*Used for the screen title*/
   h1 {
