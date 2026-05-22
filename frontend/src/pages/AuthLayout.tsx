@@ -1,4 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState, type SubmitEvent } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type SubmitEvent,
+} from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { animate } from "animejs";
 import { useAuth } from "../auth/AuthContext";
@@ -29,7 +35,7 @@ function useFadeIn(
 ) {
   useLayoutEffect(() => {
     if (ref.current) ref.current.style.opacity = "0";
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dep]);
 
   useEffect(() => {
@@ -41,8 +47,10 @@ function useFadeIn(
       ease: "outCubic",
       delay: options.delay ?? 0,
     });
-    return () => { anim.cancel(); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      anim.cancel();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dep]);
 }
 
@@ -56,10 +64,20 @@ function FieldError({ message }: { message: string }) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const anim = animate(el, { opacity: [0, 1], duration: 150, ease: "outCubic" });
-    return () => { anim.cancel(); };
+    const anim = animate(el, {
+      opacity: [0, 1],
+      duration: 150,
+      ease: "outCubic",
+    });
+    return () => {
+      anim.cancel();
+    };
   }, []);
-  return <p ref={ref} className="text-xs text-red-600">{message}</p>;
+  return (
+    <p ref={ref} className="text-xs text-red-600">
+      {message}
+    </p>
+  );
 }
 
 export function AuthLayout() {
@@ -68,7 +86,9 @@ export function AuthLayout() {
   const navigate = useNavigate();
   const { pathname } = location;
 
-  const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? "/";
+  const from =
+    (location.state as { from?: { pathname: string } } | null)?.from
+      ?.pathname ?? "/";
 
   const cardRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLFormElement>(null);
@@ -88,8 +108,12 @@ export function AuthLayout() {
   const isRegister = pathname === "/register";
 
   const buttonLabel = isRegister
-    ? loading ? "Creating account…" : "Create account"
-    : loading ? "Signing in…" : "Sign in";
+    ? loading
+      ? "Creating account…"
+      : "Create account"
+    : loading
+      ? "Signing in…"
+      : "Sign in";
 
   useEffect(() => {
     setLoading(false);
@@ -177,7 +201,7 @@ export function AuthLayout() {
     if (!el || isRegister) return;
     el.style.height = "0px";
     el.style.marginTop = `${-GAP}px`;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Animate confirm-password on route change.
@@ -203,7 +227,9 @@ export function AuthLayout() {
         marginTop: 0,
         duration: 350,
         ease: "inOutCubic",
-        onComplete: () => { el.style.height = "auto"; },
+        onComplete: () => {
+          el.style.height = "auto";
+        },
       });
     } else {
       // Pin to a pixel value before animating — anime.js can't tween from "auto".
@@ -217,7 +243,9 @@ export function AuthLayout() {
       });
     }
 
-    return () => { anim.cancel(); };
+    return () => {
+      anim.cancel();
+    };
   }, [isRegister]);
 
   useFadeIn(titleRef, pathname, { duration: 150, delay: 30 });
@@ -255,11 +283,17 @@ export function AuthLayout() {
               required
               minLength={isRegister ? 3 : undefined}
               value={username}
-              onChange={(e) => { setUsername(e.target.value); clearFieldError("username"); }}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                clearFieldError("username");
+              }}
               className={inputCls}
             />
             {fieldErrors.username && (
-              <FieldError key={fieldErrors.username} message={fieldErrors.username} />
+              <FieldError
+                key={fieldErrors.username}
+                message={fieldErrors.username}
+              />
             )}
           </div>
 
@@ -282,7 +316,10 @@ export function AuthLayout() {
               className={inputCls}
             />
             {fieldErrors.password && (
-              <FieldError key={fieldErrors.password} message={fieldErrors.password} />
+              <FieldError
+                key={fieldErrors.password}
+                message={fieldErrors.password}
+              />
             )}
           </div>
 
@@ -301,11 +338,17 @@ export function AuthLayout() {
               autoComplete="new-password"
               required={isRegister}
               value={confirmPassword}
-              onChange={(e) => { setConfirmPassword(e.target.value); clearFieldError("confirmPassword"); }}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                clearFieldError("confirmPassword");
+              }}
               className={inputCls}
             />
             {fieldErrors.confirmPassword && (
-              <FieldError key={fieldErrors.confirmPassword} message={fieldErrors.confirmPassword} />
+              <FieldError
+                key={fieldErrors.confirmPassword}
+                message={fieldErrors.confirmPassword}
+              />
             )}
           </div>
 

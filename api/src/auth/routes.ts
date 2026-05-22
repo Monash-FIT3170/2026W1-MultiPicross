@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
 import { sValidator } from "@hono/standard-validator";
-import { jwt } from "hono/jwt";
 import { getCookie } from "hono/cookie";
+import { requireAuth } from "./middleware.js";
 import { and, eq } from "drizzle-orm";
 import * as v from "valibot";
 import { toJsonSchema } from "@valibot/to-json-schema";
@@ -19,7 +19,6 @@ import {
   refreshExpiresAt,
 } from "./helpers.js";
 import {
-  ACCESS_COOKIE,
   REFRESH_COOKIE,
   setAuthCookies,
   clearAuthCookies,
@@ -279,7 +278,7 @@ auth.post(
 
 auth.get(
   "/me",
-  jwt({ secret: process.env.JWT_ACCESS_SECRET!, cookie: ACCESS_COOKIE, alg: "HS256" }),
+  requireAuth,
   describeRoute({
     tags: ["Auth"],
     summary: "Get the currently authenticated user",

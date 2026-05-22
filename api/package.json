@@ -17,10 +17,12 @@
     "hono": "^4.12.15",
     "hono-openapi": "^0.4.8",
     "postgres": "^3.4.9",
+    "pngjs": "^7.0.0",
     "valibot": "^1.4.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.17",
+    "@types/pngjs": "^6.0.5",
     "drizzle-kit": "^0.31.10",
     "tsx": "^4.7.1",
     "typescript": "^5.8.3"

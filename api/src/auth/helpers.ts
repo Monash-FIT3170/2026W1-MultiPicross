@@ -8,8 +8,8 @@ function requireEnv(name: string): string {
   return val;
 }
 
-const ACCESS_SECRET = requireEnv('JWT_ACCESS_SECRET');
-const REFRESH_SECRET = requireEnv('JWT_REFRESH_SECRET');
+const ACCESS_SECRET = requireEnv("JWT_ACCESS_SECRET");
+const REFRESH_SECRET = requireEnv("JWT_REFRESH_SECRET");
 
 const ACCESS_TTL_SECONDS = 15 * 60;
 const REFRESH_TTL_SECONDS = 7 * 24 * 60 * 60;
