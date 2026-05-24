@@ -166,7 +166,9 @@ export default function NonogramGrid({
 
     const timeoutId = setTimeout(() => {
       // Fade out cross/stripe SVG overlays
-      const svgs = cells.flatMap((el) => Array.from(el.querySelectorAll("svg")));
+      const svgs = cells.flatMap((el) =>
+        Array.from(el.querySelectorAll("svg")),
+      );
       if (svgs.length > 0) {
         animate(svgs as Element[], {
           opacity: [1, 0],
