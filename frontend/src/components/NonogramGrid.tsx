@@ -78,6 +78,8 @@ export default function NonogramGrid({
   const dragAxisRef = useRef<"row" | "col" | null>(null);
   const lastFillRef = useRef<{ row: number; col: number } | null>(null);
 
+  const manualCrossRef = useRef<number | null>(null);
+
   // Keep a ref to the current grid so the document mouseup handler can read it
   const gridRef = useRef(grid);
   useEffect(() => {
@@ -239,7 +241,10 @@ export default function NonogramGrid({
           setTimeout(() => el.classList.remove("mp-pop"), 350);
         }
       } else if (val === 2 && prev === 0) {
-        // Do not play sound for automatic cross updates.
+        if (manualCrossRef.current === idx) {
+          if (soundEnabled) playCellCross();
+          manualCrossRef.current = null;
+        }
       } else if (val === 3 && prev === 0) {
         if (soundEnabled) playCellMistake();
 
@@ -423,7 +428,9 @@ export default function NonogramGrid({
 
     const willMarkCross = val !== 2;
 
-    if (willMarkCross && soundEnabled) {
+    if (willMarkCross) {
+      manualCrossRef.current = idx;
+    } else if (soundEnabled) {
       playCellCross();
     }
 
