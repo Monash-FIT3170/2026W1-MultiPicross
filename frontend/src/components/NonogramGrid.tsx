@@ -262,7 +262,6 @@ export default function NonogramGrid({
     playCellClick,
     playCellMistake,
     playCellCross,
-
   ]);
 
   // ── Document mouseup for drag cleanup ─────────────────────────────────────
@@ -420,12 +419,10 @@ export default function NonogramGrid({
 
     const willMarkCross = val !== 2;
 
-    
     if (!willMarkCross) {
       playCellCross();
     }
 
-    
     onCross?.(row, col, willMarkCross);
   }
 
