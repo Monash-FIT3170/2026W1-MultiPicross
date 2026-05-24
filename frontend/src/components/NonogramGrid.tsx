@@ -1,5 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { animate, stagger, createTimeline, steps, spring } from "animejs";
+import useSound from "use-sound";
+import cellClickSound from "../assets/sounds/cell-click.wav";
+import cellCrossSound from "../assets/sounds/cell-cross.wav";
+import cellMistakeSound from "../assets/sounds/cell-mistake.wav";
 
 export type CellValue = 0 | 1 | 2 | 3; // unknown | filled | cross | mistake
 
@@ -51,6 +55,9 @@ export default function NonogramGrid({
   onCross,
 }: NonogramGridProps) {
   const cs = cellSize ?? autoCellSize(width, height);
+  const [playCellClick] = useSound(cellClickSound, { volume: 0.35 });
+  const [playCellCross] = useSound(cellCrossSound, { volume: 0.35 });
+  const [playCellMistake] = useSound(cellMistakeSound, { volume: 0.35 });
 
   const maxRowClueLen = Math.max(1, ...rowClues.map((r) => r.length));
   const maxColClueLen = Math.max(1, ...colClues.map((c) => c.length));
@@ -210,18 +217,29 @@ export default function NonogramGrid({
       if (!el) return;
 
       if (val === 1 && prev === 0) {
-        if (idx === mistakeCrossIdx) {
+        const isMistakeCross =
+          idx === mistakeCrossIdx || mistakeCrossIndices?.includes(idx);
+
+        if (isMistakeCross) {
+          playCellMistake();
+
           el.classList.remove("mp-shake");
           void el.offsetWidth;
           el.classList.add("mp-shake");
           setTimeout(() => el.classList.remove("mp-shake"), 420);
         } else {
+          playCellClick();
+
           el.classList.remove("mp-pop");
           void el.offsetWidth;
           el.classList.add("mp-pop");
           setTimeout(() => el.classList.remove("mp-pop"), 350);
         }
+      } else if (val === 2 && prev === 0) {
+        playCellCross();
       } else if (val === 3 && prev === 0) {
+        playCellMistake();
+
         // Stop drag on mistake
         if (dragActiveRef.current) {
           dragActiveRef.current = false;
@@ -236,7 +254,16 @@ export default function NonogramGrid({
       }
     });
     prevGrid.current = [...grid];
-  }, [grid, completed, mistakeCrossIdx]);
+  }, [
+    grid,
+    completed,
+    mistakeCrossIdx,
+    mistakeCrossIndices,
+    playCellClick,
+    playCellMistake,
+    playCellCross,
+
+  ]);
 
   // ── Document mouseup for drag cleanup ─────────────────────────────────────
   useEffect(() => {
@@ -385,9 +412,21 @@ export default function NonogramGrid({
   function handleContextMenu(e: React.MouseEvent, row: number, col: number) {
     e.preventDefault();
     if (!interactive) return;
-    const val = grid[row * width + col];
+
+    const idx = row * width + col;
+    const val = grid[idx];
+
     if (val === 1 || val === 3) return;
-    onCross?.(row, col, val !== 2);
+
+    const willMarkCross = val !== 2;
+
+    
+    if (!willMarkCross) {
+      playCellCross();
+    }
+
+    
+    onCross?.(row, col, willMarkCross);
   }
 
   // ── Clue cell base style ───────────────────────────────────────────────────
