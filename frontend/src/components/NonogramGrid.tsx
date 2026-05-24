@@ -423,7 +423,7 @@ export default function NonogramGrid({
 
     const willMarkCross = val !== 2;
 
-    if (!willMarkCross && soundEnabled) {
+    if (willMarkCross && soundEnabled) {
       playCellCross();
     }
 
