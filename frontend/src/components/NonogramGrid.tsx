@@ -164,39 +164,54 @@ export default function NonogramGrid({
     const cells = cellRefs.current.filter(Boolean) as HTMLButtonElement[];
     if (cells.length === 0) return;
 
-    // Fade out cross/stripe SVG overlays immediately
-    const svgs = cells.flatMap((el) => Array.from(el.querySelectorAll("svg")));
-    if (svgs.length > 0) {
-      animate(svgs as Element[], {
-        opacity: [1, 0],
-        duration: 200,
-        ease: "outQuad",
+    const timeoutId = setTimeout(() => {
+      // Fade out cross/stripe SVG overlays
+      const svgs = cells.flatMap((el) => Array.from(el.querySelectorAll("svg")));
+      if (svgs.length > 0) {
+        animate(svgs as Element[], {
+          opacity: [1, 0],
+          duration: 200,
+          ease: "outQuad",
+        });
+      }
+
+      // Anime.js reads backgroundColor from el.style before falling back to
+      // getComputedStyle. If the inline value is a CSS variable like
+      // "var(--color-blue-500)", anime.js cannot parse it as a color and instead
+      // treats it as a COMPLEX string — animating the number 500→0 inside the
+      // template, producing "var(--color-blue-0)" (undefined) which renders as
+      // transparent/white. Resolve each cell's computed color into a concrete
+      // rgb() value before the animation reads it.
+      cells.forEach((el) => {
+        el.style.backgroundColor = getComputedStyle(el).backgroundColor;
       });
-    }
 
-    const tl = createTimeline({ defaults: { ease: "outQuad" } });
+      const tl = createTimeline({ defaults: { ease: "outQuad" } });
 
-    // Collapse only inner borders; outer grid edge borders are preserved.
-    // The right outer border lives on col=width-1 cells (borderRight=groupBorder),
-    // the bottom outer border on row=height-1 cells — both are excluded here.
-    const innerRight = cells.filter((_, i) => i % width < width - 1);
-    const innerBottom = cells.filter(
-      (_, i) => Math.floor(i / width) < height - 1,
-    );
-    if (innerRight.length > 0)
-      tl.add(innerRight, { borderRightWidth: "0px", duration: 380 }, 0);
-    if (innerBottom.length > 0)
-      tl.add(innerBottom, { borderBottomWidth: "0px", duration: 380 }, 0);
+      // Collapse only inner borders; outer grid edge borders are preserved.
+      // The right outer border lives on col=width-1 cells (borderRight=groupBorder),
+      // the bottom outer border on row=height-1 cells — both are excluded here.
+      const innerRight = cells.filter((_, i) => i % width < width - 1);
+      const innerBottom = cells.filter(
+        (_, i) => Math.floor(i / width) < height - 1,
+      );
+      if (innerRight.length > 0)
+        tl.add(innerRight, { borderRightWidth: "0px", duration: 380 }, 0);
+      if (innerBottom.length > 0)
+        tl.add(innerBottom, { borderBottomWidth: "0px", duration: 380 }, 0);
 
-    tl.add(
-      cells,
-      {
-        backgroundColor: (_el: Element, i: number) => colors[i] ?? "#ffffff",
-        delay: stagger(38, { grid: [width, height], from: "center" }),
-        duration: 680,
-      },
-      "-=80",
-    );
+      tl.add(
+        cells,
+        {
+          backgroundColor: (_el: Element, i: number) => colors[i] ?? "#ffffff",
+          delay: stagger(38, { grid: [width, height], from: "center" }),
+          duration: 680,
+        },
+        "-=80",
+      );
+    }, 350);
+
+    return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [completed]);
 
