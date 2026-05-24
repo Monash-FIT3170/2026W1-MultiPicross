@@ -19,6 +19,7 @@ interface NonogramGridProps {
   completed?: boolean;
   mistakeCrossIdx?: number | null;
   mistakeCrossIndices?: number[];
+  soundEnabled?: boolean;
   onFill?: (row: number, col: number) => void;
   onCross?: (row: number, col: number, markCross: boolean) => void;
 }
@@ -51,10 +52,12 @@ export default function NonogramGrid({
   completed = false,
   mistakeCrossIdx,
   mistakeCrossIndices,
+  soundEnabled = true,
   onFill,
   onCross,
 }: NonogramGridProps) {
   const cs = cellSize ?? autoCellSize(width, height);
+
   const [playCellClick] = useSound(cellClickSound, { volume: 0.35 });
   const [playCellCross] = useSound(cellCrossSound, { volume: 0.35 });
   const [playCellMistake] = useSound(cellMistakeSound, { volume: 0.35 });
@@ -221,14 +224,14 @@ export default function NonogramGrid({
           idx === mistakeCrossIdx || mistakeCrossIndices?.includes(idx);
 
         if (isMistakeCross) {
-          playCellMistake();
+          if (soundEnabled) playCellMistake();
 
           el.classList.remove("mp-shake");
           void el.offsetWidth;
           el.classList.add("mp-shake");
           setTimeout(() => el.classList.remove("mp-shake"), 420);
         } else {
-          playCellClick();
+          if (soundEnabled) playCellClick();
 
           el.classList.remove("mp-pop");
           void el.offsetWidth;
@@ -236,9 +239,9 @@ export default function NonogramGrid({
           setTimeout(() => el.classList.remove("mp-pop"), 350);
         }
       } else if (val === 2 && prev === 0) {
-        playCellCross();
+        // Do not play sound for automatic cross updates.
       } else if (val === 3 && prev === 0) {
-        playCellMistake();
+        if (soundEnabled) playCellMistake();
 
         // Stop drag on mistake
         if (dragActiveRef.current) {
@@ -259,6 +262,7 @@ export default function NonogramGrid({
     completed,
     mistakeCrossIdx,
     mistakeCrossIndices,
+    soundEnabled,
     playCellClick,
     playCellMistake,
     playCellCross,
@@ -419,7 +423,7 @@ export default function NonogramGrid({
 
     const willMarkCross = val !== 2;
 
-    if (!willMarkCross) {
+    if (!willMarkCross && soundEnabled) {
       playCellCross();
     }
 
