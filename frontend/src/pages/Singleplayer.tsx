@@ -155,6 +155,10 @@ export function Singleplayer() {
   // Stable key for PlayingScreen — increments each time a fresh game starts
   const gameKeyRef = useRef(0);
 
+  // Tracks in-flight fill requests for auth games so the same cell isn't submitted
+  // twice during a fast drag before the first response updates gridRef.current.
+  const pendingFillsRef = useRef<Set<number>>(new Set());
+
   // ── Bootstrap ──────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -221,6 +225,7 @@ export function Singleplayer() {
       const { completion } = (await res.json()) as {
         completion: ActiveCompletion;
       };
+      pendingFillsRef.current.clear();
       gameKeyRef.current++;
       setPhase({
         kind: "playing",
@@ -334,13 +339,18 @@ export function Singleplayer() {
         }
       });
     } else {
+      if (pendingFillsRef.current.has(idx)) return;
+      pendingFillsRef.current.add(idx);
       void (async () => {
         try {
           const res = await apiFetch("/singleplayer/action", {
             method: "POST",
             body: JSON.stringify({ row, col, kind: "fill" }),
           });
-          if (!res.ok) return;
+          if (!res.ok) {
+            pendingFillsRef.current.delete(idx);
+            return;
+          }
           const data = (await res.json()) as ActionResponse;
           // Side effects before functional update
           if (data.result === "mistake" && !data.gameOver) flashMistake();
@@ -369,6 +379,8 @@ export function Singleplayer() {
                 outcome: data.completed ? "won" : null,
               };
             } else if (data.result === "mistake") {
+              // Cell becomes value 3; remove from pending so it can't be re-locked.
+              pendingFillsRef.current.delete(idx);
               newGrid[idx] = 3;
               return {
                 kind: "playing",
@@ -378,8 +390,12 @@ export function Singleplayer() {
             }
             return cur;
           });
+          // Correct fills stay in pendingFillsRef until gridRef.current updates
+          // after the React re-render. Deleting here creates a race where a
+          // gap-fill re-includes this cell before the render commits (showing
+          // it as value 1), causing a duplicate request.
         } catch {
-          /* ignore */
+          pendingFillsRef.current.delete(idx);
         }
       })();
     }

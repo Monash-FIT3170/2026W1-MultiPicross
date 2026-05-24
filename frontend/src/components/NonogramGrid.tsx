@@ -364,7 +364,7 @@ export default function NonogramGrid({
 
     // Fill all cells between last filled position and current to cover fast-drag gaps.
     // Duplicate onFill calls for already-filled cells are safely ignored (guest: functional
-    // update guard; auth: server returns 400 which is silently dropped).
+    // update guard; auth: speculative pending-fills guard in Singleplayer prevents the request).
     const last = lastFillRef.current;
     if (dragAxisRef.current === "row") {
       const minC = Math.min(last ? last.col : col, col);
