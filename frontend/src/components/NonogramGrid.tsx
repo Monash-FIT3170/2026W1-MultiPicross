@@ -15,6 +15,7 @@ interface NonogramGridProps {
   completed?: boolean;
   mistakeCrossIdx?: number | null;
   mistakeCrossIndices?: number[];
+  lastFilledIdx?: number | null;
   onFill?: (row: number, col: number) => void;
   onCross?: (row: number, col: number, markCross: boolean) => void;
 }
@@ -47,6 +48,7 @@ export default function NonogramGrid({
   completed = false,
   mistakeCrossIdx,
   mistakeCrossIndices,
+  lastFilledIdx,
   onFill,
   onCross,
 }: NonogramGridProps) {
@@ -200,9 +202,16 @@ export default function NonogramGrid({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [completed]);
 
-  // ── Cell transition animations (pop/shake) ─────────────────────────────────
-  useEffect(() => {
+  // ── Cell transition animations (pop/shake/cross-pop) ──────────────────────
+  // useLayoutEffect runs before paint so SVG opacity writes below take effect
+  // before the browser shows the newly-mounted cross SVGs.
+  useLayoutEffect(() => {
     if (completed) return;
+    const srcRow =
+      lastFilledIdx != null ? Math.floor(lastFilledIdx / width) : -1;
+    const srcCol = lastFilledIdx != null ? lastFilledIdx % width : -1;
+    const newCrossIndices: number[] = [];
+
     grid.forEach((val, idx) => {
       const prev = prevGrid.current[idx] ?? 0;
       if (val === prev) return;
@@ -211,15 +220,23 @@ export default function NonogramGrid({
 
       if (val === 1 && prev === 0) {
         if (idx === mistakeCrossIdx) {
-          el.classList.remove("mp-shake");
-          void el.offsetWidth;
-          el.classList.add("mp-shake");
-          setTimeout(() => el.classList.remove("mp-shake"), 420);
+          animate(el, {
+            translateX: [
+              { from: 0, to: -4, duration: 76, ease: "linear" },
+              { to: 4, duration: 76, ease: "linear" },
+              { to: -2, duration: 76, ease: "linear" },
+              { to: 2, duration: 76, ease: "linear" },
+              { to: 0, duration: 76, ease: "linear" },
+            ],
+          });
         } else {
-          el.classList.remove("mp-pop");
-          void el.offsetWidth;
-          el.classList.add("mp-pop");
-          setTimeout(() => el.classList.remove("mp-pop"), 350);
+          animate(el, {
+            scale: [
+              { from: 0.72, to: 1.14, duration: 176, ease: "outQuad" },
+              { to: 0.97, duration: 80, ease: "inQuad" },
+              { to: 1, duration: 64, ease: "outQuad" },
+            ],
+          });
         }
       } else if (val === 3 && prev === 0) {
         // Stop drag on mistake
@@ -229,14 +246,101 @@ export default function NonogramGrid({
           dragAxisRef.current = null;
           lastFillRef.current = null;
         }
-        el.classList.remove("mp-shake");
-        void el.offsetWidth;
-        el.classList.add("mp-shake");
-        setTimeout(() => el.classList.remove("mp-shake"), 420);
+        animate(el, {
+          translateX: [
+            { from: 0, to: -4, duration: 76, ease: "linear" },
+            { to: 4, duration: 76, ease: "linear" },
+            { to: -2, duration: 76, ease: "linear" },
+            { to: 2, duration: 76, ease: "linear" },
+            { to: 0, duration: 76, ease: "linear" },
+          ],
+        });
+      } else if (val === 2 && prev === 0) {
+        newCrossIndices.push(idx);
+        const cellRow = Math.floor(idx / width);
+        const cellCol = idx % width;
+        let delay = 0;
+        if (lastFilledIdx != null) {
+          if (cellRow === srcRow) delay = Math.abs(cellCol - srcCol) * 45;
+          else if (cellCol === srcCol) delay = Math.abs(cellRow - srcRow) * 45;
+        }
+        // Hide SVG before paint; animate opacity in rather than scaling from small.
+        // Opacity is independent of transform so there's no anime.js compose conflict.
+        const svg = el.querySelector("svg");
+        if (svg) (svg as HTMLElement).style.opacity = "0";
+        animate(el, {
+          scale: [
+            { from: 1, to: 1.06, duration: 130, ease: "outQuad" },
+            { to: 0.98, duration: 65, ease: "inQuad" },
+            { to: 1, duration: 55, ease: "outQuad" },
+          ],
+          delay,
+        });
+        if (svg) {
+          animate(svg as Element, {
+            opacity: [0, 1],
+            duration: 140,
+            delay,
+          });
+        }
       }
     });
+
+    // When a row or column just completed (auto-cross fired), bounce all filled
+    // cells in that line so the wave feels cohesive rather than isolated.
+    if (newCrossIndices.length > 0 && lastFilledIdx != null) {
+      const rowCompleted = newCrossIndices.some(
+        (i) => Math.floor(i / width) === srcRow,
+      );
+      const colCompleted = newCrossIndices.some((i) => i % width === srcCol);
+
+      if (rowCompleted) {
+        for (let c = 0; c < width; c++) {
+          const idx = srcRow * width + c;
+          const prevVal = prevGrid.current[idx] ?? 0;
+          // Bounce filled cells and already-crossed cells.
+          // New crosses (prevVal === 0) are already animated in the loop above.
+          const shouldBounce =
+            (grid[idx] === 1 && idx !== lastFilledIdx) ||
+            (grid[idx] === 2 && prevVal === 2);
+          if (!shouldBounce) continue;
+          const el = cellRefs.current[idx];
+          if (!el) continue;
+          animate(el, {
+            scale: [
+              { from: 1, to: 1.06, duration: 130, ease: "outQuad" },
+              { to: 0.98, duration: 65, ease: "inQuad" },
+              { to: 1, duration: 55, ease: "outQuad" },
+            ],
+            delay: Math.abs(c - srcCol) * 45,
+          });
+        }
+      }
+
+      if (colCompleted) {
+        for (let r = 0; r < height; r++) {
+          const idx = r * width + srcCol;
+          const prevVal = prevGrid.current[idx] ?? 0;
+          const shouldBounce =
+            (grid[idx] === 1 && idx !== lastFilledIdx) ||
+            (grid[idx] === 2 && prevVal === 2);
+          if (!shouldBounce) continue;
+          const el = cellRefs.current[idx];
+          if (!el) continue;
+          animate(el, {
+            scale: [
+              { from: 1, to: 1.06, duration: 130, ease: "outQuad" },
+              { to: 0.98, duration: 65, ease: "inQuad" },
+              { to: 1, duration: 55, ease: "outQuad" },
+            ],
+            delay: Math.abs(r - srcRow) * 45,
+          });
+        }
+      }
+    }
+
     prevGrid.current = [...grid];
-  }, [grid, completed, mistakeCrossIdx]);
+  }, [grid, completed, mistakeCrossIdx, lastFilledIdx, width, height]);
 
   // ── Document mouseup for drag cleanup ─────────────────────────────────────
   useEffect(() => {

@@ -190,46 +190,6 @@ body {
   }
 }
 
-@keyframes mp-shake {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-  20% {
-    transform: translateX(-4px);
-  }
-  40% {
-    transform: translateX(4px);
-  }
-  60% {
-    transform: translateX(-2px);
-  }
-  80% {
-    transform: translateX(2px);
-  }
-}
-.mp-shake {
-  animation: mp-shake 380ms var(--ease-out) forwards;
-}
-
-@keyframes mp-pop {
-  0% {
-    transform: scale(0.72);
-  }
-  55% {
-    transform: scale(1.14);
-  }
-  80% {
-    transform: scale(0.97);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-.mp-pop {
-  animation: mp-pop 320ms var(--ease-out) forwards;
-}
-
 /* Dropdown spring — expands outward in both axes then oscillates back (entry) */
 @keyframes mp-dropdown-spring {
   0% {

@@ -151,6 +151,7 @@ export function Singleplayer() {
   const [displaySeconds, setDisplaySeconds] = useState(0);
   const [mistakeFlash, setMistakeFlash] = useState(false);
   const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
+  const [lastFilledIdx, setLastFilledIdx] = useState<number | null>(null);
 
   // Stable key for PlayingScreen — increments each time a fresh game starts
   const gameKeyRef = useRef(0);
@@ -300,6 +301,7 @@ export function Singleplayer() {
       if (game.solution![idx] !== 1) {
         if (game.livesLeft > 1) flashMistake();
       }
+      if (game.solution![idx] === 1) setLastFilledIdx(idx);
       // Functional update so rapid gap-fill calls chain correctly instead of overwriting each other
       setPhase((cur) => {
         if (cur.kind !== "playing" || cur.outcome !== null) return cur;
@@ -344,6 +346,7 @@ export function Singleplayer() {
           const data = (await res.json()) as ActionResponse;
           // Side effects before functional update
           if (data.result === "mistake" && !data.gameOver) flashMistake();
+          if (data.result === "correct") setLastFilledIdx(idx);
           // Functional update ensures concurrent drag responses apply on latest state
           setPhase((cur) => {
             if (cur.kind !== "playing") return cur;
@@ -392,9 +395,10 @@ export function Singleplayer() {
 
     if (game.isGuest) {
       if (markCross && game.solution![idx] === 1) {
-        // Crossing a filled cell — mistake
+        // Crossing a filled cell — mistake; cell becomes filled and auto-complete may run
         const newLives = game.livesLeft - 1;
         setMistakeCrossIdx(idx);
+        setLastFilledIdx(idx);
         setTimeout(() => setMistakeCrossIdx(null), 450);
         if (newLives > 0) {
           // Check allDone with the new grid state to suppress flash if completing
@@ -433,6 +437,7 @@ export function Singleplayer() {
           };
         });
       } else {
+        setLastFilledIdx(null);
         const newGrid = [...game.grid] as CellValue[];
         newGrid[idx] = markCross ? 2 : 0;
         setPhase({
@@ -457,8 +462,11 @@ export function Singleplayer() {
           // Side effects before functional update
           if (data.result === "mistake-cross") {
             setMistakeCrossIdx(idx);
+            setLastFilledIdx(idx);
             setTimeout(() => setMistakeCrossIdx(null), 450);
             if (!data.gameOver && !data.completed) flashMistake();
+          } else {
+            setLastFilledIdx(null);
           }
           setPhase((cur) => {
             if (cur.kind !== "playing") return cur;
@@ -619,6 +627,7 @@ export function Singleplayer() {
           displaySeconds={displaySeconds}
           mistakeFlash={mistakeFlash}
           mistakeCrossIdx={mistakeCrossIdx}
+          lastFilledIdx={lastFilledIdx}
           interactive={phase.outcome === null}
           onFill={handleFill}
           onCross={handleCross}
@@ -849,6 +858,7 @@ function PlayingScreen({
   displaySeconds,
   mistakeFlash,
   mistakeCrossIdx,
+  lastFilledIdx,
   interactive,
   onFill,
   onCross,
@@ -861,6 +871,7 @@ function PlayingScreen({
   displaySeconds: number;
   mistakeFlash: boolean;
   mistakeCrossIdx: number | null;
+  lastFilledIdx: number | null;
   interactive: boolean;
   onFill: (row: number, col: number) => void;
   onCross: (row: number, col: number, mark: boolean) => void;
@@ -956,6 +967,7 @@ function PlayingScreen({
           completed={outcome === "won"}
           mistakeCrossIdx={mistakeCrossIdx}
           mistakeCrossIndices={game.mistakeCrossIndices ?? []}
+          lastFilledIdx={lastFilledIdx}
           onFill={onFill}
           onCross={onCross}
         />
