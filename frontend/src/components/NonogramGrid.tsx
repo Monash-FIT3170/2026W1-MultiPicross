@@ -233,8 +233,6 @@ export default function NonogramGrid({
           el.classList.add("mp-shake");
           setTimeout(() => el.classList.remove("mp-shake"), 420);
         } else {
-          if (soundEnabled) playCellClick();
-
           el.classList.remove("mp-pop");
           void el.offsetWidth;
           el.classList.add("mp-pop");
@@ -382,6 +380,7 @@ export default function NonogramGrid({
     dragAxisRef.current = null;
     lastFillRef.current = { row, col };
     onFill?.(row, col);
+    if (soundEnabled) playCellClick();
   }
 
   function handleCellMouseEnter(row: number, col: number) {
