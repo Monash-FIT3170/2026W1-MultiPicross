@@ -6,9 +6,10 @@ import { runMigrations } from "./db/migrate.js";
 import { importPuzzles } from "./db/import-puzzles.js";
 import authRoutes from "./auth/routes.js";
 import spRoutes from "./singleplayer/routes.js";
+import mpRoutes from "./multiplayer/routes.js";
 
 const app = new Hono().basePath("/api");
-
+app.route("/multiplayer", mpRoutes);
 app.route("/auth", authRoutes);
 app.route("/singleplayer", spRoutes);
 

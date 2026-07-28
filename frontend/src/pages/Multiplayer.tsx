@@ -114,7 +114,11 @@ export function Multiplayer() {
                 ))}
               </div>
             </div>
-            <Button variant="primary" size="md" disabled>
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => navigate("/multiplayer-game")}
+            >
               Create
             </Button>
           </div>
