@@ -935,15 +935,26 @@ function PlayingScreen({
       >
         Left-click to fill · Right-click to mark empty
       </p>
-      <div style={{ width: 260, margin: "0 auto 24px" }}>
-        <progress
-          value={progress}
-          max={100}
-          style={{
+      <div style={{ width: 350, margin: "0 auto 24px" }}>
+        <div
+            style={{
             width: "100%",
-            height: 12,
+            height: 20,
+            background: "#ddd",
+            border: "1px solid black",
+            borderRadius: 10,
+            overflow: "hidden",
           }}
-        />
+  >
+          <div
+            style={{
+              width: `${progress}%`,
+              height: "100%",
+              background: "#4A5A7D",
+              transition: "width 0.2s ease",
+            }}
+          />
+        </div>
       </div>
 
       <div
