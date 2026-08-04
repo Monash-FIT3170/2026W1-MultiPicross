@@ -1,0 +1,8 @@
+# These paths carry credentials to a personally-billed cloud account.
+# Requires branch protection with Code Owner review enabled on main to
+# take effect.
+
+/.github/workflows/  @kubisch
+/.github/CODEOWNERS  @kubisch
+/infra/              @kubisch
+/compose.gcp.yaml    @kubisch
