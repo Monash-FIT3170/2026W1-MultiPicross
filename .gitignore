@@ -2,3 +2,12 @@
 **/.env*
 !.env.example
 node_modules
+
+# OpenTofu / Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+backend.hcl
+crash.log

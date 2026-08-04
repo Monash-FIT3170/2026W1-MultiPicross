@@ -10,6 +10,9 @@ import mpRoutes from "./multiplayer/routes.js";
 
 const app = new Hono().basePath("/api");
 app.route("/multiplayer", mpRoutes);
+
+app.get("/health", (c) => c.json({ ok: true }));
+
 app.route("/auth", authRoutes);
 app.route("/singleplayer", spRoutes);
 
@@ -23,6 +26,7 @@ app.get(
         description: "Multipicross game API",
       },
       servers: [
+        { url: "https://multipicross.com", description: "Production" },
         {
           url: "http://multipicross.localhost",
           description: "Development (Traefik)",
