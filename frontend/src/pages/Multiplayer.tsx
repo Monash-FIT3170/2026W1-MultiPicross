@@ -4,10 +4,62 @@ import { Logo, Icon, BackButton, Chip, Button } from "../components/ui";
 
 const SIZES = ["5 × 5", "10 × 10", "15 × 15", "20 × 20"] as const;
 
+function sizeToWH(size: string): { width: number; height: number } {
+  const [w, h] = size.split(" × ").map(Number);
+  return { width: w, height: h };
+}
+
+const GS_BASE = `${window.location.protocol}//${window.location.host}/gs`;
+
 export function Multiplayer() {
   const navigate = useNavigate();
-  const [createSize, setCreateSize] = useState<string>("10 × 10");
+  const [createSize, setCreateSize] = useState<string>("15 × 15");
   const [inviteCode, setInviteCode] = useState("");
+  const [createLoading, setCreateLoading] = useState(false);
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
+
+  async function handleCreate() {
+    setCreateLoading(true);
+    setCreateError(null);
+    try {
+      const { width, height } = sizeToWH(createSize);
+      const res = await fetch(
+        `${GS_BASE}/create-room?width=${width}&height=${height}`,
+        { method: "POST" },
+      );
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: string };
+        throw new Error(body.error ?? "Failed to create room");
+      }
+      const { roomId } = (await res.json()) as { roomId: string };
+      navigate(`/room/${roomId}`);
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "Failed to create room");
+    } finally {
+      setCreateLoading(false);
+    }
+  }
+
+  async function handleJoin() {
+    if (!inviteCode.trim()) return;
+    setJoinLoading(true);
+    setJoinError(null);
+    try {
+      const res = await fetch(`${GS_BASE}/room-by-code/${inviteCode.trim()}`);
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: string };
+        throw new Error(body.error ?? "Room not found");
+      }
+      const { roomId } = (await res.json()) as { roomId: string };
+      navigate(`/room/${roomId}`);
+    } catch (err) {
+      setJoinError(err instanceof Error ? err.message : "Room not found");
+    } finally {
+      setJoinLoading(false);
+    }
+  }
 
   return (
     <div
@@ -114,8 +166,18 @@ export function Multiplayer() {
                 ))}
               </div>
             </div>
-            <Button variant="primary" size="md" disabled>
-              Create
+            {createError && (
+              <p style={{ margin: 0, fontSize: 12, color: "var(--color-coral-500)" }}>
+                {createError}
+              </p>
+            )}
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => void handleCreate()}
+              disabled={createLoading}
+            >
+              {createLoading ? "Creating…" : "Create"}
             </Button>
           </div>
 
@@ -164,8 +226,18 @@ export function Multiplayer() {
                 letterSpacing: "0.2em",
               }}
             />
-            <Button variant="primary" size="md" disabled>
-              Join
+            {joinError && (
+              <p style={{ margin: 0, fontSize: 12, color: "var(--color-coral-500)" }}>
+                {joinError}
+              </p>
+            )}
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => void handleJoin()}
+              disabled={joinLoading || !inviteCode.trim()}
+            >
+              {joinLoading ? "Joining…" : "Join"}
             </Button>
           </div>
 
