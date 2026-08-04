@@ -37,9 +37,7 @@ export function calculateWinningEloGain({
   const eloDifference = opponentElo - winnerElo;
 
   const rankMultiplier =
-    eloDifference > 0
-      ? 1 + (eloDifference / 100) * 0.2
-      : 1;
+    eloDifference > 0 ? 1 + (eloDifference / 100) * 0.2 : 1;
 
   return Math.round((baseGain + mistakeModifier) * rankMultiplier);
 }
