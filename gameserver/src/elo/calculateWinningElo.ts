@@ -11,14 +11,22 @@ export function calculateMistakeModifier(
 ): number {
   const difference = opponentMistakes - winnerMistakes;
 
-  if (difference >= 3) return 5;
-  if (difference === 2) return 3;
-  if (difference === 1) return 1;
-  if (difference === 0) return 0;
-  if (difference === -1) return -1;
-  if (difference === -2) return -3;
-
-  return -5;
+  switch (difference) {
+    case 3:
+      return 5;
+    case 2:
+      return 3;
+    case 1:
+      return 1;
+    case 0:
+      return 0;
+    case -1:
+      return -1;
+    case -2:
+      return -3;
+    default:
+      return -5;
+  }
 }
 
 export function calculateWinningEloGain({

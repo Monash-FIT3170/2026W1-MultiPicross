@@ -5,9 +5,8 @@ import {
 } from "../src/elo/calculateWinningElo.js";
 
 describe("calculateMistakeModifier", () => {
-  it("returns +5 when winner has at least 3 fewer mistakes", () => {
-    assert.strictEqual(calculateMistakeModifier(1, 4), 5);
-    assert.strictEqual(calculateMistakeModifier(0, 10), 5);
+  it("returns +5 when winner has 3 fewer mistakes", () => {
+    assert.strictEqual(calculateMistakeModifier(0, 3), 5);
   });
 
   it("returns +3 when winner has 2 fewer mistakes", () => {
@@ -27,12 +26,11 @@ describe("calculateMistakeModifier", () => {
   });
 
   it("returns -3 when winner has 2 more mistakes", () => {
-    assert.strictEqual(calculateMistakeModifier(3, 1), -3);
+    assert.strictEqual(calculateMistakeModifier(2, 0), -3);
   });
 
-  it("returns -5 when winner has at least 3 more mistakes", () => {
-    assert.strictEqual(calculateMistakeModifier(4, 1), -5);
-    assert.strictEqual(calculateMistakeModifier(10, 0), -5);
+  it("returns -5 when winner has 3 more mistakes", () => {
+    assert.strictEqual(calculateMistakeModifier(3, 0), -5);
   });
 });
 
@@ -54,8 +52,8 @@ describe("calculateWinningEloGain", () => {
       calculateWinningEloGain({
         winnerElo: 100,
         opponentElo: 100,
-        winnerMistakes: 1,
-        opponentMistakes: 4,
+        winnerMistakes: 0,
+        opponentMistakes: 3,
       }),
       35,
     );
@@ -66,8 +64,8 @@ describe("calculateWinningEloGain", () => {
       calculateWinningEloGain({
         winnerElo: 100,
         opponentElo: 100,
-        winnerMistakes: 4,
-        opponentMistakes: 1,
+        winnerMistakes: 3,
+        opponentMistakes: 0,
       }),
       25,
     );
