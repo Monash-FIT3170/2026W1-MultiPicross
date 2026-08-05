@@ -8,6 +8,7 @@ import multiIcon from "../assets/multiplayer.svg";
 import statsIcon from "../assets/stats.svg";
 import tutorialIcon from "../assets/tutorial.svg";
 import settingsIcon from "../assets/settings.svg";
+import trophyIcon from "../assets/trophy.webp";
 
 export default function MainMenu() {
   const navigate = useNavigate();
@@ -160,15 +161,28 @@ export default function MainMenu() {
         <div
             className="elo-banner"
             style={{
-              padding: 20,
+              padding: 28,
               display: "flex",
-              flexDirection: "column",
-              gap: 14,
+              justifyContent: "space-between",
+              alignItems: "center",
               width: 640,
-              height: 300,
+              height: 220,
+              background: "linear-gradient(135deg, #EAF3FF 0%, #F7FBFF 100%)",
+              border: "1px solid #D6E6FF",
+              borderRadius: 20,
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Left Side */}
+            <div
+              style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              gap: 10,
+              flex: 1,
+              paddingRight: 40,
+  }}
+            >
               <div
                 style={{
                   fontSize: 36,
@@ -178,20 +192,47 @@ export default function MainMenu() {
               >
                 Picross Ranked 
               </div>
-            </div>
-            <p
+
+              <p
               style={{
                 margin: 0,
                 fontSize: 20,
                 color: "var(--color-ink-muted)",
               }}
-            >
+              >
               Complete. Climb. Conquer.
-            </p>
+              </p>
+            </div>
 
-            <Button variant="primary" size="md" disabled>
-              Play now
-            </Button>
+
+            {/* Right Side */}
+            <div
+              style={{
+                width: 180,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                gap: 16,
+              }}
+            >
+              <img
+                src={trophyIcon}
+                alt=""
+                style={{ width: 120, height: 120, opacity: 0.85 }}
+              />
+              <Button 
+                variant="primary"
+                size="md" 
+                style={{
+                  width: 200,
+                  fontSize: 18,
+                  fontWeight: 700,      
+                }}
+                >
+                Play now
+              </Button>
+            </div>
           </div>
         </div>
         
