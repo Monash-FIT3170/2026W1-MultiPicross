@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { Logo, Icon, Button, UserDropdown } from "../components/ui";
+import { Logo, Icon, Button, UserDropdown, Chip } from "../components/ui";
 import { animate, stagger } from "animejs";
 import singleplayerIcon from "../assets/singleplayer.svg";
 import multiIcon from "../assets/multiplayer.svg";
@@ -156,6 +156,45 @@ export default function MainMenu() {
           Nonograms, now social.
         </p>
 
+        {/* ELO ranking */}
+        <div
+            className="elo-banner"
+            style={{
+              padding: 20,
+              display: "flex",
+              flexDirection: "column",
+              gap: 14,
+              width: 640,
+              height: 300,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div
+                style={{
+                  fontSize: 36,
+                  fontWeight: 700,
+                  color: "var(--color-ink)",
+                }}
+              >
+                Picross Ranked 
+              </div>
+            </div>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 20,
+                color: "var(--color-ink-muted)",
+              }}
+            >
+              Complete. Climb. Conquer.
+            </p>
+
+            <Button variant="primary" size="md" disabled>
+              Play now
+            </Button>
+          </div>
+        </div>
+        
         {/* Tile grid — 2 primary + 4 secondary */}
         <div
           ref={gridRef}
@@ -222,10 +261,10 @@ export default function MainMenu() {
             <SecondaryTile
               disabled={!isAuth}
               icon={
-                <img
-                  src={statsIcon}
-                  alt=""
-                  style={{ width: 20, height: 20, opacity: 0.8 }}
+                <IconBadge
+                  color="var(--color-primary)"
+                  iconColor="var(--color-ink)"
+                  icon="chart"
                 />
               }
               label="Statistics"
@@ -271,7 +310,6 @@ export default function MainMenu() {
             : "Playing as a guest. Sign in to save progress."}
         </p>
       </div>
-    </div>
   );
 }
 
@@ -325,5 +363,32 @@ function SecondaryTile({
       </span>
       {badge && <span style={{ marginLeft: "auto" }}>{badge}</span>}
     </button>
+  );
+}
+
+function IconBadge({
+  color,
+  iconColor,
+  icon,
+}: {
+  color: string;
+  iconColor: string;
+  icon: import("../components/ui").IconName;
+}) {
+  return (
+    <div
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        background: color,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}
+    >
+      <Icon name={icon} size={18} color={iconColor} />
+    </div>
   );
 }
