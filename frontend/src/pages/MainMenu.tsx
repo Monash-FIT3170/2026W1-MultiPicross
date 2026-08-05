@@ -202,7 +202,40 @@ export default function MainMenu() {
               >
               Complete. Climb. Conquer.
               </p>
+
+              <p
+              style={{
+                marginTop: 20,
+                color: "var(--color-ink-muted)",
+              }}
+              >
+              {isAuth && (
+                <>
+                  <div
+                    style={{
+                      fontSize: 18,
+                      color: "var(--color-ink-muted)",
+                    }}
+                  >
+                    Current Rank
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 60,
+                      fontWeight: 600,
+                      marginTop: 12,
+                      wordSpacing: "0.04em",
+                      color: "var(--color-ink)",
+                    }}
+                  >
+                    1200
+                  </div>
+                </>
+              )}
+              </p>
             </div>
+
 
 
             {/* Right Side */}
@@ -224,13 +257,14 @@ export default function MainMenu() {
               <Button 
                 variant="primary"
                 size="md" 
+                onClick={isAuth ? () => navigate("/picrossranked") : () => navigate("/login")}
                 style={{
                   width: 200,
                   fontSize: 18,
                   fontWeight: 700,      
                 }}
                 >
-                Play now
+                {isAuth ? "Play Now" : "Sign In To Play"}
               </Button>
             </div>
           </div>
