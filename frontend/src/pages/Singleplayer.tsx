@@ -1044,52 +1044,58 @@ function PlayingScreen({
           style={{
             position: "fixed",
             left: "50%",
-            bottom: 32,
+            bottom: 40,
             transform: "translateX(-50%)",
-            padding: "16px 24px",
-            background: "var(--color-sage-50)",
-            border: "1px solid var(--color-sage-100)",
-            borderRadius: 14,
+            padding: "20px 24px",
+            background: "rgba(255, 255, 255, 0.9)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(76, 175, 120, 0.2)",
+            borderRadius: 24,
             display: "flex",
             alignItems: "center",
-            gap: 16,
-            boxShadow: "0 18px 38px -12px rgba(76,175,120,0.25)",
+            gap: 20,
+            boxShadow: "0 24px 48px -12px rgba(76,175,120,0.25), 0 0 0 1px rgba(76,175,120,0.1) inset",
             zIndex: 200,
             whiteSpace: "nowrap",
+            animation: "slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards",
           }}
         >
           <div
             style={{
-              width: 28,
-              height: 28,
-              borderRadius: 8,
+              width: 48,
+              height: 48,
+              borderRadius: "50%",
               background: "var(--color-sage-400)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              boxShadow: "0 0 0 6px var(--color-sage-50)",
+              flexShrink: 0,
             }}
           >
-            <Icon name="check" size={16} color="#fff" />
+            <Icon name="check" size={24} color="#fff" />
           </div>
           <div>
             <div
               style={{
-                fontWeight: 700,
+                fontWeight: 800,
                 color: "var(--color-ink)",
-                fontSize: 15,
+                fontSize: 18,
+                marginBottom: 4,
+                letterSpacing: "-0.01em",
               }}
             >
-              Solved in {fmtSeconds(displaySeconds)}!
+              Puzzle Solved!
             </div>
-            <div style={{ fontSize: 12, color: "var(--color-sage-500)" }}>
-              {game.livesLeft}/3 lives remaining.
+            <div style={{ fontSize: 13, color: "var(--color-ink-muted)" }}>
+              Time: <strong style={{color:"var(--color-ink)"}}>{fmtSeconds(displaySeconds)}</strong> &nbsp;·&nbsp; Lives: <strong style={{color:"var(--color-ink)"}}>{game.livesLeft}/3</strong>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <Button variant="ghost" size="sm" onClick={onPlayAgain}>
+          <div style={{ display: "flex", gap: 8, marginLeft: 8 }}>
+            <Button variant="ghost" size="md" onClick={onPlayAgain}>
               Play again
             </Button>
-            <Button variant="primary" size="sm" onClick={onMainMenu}>
+            <Button variant="primary" size="md" onClick={onMainMenu}>
               Main menu
             </Button>
           </div>
@@ -1102,35 +1108,44 @@ function PlayingScreen({
           style={{
             position: "fixed",
             left: "50%",
-            bottom: 32,
+            bottom: 40,
             transform: "translateX(-50%)",
-            padding: "16px 24px",
-            background: "var(--color-coral-50)",
-            border: "1px solid var(--color-coral-100)",
-            borderRadius: 14,
+            padding: "20px 24px",
+            background: "rgba(255, 255, 255, 0.9)",
+            backdropFilter: "blur(12px)",
+            border: "1px solid rgba(239, 68, 68, 0.2)",
+            borderRadius: 24,
             display: "flex",
             alignItems: "center",
-            gap: 16,
-            boxShadow: "var(--shadow-lg)",
+            gap: 20,
+            boxShadow: "0 24px 48px -12px rgba(239,68,68,0.25), 0 0 0 1px rgba(239,68,68,0.1) inset",
             zIndex: 200,
             whiteSpace: "nowrap",
+            animation: "slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards",
           }}
         >
-          <Icon name="heart" size={22} color="var(--color-coral-500)" />
-          <div
-            style={{
-              fontWeight: 600,
-              color: "var(--color-coral-500)",
-              fontSize: 14,
-            }}
-          >
-            Out of lives. Try again?
+          <Icon name="heart" size={32} color="var(--color-coral-500)" />
+          <div>
+            <div
+              style={{
+                fontWeight: 800,
+                color: "var(--color-ink)",
+                fontSize: 18,
+                marginBottom: 4,
+                letterSpacing: "-0.01em",
+              }}
+            >
+              Out of lives!
+            </div>
+            <div style={{ fontSize: 13, color: "var(--color-ink-muted)" }}>
+              Don't give up. Try again!
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
-            <Button variant="ghost" size="sm" onClick={onPlayAgain}>
+          <div style={{ display: "flex", gap: 8, marginLeft: 8 }}>
+            <Button variant="ghost" size="md" onClick={onPlayAgain}>
               Try again
             </Button>
-            <Button variant="primary" size="sm" onClick={onMainMenu}>
+            <Button variant="primary" size="md" onClick={onMainMenu}>
               Main menu
             </Button>
           </div>
