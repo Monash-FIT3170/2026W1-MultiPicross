@@ -874,6 +874,19 @@ function PlayingScreen({
   const gridTotalHeight = (maxColClueLen + game.height) * cs;
   const clueTopOffset = maxColClueLen * cs;
 
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    const storedValue = localStorage.getItem("soundEffectsEnabled");
+    return storedValue === null ? true : storedValue === "true";
+  });
+
+  function toggleSoundEffects() {
+    setSoundEnabled((enabled) => {
+      const nextValue = !enabled;
+      localStorage.setItem("soundEffectsEnabled", String(nextValue));
+      return nextValue;
+    });
+  }
+
   return (
     <div
       style={{
@@ -956,6 +969,7 @@ function PlayingScreen({
           completed={outcome === "won"}
           mistakeCrossIdx={mistakeCrossIdx}
           mistakeCrossIndices={game.mistakeCrossIndices ?? []}
+          soundEnabled={soundEnabled}
           onFill={onFill}
           onCross={onCross}
         />
@@ -1025,6 +1039,10 @@ function PlayingScreen({
               disabled={outcome !== null}
             >
               Abandon
+            </Button>
+
+            <Button variant="ghost" size="sm" onClick={toggleSoundEffects}>
+              {soundEnabled ? "Sound On" : "Sound Off"}
             </Button>
           </div>
         </div>

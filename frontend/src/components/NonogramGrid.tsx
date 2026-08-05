@@ -1,5 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { animate, stagger, createTimeline, steps, spring } from "animejs";
+import useSound from "use-sound";
+import cellClickSound from "../assets/sounds/cell-click.wav";
+import cellCrossSound from "../assets/sounds/cell-cross.wav";
+import cellMistakeSound from "../assets/sounds/cell-mistake.wav";
 
 export type CellValue = 0 | 1 | 2 | 3; // unknown | filled | cross | mistake
 
@@ -15,6 +19,7 @@ interface NonogramGridProps {
   completed?: boolean;
   mistakeCrossIdx?: number | null;
   mistakeCrossIndices?: number[];
+  soundEnabled?: boolean;
   onFill?: (row: number, col: number) => void;
   onCross?: (row: number, col: number, markCross: boolean) => void;
 }
@@ -47,10 +52,15 @@ export default function NonogramGrid({
   completed = false,
   mistakeCrossIdx,
   mistakeCrossIndices,
+  soundEnabled = true,
   onFill,
   onCross,
 }: NonogramGridProps) {
   const cs = cellSize ?? autoCellSize(width, height);
+
+  const [playCellClick] = useSound(cellClickSound, { volume: 0.35 });
+  const [playCellCross] = useSound(cellCrossSound, { volume: 0.35 });
+  const [playCellMistake] = useSound(cellMistakeSound, { volume: 0.35 });
 
   const maxRowClueLen = Math.max(1, ...rowClues.map((r) => r.length));
   const maxColClueLen = Math.max(1, ...colClues.map((c) => c.length));
@@ -67,6 +77,8 @@ export default function NonogramGrid({
   const dragStartRef = useRef<{ row: number; col: number } | null>(null);
   const dragAxisRef = useRef<"row" | "col" | null>(null);
   const lastFillRef = useRef<{ row: number; col: number } | null>(null);
+
+  const manualCrossRef = useRef<number | null>(null);
 
   // Keep a ref to the current grid so the document mouseup handler can read it
   const gridRef = useRef(grid);
@@ -227,7 +239,12 @@ export default function NonogramGrid({
       if (!el) return;
 
       if (val === 1 && prev === 0) {
-        if (idx === mistakeCrossIdx) {
+        const isMistakeCross =
+          idx === mistakeCrossIdx || mistakeCrossIndices?.includes(idx);
+
+        if (isMistakeCross) {
+          if (soundEnabled) playCellMistake();
+
           el.classList.remove("mp-shake");
           void el.offsetWidth;
           el.classList.add("mp-shake");
@@ -238,7 +255,14 @@ export default function NonogramGrid({
           el.classList.add("mp-pop");
           setTimeout(() => el.classList.remove("mp-pop"), 350);
         }
+      } else if (val === 2 && prev === 0) {
+        if (manualCrossRef.current === idx) {
+          if (soundEnabled) playCellCross();
+          manualCrossRef.current = null;
+        }
       } else if (val === 3 && prev === 0) {
+        if (soundEnabled) playCellMistake();
+
         // Stop drag on mistake
         if (dragActiveRef.current) {
           dragActiveRef.current = false;
@@ -253,7 +277,16 @@ export default function NonogramGrid({
       }
     });
     prevGrid.current = [...grid];
-  }, [grid, completed, mistakeCrossIdx]);
+  }, [
+    grid,
+    completed,
+    mistakeCrossIdx,
+    mistakeCrossIndices,
+    soundEnabled,
+    playCellClick,
+    playCellMistake,
+    playCellCross,
+  ]);
 
   // ── Document mouseup for drag cleanup ─────────────────────────────────────
   useEffect(() => {
@@ -364,6 +397,7 @@ export default function NonogramGrid({
     dragAxisRef.current = null;
     lastFillRef.current = { row, col };
     onFill?.(row, col);
+    if (soundEnabled) playCellClick();
   }
 
   function handleCellMouseEnter(row: number, col: number) {
@@ -402,9 +436,21 @@ export default function NonogramGrid({
   function handleContextMenu(e: React.MouseEvent, row: number, col: number) {
     e.preventDefault();
     if (!interactive) return;
-    const val = grid[row * width + col];
+
+    const idx = row * width + col;
+    const val = grid[idx];
+
     if (val === 1 || val === 3) return;
-    onCross?.(row, col, val !== 2);
+
+    const willMarkCross = val !== 2;
+
+    if (willMarkCross) {
+      manualCrossRef.current = idx;
+    } else if (soundEnabled) {
+      playCellCross();
+    }
+
+    onCross?.(row, col, willMarkCross);
   }
 
   // ── Clue cell base style ───────────────────────────────────────────────────
