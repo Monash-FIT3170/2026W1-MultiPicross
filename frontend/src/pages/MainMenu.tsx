@@ -157,7 +157,7 @@ export default function MainMenu() {
           Nonograms, now social.
         </p>
 
-        {/* ELO ranking */}
+        {/* ELO ranking banner */}
         <div
             className="elo-banner"
             style={{
@@ -234,24 +234,33 @@ export default function MainMenu() {
               </Button>
             </div>
           </div>
-        </div>
         
-        {/* Tile grid — 2 primary + 4 secondary */}
+        {/* Main content */}
         <div
           ref={gridRef}
           style={{
+            width: 640,
             display: "flex",
+            flexDirection: "column",
             gap: 20,
-            flexWrap: "wrap",
-            justifyContent: "center",
+            marginTop: 24,
           }}
         >
-          {/* Left column — primary tiles */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {/* Player options */}
+          <div
+            style={{
+              display: "flex",
+              gap: 20,
+            }}
+          >
+            {/* Singleplayer */}
             <button
               className="tile"
               onClick={() => navigate("/singleplayer")}
-              style={{ width: 320, height: 120 }}
+              style={{
+                flex: 1,
+                height: 120,
+              }}
             >
               <img
                 src={singleplayerIcon}
@@ -268,10 +277,15 @@ export default function MainMenu() {
                 Singleplayer
               </span>
             </button>
+
+            {/* Multiplayer */}
             <button
               className="tile"
               onClick={() => navigate("/multiplayer")}
-              style={{ width: 320, height: 120 }}
+              style={{
+                flex: 1,
+                height: 120,
+              }}
             >
               <img
                 src={multiIcon}
@@ -290,8 +304,15 @@ export default function MainMenu() {
             </button>
           </div>
 
-          {/* Right column — secondary tiles */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {/* Other features */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+            }}
+          >
+            {/* Collection */}
             <SecondaryTile
               disabled={!isAuth}
               icon={<Icon name="grid" size={20} color="var(--color-ink)" />}
@@ -299,19 +320,23 @@ export default function MainMenu() {
               onClick={isAuth ? () => navigate("/collection") : undefined}
               badge={!isAuth ? <SignInHint /> : undefined}
             />
+            
+            {/* Statistics */}
             <SecondaryTile
               disabled={!isAuth}
               icon={
-                <IconBadge
-                  color="var(--color-primary)"
-                  iconColor="var(--color-ink)"
-                  icon="chart"
+                <img
+                  src={statsIcon}
+                  alt=""
+                  style={{ width: 20, height: 20, opacity: 0.8 }}
                 />
               }
               label="Statistics"
               onClick={isAuth ? () => navigate("/statistics") : undefined}
               badge={!isAuth ? <SignInHint /> : undefined}
             />
+
+            {/* Tutorial */}
             <SecondaryTile
               icon={
                 <img
@@ -323,6 +348,8 @@ export default function MainMenu() {
               label="Tutorial"
               onClick={() => navigate("/tutorial")}
             />
+
+            {/* Settings */}
             <SecondaryTile
               icon={
                 <img
@@ -336,6 +363,7 @@ export default function MainMenu() {
             />
           </div>
         </div>
+</div>
 
         {/* Footer hint */}
         <p
@@ -358,9 +386,10 @@ function SignInHint() {
   return (
     <span
       style={{
-        fontSize: 11,
+        fontSize: 14,
         color: "var(--color-ink-faint)",
-        fontWeight: 500,
+        fontWeight: 600,
+        padding: "2px 14px",
         letterSpacing: "0.02em",
       }}
     >
@@ -388,17 +417,17 @@ function SecondaryTile({
       disabled={disabled}
       onClick={onClick}
       style={{
-        width: 320,
+        width: 640,
         height: 56,
         flexDirection: "row",
-        gap: 12,
+        gap: 24,
         padding: "0 18px",
         justifyContent: "flex-start",
       }}
     >
       {icon}
       <span
-        style={{ fontSize: 15, fontWeight: 600, color: "var(--color-ink)" }}
+        style={{ fontSize: 18, fontWeight: 600, color: "var(--color-ink)" }}
       >
         {label}
       </span>
