@@ -368,23 +368,23 @@ export default function MainMenu() {
                   }}
                 >
                   <DropdownItem
-                    label="Private Match"
+                    label="Private Game"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
-                      navigate("/multiplayer/private");
+                      navigate("/privatemultiplayer");
                     }}
                   />
 
                   <DropdownItem
-                    label="Public Match"
+                    label="Public Game"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
-                      navigate("/public");
+                      navigate("/publicmultiplayer");
                     }}
                   />
 
                   <DropdownItem
-                    label="Picross Ranked Match"
+                    label="Picross Ranked Game"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
                       navigate("/picrossranked");

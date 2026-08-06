@@ -4,7 +4,7 @@ import { Logo, Icon, BackButton, Chip, Button } from "../components/ui";
 
 const SIZES = ["5 × 5", "10 × 10", "15 × 15", "20 × 20"] as const;
 
-export function Public() {
+export function PrivateMultiplayer() {
   const navigate = useNavigate();
   const [createSize, setCreateSize] = useState<string>("10 × 10");
   const [inviteCode, setInviteCode] = useState("");
@@ -41,7 +41,7 @@ export function Public() {
             color: "var(--color-ink)",
           }}
         >
-          Public Multiplayer
+          Private Multiplayer
         </h1>
         <p
           style={{
