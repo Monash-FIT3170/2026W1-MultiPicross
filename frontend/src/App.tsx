@@ -2,7 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import MainMenu from "./pages/MainMenu";
 import { Singleplayer } from "./pages/Singleplayer";
-import { Multiplayer } from "./pages/Multiplayer";
+import { Public } from "./pages/Public";
 import { Statistics } from "./pages/Statistics";
 import { Tutorial } from "./pages/Tutorial";
 import { Settings } from "./pages/Settings";
@@ -15,7 +15,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<MainMenu />} />
       <Route path="/singleplayer" element={<Singleplayer />} />
-      <Route path="/multiplayer" element={<Multiplayer />} />
+      <Route path="/public" element={<Public />} />
       <Route path="/statistics" element={<Statistics />} />
       <Route path="/tutorial" element={<Tutorial />} />
       <Route path="/settings" element={<Settings />} />

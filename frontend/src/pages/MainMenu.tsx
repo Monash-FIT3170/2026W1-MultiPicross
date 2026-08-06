@@ -384,7 +384,7 @@ export default function MainMenu() {
                   />
 
                   <DropdownItem
-                    label="Ranked Match"
+                    label="Picross Ranked Match"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
                       navigate("/picrossranked");
