@@ -217,7 +217,7 @@ export default function MainMenu() {
                       color: "var(--color-ink-muted)",
                     }}
                   >
-                    Current Rank
+                    Current Rating 
                   </div>
 
                   <div
