@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { Logo, Icon, Button, UserDropdown, Chip } from "../components/ui";
@@ -20,6 +20,7 @@ export default function MainMenu() {
   const taglineRef = useRef<HTMLParagraphElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const footerRef = useRef<HTMLParagraphElement>(null);
+  const [showMultiplayerMenu, setShowMultiplayerMenu] = useState(false);
 
   useLayoutEffect(() => {
     const wordmark = wordmarkRef.current;
@@ -31,6 +32,8 @@ export default function MainMenu() {
 
     const headEls = [wordmark, tagline].filter(Boolean) as HTMLElement[];
     const allEls = [...headEls, ...tiles, ...(footer ? [footer] : [])];
+    
+
     allEls.forEach((el) => {
       el.style.opacity = "0";
     });
@@ -203,7 +206,7 @@ export default function MainMenu() {
               Complete. Climb. Conquer.
               </p>
 
-              <p
+              <div
               style={{
                 marginTop: 20,
                 color: "var(--color-ink-muted)",
@@ -233,7 +236,7 @@ export default function MainMenu() {
                   </div>
                 </>
               )}
-              </p>
+              </div>
             </div>
 
 
@@ -313,29 +316,84 @@ export default function MainMenu() {
             </button>
 
             {/* Multiplayer */}
-            <button
-              className="tile"
-              onClick={() => navigate("/multiplayer")}
+            <div
               style={{
+                position: "relative",
                 flex: 1,
-                height: 120,
               }}
+              onMouseEnter={() => setShowMultiplayerMenu(true)}
+              onMouseLeave={() => setShowMultiplayerMenu(false)}
             >
-              <img
-                src={multiIcon}
-                alt=""
-                style={{ width: 40, height: 40, opacity: 0.85 }}
-              />
-              <span
+              <button
+                className="tile"
+                onClick={() => setShowMultiplayerMenu((prev) => !prev)}
                 style={{
-                  fontSize: 20,
-                  fontWeight: 700,
-                  color: "var(--color-ink)",
+                  width: "100%",
+                  height: 120,
                 }}
               >
-                Multiplayer
-              </span>
-            </button>
+                <img
+                  src={multiIcon}
+                  alt=""
+                  style={{
+                    width: 40,
+                    height: 40,
+                    opacity: 0.85,
+                  }}
+                />
+
+                <span
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 700,
+                    color: "var(--color-ink)",
+                  }}
+                >
+                  Multiplayer
+                </span>
+              </button>
+
+              {showMultiplayerMenu && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    width: "100%",
+                    background: "white",
+                    borderRadius: 16,
+                    border: "1px solid #E5E7EB",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+                    overflow: "hidden",
+                    zIndex: 100,
+                  }}
+                >
+                  <DropdownItem
+                    label="Private Match"
+                    onClick={() => {
+                      setShowMultiplayerMenu(false);
+                      navigate("/multiplayer/private");
+                    }}
+                  />
+
+                  <DropdownItem
+                    label="Public Match"
+                    onClick={() => {
+                      setShowMultiplayerMenu(false);
+                      navigate("/public");
+                    }}
+                  />
+
+                  <DropdownItem
+                    label="Ranked Match"
+                    onClick={() => {
+                      setShowMultiplayerMenu(false);
+                      navigate("/picrossranked");
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
           </div>
 
           {/* Other features */}
@@ -395,6 +453,8 @@ export default function MainMenu() {
               label="Settings"
               onClick={() => navigate("/settings")}
             />
+
+        
           </div>
         </div>
 </div>
@@ -466,6 +526,41 @@ function SecondaryTile({
         {label}
       </span>
       {badge && <span style={{ marginLeft: "auto" }}>{badge}</span>}
+    </button>
+  );
+}
+
+function DropdownItem({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "#F5F9FF";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "white";
+      }}
+      style={{
+        width: "100%",
+        padding: "14px 18px",
+        background: "white",
+        border: "none",
+        borderBottom: "1px solid #F1F5F9",
+        cursor: "pointer",
+        textAlign: "left",
+        fontSize: 16,
+        fontWeight: 600,
+        color: "var(--color-ink)",
+        transition: "background 0.15s ease",
+      }}
+    >
+      {label}
     </button>
   );
 }
