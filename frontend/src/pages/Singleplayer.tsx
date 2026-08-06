@@ -1093,7 +1093,7 @@ function PlayingScreen({
               Play again
             </Button>
             <Button variant="primary" size="sm" onClick={onMainMenu}>
-              Main menu
+              Main Menu
             </Button>
           </div>
         </div>

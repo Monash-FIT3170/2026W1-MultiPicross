@@ -55,11 +55,14 @@ const simulateMatchFound = () => {
         style={{
             position: "relative",
             zIndex: 200,
+            opacity: searching ? 0.85 : 0.52,
+
+            transition: "opacity 0.2s ease",
         }}
-        >
+        > 
         <BackButton
             onClick={() => navigate("/")}
-            label="Main menu"
+            label="Main Menu"
         />
         </div>
 

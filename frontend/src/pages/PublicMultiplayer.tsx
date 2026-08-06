@@ -26,7 +26,7 @@ export function PublicMultiplayer() {
           marginBottom: 28,
         }}
       >
-        <BackButton onClick={() => navigate("/")} label="Main menu" />
+        <BackButton onClick={() => navigate("/")} label="Main Menu" />
         <Logo size={34} />
         <div style={{ width: 100 }} />
       </div>
