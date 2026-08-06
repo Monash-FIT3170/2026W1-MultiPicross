@@ -45,15 +45,23 @@ const simulateMatchFound = () => {
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 28,
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 28,
+            position: "relative",
         }}
       >
-        <BackButton 
-          onClick={() => navigate("/")} 
-          label="Main menu" 
+        <div
+        style={{
+            position: "relative",
+            zIndex: 200,
+        }}
+        >
+        <BackButton
+            onClick={() => navigate("/")}
+            label="Main menu"
         />
+        </div>
 
         <Logo size={34} />
 
@@ -67,6 +75,7 @@ const simulateMatchFound = () => {
             fontSize: 30,
             fontWeight: 700,
             color: "var(--color-ink)",
+            letterSpacing: "-0.01em",
           }}
         >
           Picross Ranked
@@ -205,9 +214,9 @@ const simulateMatchFound = () => {
                 Keep Searching
                 </Button>
                 
-                <Button onClick={simulateMatchFound}>
+             {/*    <Button onClick={simulateMatchFound}>
                     Simulate Match
-                </Button>
+                </Button> */}
                 
             </div>
     </div>
