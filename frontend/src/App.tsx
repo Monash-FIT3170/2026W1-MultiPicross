@@ -2,8 +2,8 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import MainMenu from "./pages/MainMenu";
 import { Singleplayer } from "./pages/Singleplayer";
-import { PublicMultiplayer } from "./pages/PrivateMultiplayer";
-import { PrivateMultiplayer } from "./pages/PublicMultiplayer";
+import { PublicMultiplayer } from "./pages/PublicMultiplayer";
+import { PrivateMultiplayer } from "./pages/PrivateMultiplayer";
 import { Statistics } from "./pages/Statistics";
 import { Tutorial } from "./pages/Tutorial";
 import { Settings } from "./pages/Settings";

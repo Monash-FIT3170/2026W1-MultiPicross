@@ -195,7 +195,7 @@ const simulateMatchFound = () => {
                 variant="ghost"
                 onClick={() => navigate("/")}
                 >
-                Back Home
+                Back To Main Menu
                 </Button>
 
                 <Button
