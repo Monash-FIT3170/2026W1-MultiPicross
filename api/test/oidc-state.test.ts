@@ -46,7 +46,10 @@ test("a tampered signature is rejected", async () => {
   const setRes = await app.request("/set/state-b");
   const cookie = cookieHeader(setRes);
   const [name, value] = cookie.split("=");
-  const tampered = `${name}=${value.slice(0, -1)}${value.endsWith("A") ? "B" : "A"}`;
+  // Flip the first signature character: the last one carries padding bits, so
+  // flipping it decodes to identical bytes roughly one time in sixteen.
+  const [header, payload, sig] = value.split(".");
+  const tampered = `${name}=${header}.${payload}.${sig[0] === "A" ? "B" : "A"}${sig.slice(1)}`;
 
   const takeRes = await app.request("/take/state-b", {
     headers: { Cookie: tampered },

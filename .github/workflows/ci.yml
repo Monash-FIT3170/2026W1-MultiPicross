@@ -99,6 +99,20 @@ jobs:
     strategy:
       matrix:
         service: [api, gameserver]
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: picross
+          POSTGRES_PASSWORD: picross
+          POSTGRES_DB: picross
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U picross -d picross"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -112,8 +126,22 @@ jobs:
         run: npm install
         working-directory: ${{ matrix.service }}
 
+      - name: Apply database migrations
+        if: matrix.service == 'api'
+        run: npm run db:migrate
+        working-directory: api
+        env:
+          DB_HOST: localhost
+          DB_USER: picross
+          DB_PASSWORD: picross
+          DB_NAME: picross
+
       - name: Run tests
         run: npm test
         working-directory: ${{ matrix.service }}
         env:
           CI: true
+          DB_HOST: localhost
+          DB_USER: picross
+          DB_PASSWORD: picross
+          DB_NAME: picross

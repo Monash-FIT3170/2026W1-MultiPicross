@@ -19,7 +19,6 @@ export async function verifyPassword(
 
 export async function signAccessToken(payload: {
   sub: string;
-  username: string;
 }): Promise<string> {
   return sign(
     {

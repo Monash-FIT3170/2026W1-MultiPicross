@@ -11,3 +11,6 @@ const connectionString = `postgres://${DB_USER}:${encodeURIComponent(DB_PASSWORD
 
 const sql = postgres(connectionString);
 export const db = drizzle(sql, { schema });
+// Exported so tests can close the pool in an `after` hook; postgres-js keeps
+// idle connections open, which would otherwise hang the test runner's exit.
+export const pgClient = sql;

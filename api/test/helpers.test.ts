@@ -15,10 +15,7 @@ test("access and refresh tokens round-trip with the correct type and exp claims"
   process.env.JWT_ACCESS_SECRET = "test-access-secret";
   process.env.JWT_REFRESH_SECRET = "test-refresh-secret";
 
-  const accessToken = await signAccessToken({
-    sub: "user-1",
-    username: "alice",
-  });
+  const accessToken = await signAccessToken({ sub: "user-1" });
   const accessPayload = decode(accessToken).payload as {
     type: string;
     exp: number;

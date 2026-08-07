@@ -71,6 +71,8 @@ services:
       OIDC_ANCHOR_CLAIM: ${OIDC_ANCHOR_CLAIM}
       OIDC_ALLOW_INSECURE: ${OIDC_ALLOW_INSECURE}
       OIDC_STATE_SECRET: ${OIDC_STATE_SECRET}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
@@ -82,6 +84,21 @@ services:
       # - "traefik.http.routers.api.middlewares=api-strip"
       # - "traefik.http.middlewares.api-strip.stripprefix.prefixes=/api"
       - "traefik.http.services.api.loadbalancer.server.port=3000"
+      # Volumetric per-IP limit on the password-login endpoint only. Method(`POST`)
+      # is essential: GET /api/auth/login is the SSO redirect every normal user
+      # hits and shares this path, so without the method matcher a shared-NAT
+      # network could exhaust 5/min of SSO logins and lock out real users.
+      - "traefik.http.routers.api-login.rule=Host(`multipicross.localhost`) && Path(`/api/auth/login`) && Method(`POST`)"
+      - "traefik.http.routers.api-login.priority=200"
+      - "traefik.http.routers.api-login.service=api"
+      - "traefik.http.routers.api-login.entrypoints=web"
+      - "traefik.http.routers.api-login.middlewares=login-ratelimit"
+      - "traefik.http.middlewares.login-ratelimit.ratelimit.average=5"
+      - "traefik.http.middlewares.login-ratelimit.ratelimit.period=1m"
+      - "traefik.http.middlewares.login-ratelimit.ratelimit.burst=10"
+      # depth=0: the VM receives traffic directly with no trustworthy X-Forwarded-For,
+      # so keying off a forwarded header would let an attacker spoof past the limit.
+      - "traefik.http.middlewares.login-ratelimit.ratelimit.sourcecriterion.ipstrategy.depth=0"
 
   gameserver:
     build:

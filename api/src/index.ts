@@ -8,6 +8,7 @@ import { importPuzzles } from "./db/import-puzzles.js";
 import authRoutes from "./auth/routes.js";
 import spRoutes from "./singleplayer/routes.js";
 import { assertOidcEnv, getOidcConfig } from "./auth/oidc.js";
+import { createServiceAccount } from "./auth/service-account.js";
 
 const app = new Hono().basePath("/api");
 
@@ -45,6 +46,15 @@ assertOidcEnv();
 
 await runMigrations();
 await importPuzzles();
+
+// No-op when unset, so production can seed once and then unset these rather
+// than leaving a password in the environment forever. Never resets an existing password.
+const adminUsername = env("ADMIN_USERNAME", "");
+const adminPassword = env("ADMIN_PASSWORD", "");
+if (adminUsername && adminPassword) {
+  const result = await createServiceAccount(adminUsername, adminPassword);
+  if (result.created) console.log(`Seeded service account "${adminUsername}"`);
+}
 
 serve({ fetch: app.fetch, port: 3000 }, (info) =>
   console.log(`Server is running on http://localhost:${info.port}`),
