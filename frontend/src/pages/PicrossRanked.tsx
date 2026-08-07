@@ -1,23 +1,15 @@
 import { useNavigate } from "react-router-dom";
-import { BackButton, Button, Logo } from "../components/ui";
+import { BackButton, Button, Logo, Icon } from "../components/ui";
 import { useEffect, useState } from "react";
+import statsIcon from "../assets/stats.svg";
+import { start } from "repl";
 
 export function PicrossRanked() {
   const navigate = useNavigate();
-  const [searching, setSearching] = useState(true);
+  const [searching, setSearching] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
 
-{/* Finding a match */}
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      setSearching(false);
-      setTimedOut(true);
-    }, 5000); // set time to 5 seconds for testing 
-
-    return () => clearTimeout(timeout);
-  }, []);
-
-  {/* Continue to finding a match */}
+  {/* Finding a match */}
   const continueSearching = () => {
   setTimedOut(false);
   setSearching(true);
@@ -26,7 +18,12 @@ export function PicrossRanked() {
     setSearching(false);
     setTimedOut(true);
   }, 5000); // set time to 5 seconds for testing 
-};
+  };
+
+    const cancelSearching = () => {
+    setSearching(false);
+    setTimedOut(false);
+    };
 
 {/* Simulate match found */}
 const simulateMatchFound = () => {
@@ -70,7 +67,8 @@ const simulateMatchFound = () => {
 
         <div style={{ width: 100 }} />
       </div>
-
+    
+      {/* Body */}
       <div style={{ maxWidth: 960, margin: "0 auto" }}>
         <h1
           style={{
@@ -93,13 +91,235 @@ const simulateMatchFound = () => {
         >
           Complete. Climb. Conquer.
         </p>
+        
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 2fr",
+            gap: 16,
+            marginBottom: 40,
+          }}
+        >
+            {/* Your Stats - Left column  */}
+            <div
+            className="mp-surface"
+            style={{
+              padding: 20,
+              display: "flex",
+              flexDirection: "column",
+              background: "linear-gradient(135deg, #EAF3FF 0%, #F7FBFF 100%)",
+              border: "1px solid #D6E6FF",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div
+                style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: "var(--color-ink)",
+                }}
+              >
+                Your Stats
+              </div>
 
+            </div>
+
+            {/* Rating */}
+            <div
+                style={{
+                  display: "flex",
+                    alignItems: "center",
+                    paddingTop: 6,
+                }}
+                >
+                    <img
+                    src={statsIcon}
+                    alt=""
+                    style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
+                    />
+
+                    
+                    <div
+                    style={{
+                    padding: 20,
+                    display: "flex",
+                    flexDirection: "column",
+                    }}
+                    >
+                        <p
+                            style={{
+                                marginLeft: 4,
+                            }}
+                        >
+                             Rating
+                        </p>
+
+                        <p
+                            style={{
+                            marginTop: 4,
+                            fontSize: 40,
+                            fontWeight: 700,
+                            }}
+                        >
+                            1200
+                        </p>
+                </div>               
+            </div>
+                 
+            {/* Wins */}
+            <div
+                style={{
+                  display: "flex",
+                    alignItems: "center",
+                    paddingTop: 6,
+                }}
+                >
+                    <img
+                    src={statsIcon}
+                    alt=""
+                    style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
+                    />
+
+                    
+                    <div
+                    style={{
+                    padding: 20,
+                    display: "flex",
+                    flexDirection: "column",
+                    }}
+                    >
+                        <p
+                            style={{
+                                marginLeft: 4,
+                            }}
+                        >
+                             Wins
+                        </p>
+
+                        <p
+                            style={{
+                            marginTop: 4,
+                            fontSize: 40,
+                            fontWeight: 700,
+                            }}
+                        >
+                            54
+                        </p>
+                </div>               
+            </div>
+            
+            {/* Losses */}
+            <div
+                style={{
+                  display: "flex",
+                    alignItems: "center",
+                    paddingTop: 6,
+                }}
+                >
+                    <img
+                    src={statsIcon}
+                    alt=""
+                    style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
+                    />
+
+                    
+                    <div
+                    style={{
+                    padding: 20,
+                    display: "flex",
+                    flexDirection: "column",
+                    }}
+                    >
+                        <p
+                            style={{
+                                marginLeft: 4,
+                            }}
+                        >
+                             Losses
+                        </p>
+
+                        <p
+                            style={{
+                            marginTop: 4,
+                            fontSize: 40,
+                            fontWeight: 700,
+                            }}
+                        >
+                            54
+                        </p>
+                </div>             
+            </div>
+
+
+            </div>
+            
+            {/* Leaderboard - Right column */}
+            <div
+            className="mp-surface"
+            style={{
+              padding: 20,
+              display: "flex",
+              flexDirection: "column",
+
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div
+                style={{
+                  fontSize: 18,
+                  fontWeight: 700,
+                  color: "var(--color-ink)",
+                }}
+              >
+                Leaderboard
+              </div>
+
+            </div>
+
+            {/* Not Implemented Leaderboard */}
+            <div
+                style={{
+                  display: "flex",
+                    alignItems: "center",
+                    paddingTop: 6,
+                }}
+                >
+                    <div
+                    style={{
+                    marginTop: 100,
+                    marginLeft: 210,
+                    alignItems: "center",
+                    flexDirection: "column",
+                    fontWeight: 700,
+                    fontSize: 20,
+                    color: "var(--color-ink-muted)",
+                    }}
+                    >
+                       Not Implemented
+                    </div>    
+            </div>
+
+            </div>
+        </div>
+
+        {/* Play Game Button */}
+        <Button
+            variant="primary"
+            size="md" disabled
+            onClick={continueSearching}
+            style={{ 
+                marginTop: 10,
+                width: "100%",
+               }}
+            >
+              Play Game
+            </Button>
 
         {/* Searching Modal */}
         {searching && (
           <div
             style={{
-              position: "fixed",
+              position: "relative",
               inset: 0,
               background: "rgba(0,0,0,0.25)",
               display: "flex",
@@ -108,16 +328,37 @@ const simulateMatchFound = () => {
               zIndex: 100,
             }}
           >
-            <div
-              style={{
-                width: 360,
-                padding: 32,
-                background: "var(--color-paper)",
-                borderRadius: 20,
-                boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
-                textAlign: "center",
-              }}
-            >
+                {/* Close button */}
+                <button
+                    onClick={cancelSearching}
+                    style={{
+                    position: "absolute",
+                    top: 12,
+                    right: 12,
+                    width: 34,
+                    height: 34,
+                    border: "none",
+                    background: "transparent",
+                    cursor: "pointer",
+                    fontSize: 24,
+                    fontWeight: 400,
+                    color: "var(--color-ink-muted)",
+                    borderRadius: 8,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#F3F4F6";
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "transparent";
+                }}
+                >
+                    ×
+                </button>
+
+
               {/* Loading spinner */}
               <div
                 style={{
@@ -130,7 +371,8 @@ const simulateMatchFound = () => {
                   animation: "spin 1s linear infinite",
                 }}
               />
-
+              
+              {/* Please wait */}
               <div
                 style={{
                   fontSize: 20,
@@ -140,7 +382,8 @@ const simulateMatchFound = () => {
               >
                 Please wait...
               </div>
-
+            
+              {/* Finding matches */}
               <div
                 style={{
                   marginTop: 8,
@@ -151,7 +394,6 @@ const simulateMatchFound = () => {
                 Finding matches
               </div>
             </div>
-          </div>
         )}
 
         {/* No Match Modal */}
@@ -207,14 +449,7 @@ const simulateMatchFound = () => {
                 variant="ghost"
                 onClick={() => navigate("/")}
                 >
-                Back To Main Menu
-                </Button>
-
-                <Button
-                variant="primary"
-                onClick={continueSearching}
-                >
-                Keep Searching
+                Close 
                 </Button>
                 
              {/*    <Button onClick={simulateMatchFound}>
