@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { BackButton, Button, Logo, Icon } from "../components/ui";
 import { useEffect, useState } from "react";
 import statsIcon from "../assets/stats.svg";
-import { start } from "repl";
+//import { start } from "repl";
 
 export function PicrossRanked() {
   const navigate = useNavigate();
@@ -10,7 +10,7 @@ export function PicrossRanked() {
   const [timedOut, setTimedOut] = useState(false);
 
   {/* Finding a match */}
-  const continueSearching = () => {
+  const startSearching = () => {
   setTimedOut(false);
   setSearching(true);
 
@@ -24,11 +24,6 @@ export function PicrossRanked() {
     setSearching(false);
     setTimedOut(false);
     };
-
-{/* Simulate match found */}
-const simulateMatchFound = () => {
-  navigate("/singleplayer"); // change to elo multiplayer game page when implemented in order to test
-};
 
   return (
     <div
@@ -51,10 +46,6 @@ const simulateMatchFound = () => {
         <div
         style={{
             position: "relative",
-            zIndex: 200,
-            opacity: searching ? 0.85 : 0.52,
-
-            transition: "opacity 0.2s ease",
         }}
         > 
         <BackButton
@@ -222,7 +213,6 @@ const simulateMatchFound = () => {
                     style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
                     />
 
-                    
                     <div
                     style={{
                     padding: 20,
@@ -249,10 +239,8 @@ const simulateMatchFound = () => {
                         </p>
                 </div>             
             </div>
-
-
-            </div>
-            
+        </div>
+           
             {/* Leaderboard - Right column */}
             <div
             className="mp-surface"
@@ -260,9 +248,10 @@ const simulateMatchFound = () => {
               padding: 20,
               display: "flex",
               flexDirection: "column",
-
             }}
-          >
+            >
+            
+            {/* Leaderboard Heading */}
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div
                 style={{
@@ -299,101 +288,118 @@ const simulateMatchFound = () => {
                     </div>    
             </div>
 
-            </div>
-        </div>
+            </div>  
+    </div>
 
-        {/* Play Game Button */}
-        <Button
+    {/* Play Game Button */}
+        <div
+            style={{
+                display: "flex",
+                justifyContent: "center",
+            }}
+        >   <Button
             variant="primary"
-            size="md" disabled
-            onClick={continueSearching}
+            size="md"
+            onClick={startSearching}
             style={{ 
-                marginTop: 10,
                 width: "100%",
+                fontSize: 19,
+                fontWeight: 700,
                }}
             >
               Play Game
             </Button>
+        </div>
 
-        {/* Searching Modal */}
+        
+       {/* Searching Modal */}
         {searching && (
           <div
             style={{
-              position: "relative",
+              position: "fixed",
               inset: 0,
               background: "rgba(0,0,0,0.25)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              zIndex: 100,
             }}
           >
-                {/* Close button */}
-                <button
+            <div
+              style={{
+                position: "relative",
+                width: 420,
+                height: 200,
+                padding: 32,
+                background: "var(--color-paper)",
+                borderRadius: 20,
+                boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
+                textAlign: "center",
+              }}
+            >
+                {/* Cancel button */}
+                <div
                     onClick={cancelSearching}
                     style={{
-                    position: "absolute",
-                    top: 12,
-                    right: 12,
-                    width: 34,
-                    height: 34,
-                    border: "none",
-                    background: "transparent",
-                    cursor: "pointer",
-                    fontSize: 24,
-                    fontWeight: 400,
-                    color: "var(--color-ink-muted)",
-                    borderRadius: 8,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                }}
-                onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#F3F4F6";
-                }}
-                onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "transparent";
-                }}
+                        position: "absolute",
+                        top: 16,
+                        right: 16,
+                        width: 32,
+                        height: 32,
+                        border: "none",
+                        borderRadius: 8,
+                        background: "#F3F4F6",
+                        color: "#000",
+                        fontSize: 20,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "background 0.15s ease",
+                    }}      
                 >
-                    ×
-                </button>
+                    <IconBadge
+                                  iconColor="#000"
+                                  icon="x" color={""}                    />
+                </div>
 
 
-              {/* Loading spinner */}
-              <div
-                style={{
-                  width: 40,
-                  height: 40,
-                  border: "4px solid var(--color-blue-100)",
-                  borderTop: "4px solid var(--color-blue-500)",
-                  borderRadius: "50%",
-                  margin: "0 auto 20px",
-                  animation: "spin 1s linear infinite",
-                }}
-              />
-              
-              {/* Please wait */}
-              <div
-                style={{
-                  fontSize: 20,
-                  fontWeight: 700,
-                  color: "var(--color-ink)",
-                }}
-              >
-                Please wait...
-              </div>
-            
-              {/* Finding matches */}
-              <div
-                style={{
-                  marginTop: 8,
-                  fontSize: 15,
-                  color: "var(--color-ink-muted)",
-                }}
-              >
+                {/* Loading spinner */}
+                <div
+                    style={{
+                    width: 40,
+                    height: 40,
+                    border: "4px solid var(--color-blue-100)",
+                    borderTop: "4px solid var(--color-blue-500)",
+                    borderRadius: "50%",
+                    margin: "0 auto 10px",
+                    animation: "spin 1s linear infinite",
+                    }}
+                />
+
+                {/* Loading spinner */}
+                <div
+                    style={{
+                    fontSize: 20,
+                    fontWeight: 700,
+                    color: "var(--color-ink)",
+                    }}
+                >
+                    Please wait...
+                </div>
+                
+                {/* Finding matches */}
+                <div
+                    style={{
+                    marginTop: 8,
+                    fontSize: 15,
+                    color: "var(--color-ink-muted)",
+                    }}
+                >
                 Finding matches
               </div>
             </div>
+          </div>
         )}
 
         {/* No Match Modal */}
@@ -406,12 +412,13 @@ const simulateMatchFound = () => {
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            zIndex: 100,
             }}
         >
             <div
             style={{
+                position:"relative",
                 width: 420,
+                height: 200,
                 padding: 32,
                 background: "var(--color-paper)",
                 borderRadius: 20,
@@ -419,6 +426,35 @@ const simulateMatchFound = () => {
                 boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
             }}
             >
+            
+            {/* Cancel button */}
+                <div
+                    onClick={cancelSearching}
+                    style={{
+                        position: "absolute",
+                        top: 16,
+                        right: 16,
+                        width: 32,
+                        height: 32,
+                        border: "none",
+                        borderRadius: 8,
+                        background: "#F3F4F6",
+                        color: "#000",
+                        fontSize: 20,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "background 0.15s ease",
+                    }}      
+                >
+                    <IconBadge
+                                  iconColor="#000"
+                                  icon="x" color={""}                    />
+                </div>
+
+
             <h2
                 style={{
                 margin: 0,
@@ -447,9 +483,17 @@ const simulateMatchFound = () => {
             >
                 <Button
                 variant="ghost"
-                onClick={() => navigate("/")}
+                onClick= {startSearching}
                 >
-                Close 
+                    Keep Searching 
+                </Button>
+
+                
+                <Button
+                variant="ghost"
+                onClick= {cancelSearching}
+                >
+                    Stop Searching
                 </Button>
                 
              {/*    <Button onClick={simulateMatchFound}>
@@ -476,6 +520,33 @@ const simulateMatchFound = () => {
           }
         `}
       </style>
+    </div>
+  );
+}
+
+function IconBadge({
+  color,
+  iconColor,
+  icon,
+}: {
+  color: string;
+  iconColor: string;
+  icon: import("../components/ui").IconName;
+}) {
+  return (
+    <div
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        background: color,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+      }}
+    >
+      <Icon name={icon} size={18} color={iconColor} />
     </div>
   );
 }
