@@ -11,6 +11,14 @@ services:
       - "8080:8080" # Traefik dashboard
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      default:
+        # dex.multipicross.localhost must resolve to the same place from the api
+        # container and from the browser, so the OIDC `iss` claim matches on both
+        # sides. The browser resolves *.localhost to 127.0.0.1 -> here; containers
+        # resolve it via this alias, also to here. Note curl inside a container
+        # forces *.localhost to 127.0.0.1 and cannot reach dex; use node to test.
+        aliases: ["dex.multipicross.localhost"]
 
   db:
     image: postgres:18-alpine
@@ -31,6 +39,18 @@ services:
       retries: 10
       start_period: 10s
 
+  # Local dev stand-in for the real OIDC provider.
+  dex:
+    image: dexidp/dex:v2.41.1
+    volumes:
+      - ./dev/dex/config.yaml:/etc/dex/config.yaml:ro
+    command: ["dex", "serve", "/etc/dex/config.yaml"]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dex.rule=Host(`dex.multipicross.localhost`)"
+      - "traefik.http.routers.dex.entrypoints=web"
+      - "traefik.http.services.dex.loadbalancer.server.port=5556"
+
   api:
     build:
       context: ./api
@@ -41,6 +61,16 @@ services:
       DB_NAME: ${POSTGRES_DB}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      APP_BASE_URL: ${APP_BASE_URL}
+      OIDC_ISSUER: ${OIDC_ISSUER}
+      OIDC_PROVIDER_ID: ${OIDC_PROVIDER_ID}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+      OIDC_SCOPES: ${OIDC_SCOPES}
+      OIDC_CLIENT_AUTH: ${OIDC_CLIENT_AUTH}
+      OIDC_ANCHOR_CLAIM: ${OIDC_ANCHOR_CLAIM}
+      OIDC_ALLOW_INSECURE: ${OIDC_ALLOW_INSECURE}
+      OIDC_STATE_SECRET: ${OIDC_STATE_SECRET}
     depends_on:
       db:
         condition: service_healthy
