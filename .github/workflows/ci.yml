@@ -92,28 +92,28 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,scope=${{ matrix.service }},mode=max
 
-  # test:
-  #   name: Test (${{ matrix.service }})
-  #   needs: build
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     matrix:
-  #       service: [gameserver, frontend]
-  #   steps:
-  #     - uses: actions/checkout@v4
+  test:
+    name: Test (${{ matrix.service }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api, gameserver]
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 25
-  #         cache: npm
-  #         cache-dependency-path: ${{ matrix.service }}/package-lock.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 25
+          cache: npm
+          cache-dependency-path: ${{ matrix.service }}/package-lock.json
 
-  #     - name: Install dependencies
-  #       run: npm install
-  #       working-directory: ${{ matrix.service }}
+      - name: Install dependencies
+        run: npm install
+        working-directory: ${{ matrix.service }}
 
-  #     - name: Run tests
-  #       run: npm test
-  #       working-directory: ${{ matrix.service }}
-  #       env:
-  #         CI: true
+      - name: Run tests
+        run: npm test
+        working-directory: ${{ matrix.service }}
+        env:
+          CI: true

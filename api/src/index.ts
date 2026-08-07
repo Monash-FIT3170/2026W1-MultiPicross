@@ -2,6 +2,7 @@ import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { openAPISpecs } from "hono-openapi";
 import { Scalar } from "@scalar/hono-api-reference";
+import { env } from "./env.js";
 import { runMigrations } from "./db/migrate.js";
 import { importPuzzles } from "./db/import-puzzles.js";
 import authRoutes from "./auth/routes.js";
@@ -36,6 +37,9 @@ app.get(
 );
 
 app.get("/docs", Scalar({ spec: { url: "/api/openapi" } }));
+
+env("JWT_ACCESS_SECRET");
+env("JWT_REFRESH_SECRET");
 
 await runMigrations();
 await importPuzzles();
