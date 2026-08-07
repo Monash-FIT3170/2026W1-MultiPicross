@@ -1,31 +1,36 @@
 import { useNavigate } from "react-router-dom";
 import { BackButton, Button, Logo, Icon } from "../components/ui";
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import statsIcon from "../assets/stats.svg";
 //import { start } from "repl";
 
 export function PicrossRanked() {
-  const navigate = useNavigate();
-  const [searching, setSearching] = useState(false);
-  const [timedOut, setTimedOut] = useState(false);
+    const navigate = useNavigate();
+    const [searching, setSearching] = useState(false);
+    const [timedOut, setTimedOut] = useState(false);
+    const timeoutRef = useRef<number | null>(null);
 
-  {/* Finding a match */}
-  const startSearching = () => {
-  setTimedOut(false);
-  setSearching(true);
+    {/* Finding a match */}
+    const startSearching = () => {
+        setSearching(true);
+        setTimedOut(false);
 
-  setTimeout(() => {
-    setSearching(false);
-    setTimedOut(true);
-  }, 5000); // set time to 5 seconds for testing 
-  };
-
-    const cancelSearching = () => {
-    setSearching(false);
-    setTimedOut(false);
+        timeoutRef.current = window.setTimeout(() => {
+            setSearching(false);
+            setTimedOut(true);
+        }, 5000);
     };
 
-  return (
+    const cancelSearching = () => {
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+        }
+
+        setSearching(false);
+        setTimedOut(false);
+    };
+
+    return (
     <div
       style={{
         minHeight: "100vh",
