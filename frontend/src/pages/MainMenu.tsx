@@ -24,7 +24,9 @@ export default function MainMenu() {
     const wordmark = wordmarkRef.current;
     const tagline = taglineRef.current;
     const tiles = gridRef.current
-      ? (Array.from(gridRef.current.querySelectorAll(".tile")) as HTMLElement[])
+      ? (Array.from(
+          gridRef.current.querySelectorAll(".tile-enter"),
+        ) as HTMLElement[])
       : [];
     const footer = footerRef.current;
 
@@ -49,9 +51,6 @@ export default function MainMenu() {
         delay: stagger(55, { start: 140 }),
         duration: 300,
         ease: "outExpo",
-        // After entrance, remove inline opacity so disabled tiles revert to CSS opacity: 0.55
-        onComplete: () =>
-          tiles.forEach((el) => el.style.removeProperty("opacity")),
       });
     }
 
@@ -168,46 +167,50 @@ export default function MainMenu() {
         >
           {/* Left column — primary tiles */}
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <button
-              className="tile"
-              onClick={() => navigate("/singleplayer")}
-              style={{ width: 320, height: 120 }}
-            >
-              <img
-                src={singleplayerIcon}
-                alt=""
-                style={{ width: 40, height: 40, opacity: 0.85 }}
-              />
-              <span
-                style={{
-                  fontSize: 20,
-                  fontWeight: 700,
-                  color: "var(--color-ink)",
-                }}
+            <div className="tile-enter" style={{ alignSelf: "flex-start" }}>
+              <button
+                className="tile"
+                onClick={() => navigate("/singleplayer")}
+                style={{ width: 320, height: 120 }}
               >
-                Singleplayer
-              </span>
-            </button>
-            <button
-              className="tile"
-              onClick={() => navigate("/multiplayer")}
-              style={{ width: 320, height: 120 }}
-            >
-              <img
-                src={multiIcon}
-                alt=""
-                style={{ width: 40, height: 40, opacity: 0.85 }}
-              />
-              <span
-                style={{
-                  fontSize: 20,
-                  fontWeight: 700,
-                  color: "var(--color-ink)",
-                }}
+                <img
+                  src={singleplayerIcon}
+                  alt=""
+                  style={{ width: 40, height: 40, opacity: 0.85 }}
+                />
+                <span
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 700,
+                    color: "var(--color-ink)",
+                  }}
+                >
+                  Singleplayer
+                </span>
+              </button>
+            </div>
+            <div className="tile-enter" style={{ alignSelf: "flex-start" }}>
+              <button
+                className="tile"
+                onClick={() => navigate("/multiplayer")}
+                style={{ width: 320, height: 120 }}
               >
-                Multiplayer
-              </span>
-            </button>
+                <img
+                  src={multiIcon}
+                  alt=""
+                  style={{ width: 40, height: 40, opacity: 0.85 }}
+                />
+                <span
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 700,
+                    color: "var(--color-ink)",
+                  }}
+                >
+                  Multiplayer
+                </span>
+              </button>
+            </div>
           </div>
 
           {/* Right column — secondary tiles */}
@@ -304,26 +307,28 @@ function SecondaryTile({
   badge?: React.ReactNode;
 }) {
   return (
-    <button
-      className="tile"
-      disabled={disabled}
-      onClick={onClick}
-      style={{
-        width: 320,
-        height: 56,
-        flexDirection: "row",
-        gap: 12,
-        padding: "0 18px",
-        justifyContent: "flex-start",
-      }}
-    >
-      {icon}
-      <span
-        style={{ fontSize: 15, fontWeight: 600, color: "var(--color-ink)" }}
+    <div className="tile-enter" style={{ alignSelf: "flex-start" }}>
+      <button
+        className="tile"
+        disabled={disabled}
+        onClick={onClick}
+        style={{
+          width: 320,
+          height: 56,
+          flexDirection: "row",
+          gap: 12,
+          padding: "0 18px",
+          justifyContent: "flex-start",
+        }}
       >
-        {label}
-      </span>
-      {badge && <span style={{ marginLeft: "auto" }}>{badge}</span>}
-    </button>
+        {icon}
+        <span
+          style={{ fontSize: 15, fontWeight: 600, color: "var(--color-ink)" }}
+        >
+          {label}
+        </span>
+        {badge && <span style={{ marginLeft: "auto" }}>{badge}</span>}
+      </button>
+    </div>
   );
 }
