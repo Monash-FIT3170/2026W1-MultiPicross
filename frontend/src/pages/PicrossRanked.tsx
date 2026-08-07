@@ -2,6 +2,8 @@ import { useNavigate } from "react-router-dom";
 import { BackButton, Button, Logo, Icon } from "../components/ui";
 import { useRef, useState } from "react";
 import statsIcon from "../assets/stats.svg";
+import trohpyIcon from "../assets/trophy.svg";
+import shieldIcon from "../assets/shield.svg";
 //import { start } from "repl";
 
 export function PicrossRanked() {
@@ -115,7 +117,7 @@ export function PicrossRanked() {
                   color: "var(--color-ink)",
                 }}
               >
-                Your Stats
+                Your Statistics
               </div>
 
             </div>
@@ -171,7 +173,7 @@ export function PicrossRanked() {
                 }}
                 >
                     <img
-                    src={statsIcon}
+                    src={trohpyIcon}
                     alt=""
                     style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
                     />
@@ -213,7 +215,7 @@ export function PicrossRanked() {
                 }}
                 >
                     <img
-                    src={statsIcon}
+                    src={shieldIcon}
                     alt=""
                     style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
                     />
