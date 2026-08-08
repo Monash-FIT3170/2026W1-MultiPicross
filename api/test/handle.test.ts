@@ -71,7 +71,7 @@ if (!ready) {
     assert.equal(secondRes.status, 409);
   });
 
-  test("a second write against an account that already has a handle is rejected", async () => {
+  test("an account with a handle can rename to a free one", async () => {
     const accountId = await createSsoAccount();
     const setRes = await postHandle(
       accountId,
@@ -79,11 +79,24 @@ if (!ready) {
     );
     assert.equal(setRes.status, 200);
 
-    const renameRes = await postHandle(
-      accountId,
-      `handle-${crypto.randomUUID().slice(0, 8)}`,
+    const renamed = `handle-${crypto.randomUUID().slice(0, 8)}`;
+    const renameRes = await postHandle(accountId, renamed);
+    assert.equal(renameRes.status, 200);
+    assert.deepEqual(await renameRes.json(), { handle: renamed });
+  });
+
+  test("renaming to a handle another account holds returns 409", async () => {
+    const taken = `handle-${crypto.randomUUID().slice(0, 8)}`;
+    const otherId = await createSsoAccount();
+    assert.equal((await postHandle(otherId, taken)).status, 200);
+
+    const accountId = await createSsoAccount();
+    assert.equal(
+      (await postHandle(accountId, `handle-${crypto.randomUUID().slice(0, 8)}`))
+        .status,
+      200,
     );
-    assert.equal(renameRes.status, 409);
+    assert.equal((await postHandle(accountId, taken)).status, 409);
   });
 
   test("invalid characters are rejected", async () => {

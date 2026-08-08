@@ -261,7 +261,7 @@ export default function MainMenu() {
           }}
         >
           {isAuth
-            ? `Welcome back, ${user?.handle ?? "service account"}.`
+            ? `Welcome back, ${user?.handle ?? "Service account"}.`
             : "Playing as a guest. Sign in to save progress."}
         </p>
       </div>

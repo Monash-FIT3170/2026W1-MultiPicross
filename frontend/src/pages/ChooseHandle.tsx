@@ -9,7 +9,7 @@ const inputCls =
 const labelCls = "text-sm font-medium text-gray-700";
 
 export function ChooseHandle() {
-  const { status, user, setHandle, logout } = useAuth();
+  const { status, user, setHandle } = useAuth();
   const navigate = useNavigate();
 
   const [handle, setHandleInput] = useState("");
@@ -44,7 +44,6 @@ export function ChooseHandle() {
       await setHandle(handle);
       navigate("/", { replace: true });
     } catch (err) {
-      // 409 covers both "taken" and "already set", so use the server's message.
       setError(err instanceof Error ? err.message : "Something went wrong");
       setLoading(false);
     }
@@ -62,7 +61,8 @@ export function ChooseHandle() {
             Choose a handle
           </h2>
           <p className="text-center text-sm text-gray-500">
-            This is how other players will see you. You cannot change it later.
+            This is how other players will see you. You can change it later in
+            Settings.
           </p>
 
           <div className="flex flex-col gap-1">
@@ -97,14 +97,6 @@ export function ChooseHandle() {
             className="rounded-xl bg-gray-900 py-2 font-semibold text-white transition hover:bg-black disabled:opacity-60"
           >
             {loading ? "Saving…" : "Continue"}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => void logout()}
-            className="text-center text-sm text-gray-500 hover:underline"
-          >
-            Sign out
           </button>
         </form>
       </div>

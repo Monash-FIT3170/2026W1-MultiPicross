@@ -3,7 +3,7 @@ import { describeRoute } from "hono-openapi";
 import { sValidator } from "@hono/standard-validator";
 import { getCookie } from "hono/cookie";
 import { requireAuth } from "./middleware.js";
-import { and, eq, gte, isNull, lt, count } from "drizzle-orm";
+import { and, eq, gte, lt, count } from "drizzle-orm";
 import * as v from "valibot";
 import { toJsonSchema } from "@valibot/to-json-schema";
 import type { OpenAPIV3 } from "openapi-types";
@@ -339,7 +339,7 @@ auth.post(
   csrf,
   describeRoute({
     tags: ["Auth"],
-    summary: "Set the account handle (once)",
+    summary: "Set or change the account handle",
     requestBody: {
       required: true,
       content: { "application/json": { schema: schema(HandleBody) } },
@@ -360,10 +360,7 @@ auth.post(
       401: { description: "Not authenticated", content: errorContent },
       403: { description: "Invalid CSRF token", content: errorContent },
       404: { description: "Account not found", content: errorContent },
-      409: {
-        description: "Handle already set or taken",
-        content: errorContent,
-      },
+      409: { description: "Handle already taken", content: errorContent },
     },
   }),
   sValidator("json", HandleBody, (result, c) => {
@@ -377,20 +374,12 @@ auth.post(
     >;
 
     try {
-      // Conditional on handle IS NULL so this can't double as a free rename endpoint.
       const [updated] = await db
         .update(accounts)
         .set({ handle })
-        .where(and(eq(accounts.id, accountId), isNull(accounts.handle)))
+        .where(eq(accounts.id, accountId))
         .returning({ handle: accounts.handle });
-      if (!updated) {
-        const exists = await db.query.accounts.findFirst({
-          where: eq(accounts.id, accountId),
-          columns: { id: true },
-        });
-        if (!exists) return c.json({ error: "Account not found" }, 404);
-        return c.json({ error: "Handle already set" }, 409);
-      }
+      if (!updated) return c.json({ error: "Account not found" }, 404);
       return c.json({ handle: updated.handle });
     } catch (err) {
       if (isUniqueViolation(err)) {
