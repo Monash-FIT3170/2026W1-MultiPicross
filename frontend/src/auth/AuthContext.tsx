@@ -6,18 +6,30 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { apiFetch, parseApiError, setLogoutHandler } from "../api/client";
+import {
+  apiFetch,
+  setLogoutHandler,
+  signInRedirect,
+  throwApiError,
+} from "../api/client";
 
 type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 
+interface AuthUser {
+  id: string;
+  handle: string | null;
+  kind: "sso" | "service";
+}
+
 interface AuthState {
   status: AuthStatus;
-  username: string | null;
+  user: AuthUser | null;
 }
 
 interface AuthContextValue extends AuthState {
   login: (username: string, password: string) => Promise<void>;
-  register: (username: string, password: string) => Promise<void>;
+  signIn: (returnTo?: string) => void;
+  setHandle: (handle: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -26,7 +38,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     status: "loading",
-    username: null,
+    user: null,
   });
   const bootstrapped = useRef(false);
 
@@ -34,23 +46,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (bootstrapped.current) return;
     bootstrapped.current = true;
 
-    apiFetch("/auth/refresh", { method: "POST" })
+    apiFetch("/auth/me")
       .then(async (res) => {
         if (res.ok) {
-          const body = (await res.json()) as { username: string };
-          setState({ status: "authenticated", username: body.username });
+          const body = (await res.json()) as AuthUser;
+          setState({ status: "authenticated", user: body });
         } else {
-          setState({ status: "unauthenticated", username: null });
+          setState({ status: "unauthenticated", user: null });
         }
       })
       .catch(() => {
-        setState({ status: "unauthenticated", username: null });
+        setState({ status: "unauthenticated", user: null });
       });
   }, []);
 
   useEffect(() => {
     setLogoutHandler(() => {
-      setState({ status: "unauthenticated", username: null });
+      setState({ status: "unauthenticated", user: null });
     });
   }, []);
 
@@ -60,30 +72,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       body: JSON.stringify({ username, password }),
     });
     if (!res.ok) {
-      throw new Error(await parseApiError(res));
+      await throwApiError(res);
     }
-    const body = (await res.json()) as { username: string };
-    setState({ status: "authenticated", username: body.username });
+    const body = (await res.json()) as AuthUser;
+    setState({ status: "authenticated", user: body });
   }
 
-  async function register(username: string, password: string): Promise<void> {
-    const regRes = await apiFetch("/auth/register", {
+  function signIn(returnTo?: string): void {
+    signInRedirect(returnTo);
+  }
+
+  async function setHandle(handle: string): Promise<void> {
+    const res = await apiFetch("/auth/handle", {
       method: "POST",
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ handle }),
     });
-    if (!regRes.ok) {
-      throw new Error(await parseApiError(regRes));
+    if (!res.ok) {
+      await throwApiError(res);
     }
-    await login(username, password);
+    const body = (await res.json()) as { handle: string };
+    setState((prev) =>
+      prev.user
+        ? { ...prev, user: { ...prev.user, handle: body.handle } }
+        : prev,
+    );
   }
 
   async function logout(): Promise<void> {
     await apiFetch("/auth/logout", { method: "POST" });
-    setState({ status: "unauthenticated", username: null });
+    setState({ status: "unauthenticated", user: null });
   }
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ ...state, login, signIn, setHandle, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

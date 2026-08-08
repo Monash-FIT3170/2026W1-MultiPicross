@@ -63,9 +63,14 @@ if (!ready) {
 
     const res = await postLogin(username, PASSWORD);
     assert.equal(res.status, 200);
-    const body = (await res.json()) as { id: string; handle: string | null };
+    const body = (await res.json()) as {
+      id: string;
+      handle: string | null;
+      kind: string;
+    };
     assert.equal(body.id, account.id);
     assert.equal(body.handle, null);
+    assert.equal(body.kind, "service");
   });
 
   test("an sso account is rejected with the generic 401 even if a password hash is present", async () => {

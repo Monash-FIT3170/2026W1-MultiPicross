@@ -29,6 +29,15 @@ jobs:
       - name: Run ESLint
         run: npx eslint .
 
+      # The root config ignores frontend/, which has its own config and React plugins.
+      - name: Install frontend dependencies
+        run: npm install
+        working-directory: frontend
+
+      - name: Run ESLint (frontend)
+        run: npm run lint
+        working-directory: frontend
+
   build:
     name: Build (${{ matrix.service }})
     runs-on: ubuntu-latest

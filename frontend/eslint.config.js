@@ -19,5 +19,10 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      // Only affects hot-reload granularity, and it rejects the standard
+      // "provider plus its hook in one file" pattern.
+      "react-refresh/only-export-components": "off",
+    },
   },
 ]);

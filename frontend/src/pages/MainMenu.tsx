@@ -11,7 +11,7 @@ import settingsIcon from "../assets/settings.svg";
 
 export default function MainMenu() {
   const navigate = useNavigate();
-  const { status, username, logout } = useAuth();
+  const { status, user, logout } = useAuth();
 
   const isAuth = status === "authenticated";
 
@@ -94,26 +94,17 @@ export default function MainMenu() {
         >
           {isAuth ? (
             <UserDropdown
-              username={username ?? ""}
+              handle={user?.handle ?? null}
               onSignOut={() => void logout()}
             />
           ) : (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/login")}
-              >
-                Sign in
-              </Button>
-              <Button
-                variant="dark"
-                size="sm"
-                onClick={() => navigate("/register")}
-              >
-                Sign up
-              </Button>
-            </>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/login")}
+            >
+              Sign in
+            </Button>
           )}
         </div>
       </div>
@@ -155,7 +146,7 @@ export default function MainMenu() {
           Nonograms, now social.
         </p>
 
-        {/* Tile grid — 2 primary + 4 secondary */}
+        {/* Tile grid, 2 primary + 4 secondary */}
         <div
           ref={gridRef}
           style={{
@@ -165,7 +156,7 @@ export default function MainMenu() {
             justifyContent: "center",
           }}
         >
-          {/* Left column — primary tiles */}
+          {/* Left column, primary tiles */}
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div className="tile-enter" style={{ alignSelf: "flex-start" }}>
               <button
@@ -213,7 +204,7 @@ export default function MainMenu() {
             </div>
           </div>
 
-          {/* Right column — secondary tiles */}
+          {/* Right column, secondary tiles */}
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <SecondaryTile
               disabled={!isAuth}
@@ -270,7 +261,7 @@ export default function MainMenu() {
           }}
         >
           {isAuth
-            ? `Welcome back, ${username ?? ""}.`
+            ? `Welcome back, ${user?.handle ?? "service account"}.`
             : "Playing as a guest. Sign in to save progress."}
         </p>
       </div>

@@ -94,6 +94,7 @@ const meSchema: OpenAPIV3.SchemaObject = {
   properties: {
     id: { type: "string" },
     handle: { type: "string", nullable: true },
+    kind: { type: "string", enum: ["sso", "service"] },
   },
 };
 const meContent = { "application/json": { schema: meSchema } };
@@ -461,7 +462,11 @@ auth.post(
 
     await clearLoginFailures(username);
     await issueSession(c, account.id);
-    return c.json({ id: account.id, handle: account.handle });
+    return c.json({
+      id: account.id,
+      handle: account.handle,
+      kind: account.kind,
+    });
   },
 );
 
@@ -518,7 +523,11 @@ auth.post(
     }
 
     await issueSession(c, account.id);
-    return c.json({ id: account.id, handle: account.handle });
+    return c.json({
+      id: account.id,
+      handle: account.handle,
+      kind: account.kind,
+    });
   },
 );
 
@@ -575,10 +584,14 @@ auth.get(
     const { sub: accountId } = c.get("jwtPayload") as { sub: string };
     const account = await db.query.accounts.findFirst({
       where: eq(accounts.id, accountId),
-      columns: { id: true, handle: true },
+      columns: { id: true, handle: true, kind: true },
     });
     if (!account) return c.json({ error: "Account not found" }, 404);
-    return c.json({ id: account.id, handle: account.handle });
+    return c.json({
+      id: account.id,
+      handle: account.handle,
+      kind: account.kind,
+    });
   },
 );
 

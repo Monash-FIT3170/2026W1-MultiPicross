@@ -448,11 +448,14 @@ export function StatTile({ icon, label, children }: StatTileProps) {
 // ──── UserDropdown ────────────────────────────────────────────────────────────
 
 interface UserDropdownProps {
-  username: string;
+  handle: string | null;
   onSignOut: () => void;
 }
 
-export function UserDropdown({ username, onSignOut }: UserDropdownProps) {
+// Only a service account (admin) can reach the menu with a null handle,
+// since sso accounts are routed to /welcome to choose one first.
+export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
+  const displayName = handle ?? "Service account";
   const [open, setOpen] = useState(false);
   const [panelMounted, setPanelMounted] = useState(false);
   const [panelClosing, setPanelClosing] = useState(false);
@@ -477,11 +480,13 @@ export function UserDropdown({ username, onSignOut }: UserDropdownProps) {
   function closeDropdown() {
     setOpen(false);
     setPanelClosing(true);
-    // panelMounted stays true — the panel plays its close animation,
+    // panelMounted stays true so the panel plays its close animation,
     // then onAnimationEnd unmounts it exactly when the animation finishes
   }
 
-  closeRef.current = closeDropdown;
+  useEffect(() => {
+    closeRef.current = closeDropdown;
+  });
 
   useEffect(() => {
     function handleOutside(e: MouseEvent) {
@@ -503,7 +508,7 @@ export function UserDropdown({ username, onSignOut }: UserDropdownProps) {
 
   return (
     <div ref={containerRef} style={{ position: "relative", zIndex: 100 }}>
-      {/* Trigger — always in-flow, stable height, gets CSS breathe animation on open */}
+      {/* Trigger: always in-flow, stable height, gets CSS breathe animation on open */}
       <button
         ref={triggerRef}
         onClick={handleToggle}
@@ -544,7 +549,7 @@ export function UserDropdown({ username, onSignOut }: UserDropdownProps) {
             fontFamily: "var(--font-ui)",
           }}
         >
-          {username.slice(0, 2).toUpperCase()}
+          {displayName.slice(0, 2).toUpperCase()}
         </div>
         <span
           style={{
@@ -558,7 +563,7 @@ export function UserDropdown({ username, onSignOut }: UserDropdownProps) {
             textAlign: "left",
           }}
         >
-          {username}
+          {displayName}
         </span>
         <svg
           width="12"
@@ -580,7 +585,7 @@ export function UserDropdown({ username, onSignOut }: UserDropdownProps) {
         </svg>
       </button>
 
-      {/* Panel — mounts on open, stays mounted during close animation, unmounts via animationend */}
+      {/* Panel: mounts on open, stays mounted during close animation, unmounts via animationend */}
       {panelMounted && (
         <div
           onAnimationEnd={() => {
