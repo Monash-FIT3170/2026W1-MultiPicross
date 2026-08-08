@@ -67,14 +67,21 @@ mkdir -p /opt/multipicross
 cd /opt/multipicross
 
 cat >host.env <<EOF
-DOMAIN=${domain_name}
-ACME_EMAIL=${acme_email}
-ACME_CASERVER=${acme_caserver}
-AR_HOST=${ar_host}
-PROJECT_ID=${project_id}
-REGION=${region}
-ZONE=${zone}
-PGDATA_DISK=${pgdata_disk}
+DOMAIN="${domain_name}"
+ACME_EMAIL="${acme_email}"
+ACME_CASERVER="${acme_caserver}"
+AR_HOST="${ar_host}"
+PROJECT_ID="${project_id}"
+REGION="${region}"
+ZONE="${zone}"
+PGDATA_DISK="${pgdata_disk}"
+OIDC_ISSUER="${oidc_issuer}"
+OIDC_PROVIDER_ID="${oidc_provider_id}"
+OIDC_CLIENT_ID="${oidc_client_id}"
+OIDC_ANCHOR_CLAIM="${oidc_anchor_claim}"
+# quoted because deploy.sh sources this file, and scopes are space separated
+OIDC_SCOPES="${oidc_scopes}"
+OIDC_CLIENT_AUTH="${oidc_client_auth}"
 EOF
 chmod 644 host.env
 

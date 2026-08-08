@@ -14,6 +14,11 @@ locals {
     # htpasswd credential for the /gs/monitor basicauth middleware.
     # Generate with: htpasswd -nB admin
     "GS_MONITOR_HTPASSWD",
+    "OIDC_CLIENT_SECRET",
+    "OIDC_STATE_SECRET",
+    # Optional, and only take effect together. See the second loop in deploy.sh.
+    "ADMIN_USERNAME",
+    "ADMIN_PASSWORD",
   ]
 }
 
