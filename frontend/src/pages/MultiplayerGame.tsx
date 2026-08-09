@@ -55,6 +55,13 @@ interface GameState {
   mistakeCrossIndices?: number[];
 }
 
+interface PlayerBoard {
+  playerId: string; // matches the Colyseus sessionId for this player
+  name: string;
+  grid: CellValue[];
+  livesLeft: number;
+}
+
 type Phase =
   | { kind: "loading" }
   | {
@@ -151,8 +158,23 @@ export function MultiplayerGame() {
   const [displaySeconds, setDisplaySeconds] = useState(0);
   const [mistakeFlash, setMistakeFlash] = useState(false);
   const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
+
+  const [players, setPlayers] = useState<Record<string, PlayerBoard>>({});
+  const myId = "";
+
   // Stable key for PlayingScreen — increments each time a fresh game starts
   const gameKeyRef = useRef(0);
+
+  const activeWidth = phase.kind === "playing" ? phase.game.width : 0;
+  const activeHeight = phase.kind === "playing" ? phase.game.height : 0;
+
+  useEffect(() => {
+    if (activeWidth === 0 || activeHeight === 0) return;
+    const empty = Array(activeWidth * activeHeight).fill(0) as CellValue[];
+    setPlayers({
+      opp: { playerId: "opp", name: "Opponent", grid: [...empty], livesLeft: 3 },
+    });
+  }, [activeWidth, activeHeight]);
 
   // ── Bootstrap ──────────────────────────────────────────────────────────────
 
@@ -512,6 +534,17 @@ export function MultiplayerGame() {
     }
   }
 
+  // Applies single cell changes in multiplayer
+  function applyUpdate(playerId: string, idx: number, value: CellValue) {
+    setPlayers((prev) => {
+      const p = prev[playerId];
+      if (!p) return prev; // unknown player → ignore safely
+      const grid = [...p.grid];
+      grid[idx] = value;
+      return { ...prev, [playerId]: { ...p, grid } };
+    });
+  }
+
   async function handleAbandon() {
     if (phase.kind !== "playing") return;
     if (!phase.game.isGuest) {
@@ -614,6 +647,8 @@ export function MultiplayerGame() {
         <PlayingScreen
           key={gameKeyRef.current}
           game={phase.game}
+          players={players}
+          myId={myId}
           outcome={phase.outcome}
           displaySeconds={displaySeconds}
           mistakeFlash={mistakeFlash}
@@ -844,6 +879,8 @@ function ActiveChoiceScreen({
 
 function PlayingScreen({
   game,
+  players,
+  myId,
   outcome,
   displaySeconds,
   mistakeFlash,
@@ -856,6 +893,8 @@ function PlayingScreen({
   onMainMenu,
 }: {
   game: GameState;
+  players: Record<string, PlayerBoard>;
+  myId: string;
   outcome: "won" | "failed" | null;
   displaySeconds: number;
   mistakeFlash: boolean;
@@ -875,6 +914,10 @@ function PlayingScreen({
   const filledCells = game.grid.filter((cell) => cell === 1).length;
   const totalCells = game.width * game.height;
   const progress = (filledCells / totalCells) * 100;
+  const boards: PlayerBoard[] = [
+    { playerId: myId, name: "You", grid: game.grid, livesLeft: game.livesLeft },
+    ...Object.values(players).filter((p) => p.playerId !== myId),
+  ];
   return (
     <div
       style={{
@@ -966,21 +1009,89 @@ function PlayingScreen({
           overflow: "hidden",
         }}
       >
-        {/* Grid */}
-        <NonogramGrid
-          rowClues={game.rowClues}
-          colClues={game.colClues}
-          grid={game.grid}
-          width={game.width}
-          height={game.height}
-          interactive={interactive}
-          colors={game.colors}
-          completed={outcome === "won"}
-          mistakeCrossIdx={mistakeCrossIdx}
-          mistakeCrossIndices={game.mistakeCrossIndices ?? []}
-          onFill={onFill}
-          onCross={onCross}
-        />
+        {/* One grid per player. Your own board is interactive; opponents'
+            boards are read-only — we simply omit onFill/onCross for them,
+            which NonogramGrid handles safely via optional chaining. */}
+        {boards.map((p) => {
+          const isMe = p.playerId === myId;
+          return (
+            <div
+              key={p.playerId}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 14,
+              }}
+            >
+              {/* Name plate — your own board is highlighted so the two are
+                  distinguishable at a glance. */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "5px 14px",
+                  borderRadius: 999,
+                  background: isMe
+                    ? "var(--color-ink)"
+                    : "var(--color-line)",
+                  color: isMe ? "var(--color-paper)" : "var(--color-ink-muted)",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                }}
+              >
+                {isMe ? "You" : p.name}
+              </div>
+
+              {/* The opponent solves the SAME puzzle, so an unobscured board
+                  would leak the solution. Blur hides individual cells while
+                  still conveying their overall progress and pace.
+                  pointerEvents:none also guarantees no stray clicks land here. */}
+              <div
+                style={{
+                  filter: isMe ? "none" : "blur(8px)",
+                  opacity: isMe ? 1 : 0.75,
+                  pointerEvents: isMe ? "auto" : "none",
+                  userSelect: isMe ? "auto" : "none",
+                  transition: "filter 200ms ease, opacity 200ms ease",
+                }}
+                aria-hidden={!isMe}
+              >
+                <NonogramGrid
+                  rowClues={game.rowClues}
+                  colClues={game.colClues}
+                  grid={p.grid}
+                  width={game.width}
+                  height={game.height}
+                  interactive={isMe && interactive}
+                  colors={game.colors}
+                  completed={outcome === "won"}
+                  // Mistake highlighting is local to your own board only
+                  mistakeCrossIdx={isMe ? mistakeCrossIdx : null}
+                  mistakeCrossIndices={
+                    isMe ? (game.mistakeCrossIndices ?? []) : []
+                  }
+                  onFill={isMe ? onFill : undefined}
+                  onCross={isMe ? onCross : undefined}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <Icon name="heart" size={12} color="var(--color-ink-faint)" />
+                <LivesPips lives={p.livesLeft} />
+              </div>
+            </div>
+          );
+        })}
 
         {/* Wrapper that spans the full grid height but pads the top by the clue area height,
             so the sidebar card is flex-centered within just the game cells portion */}
@@ -1017,20 +1128,8 @@ function PlayingScreen({
                 {fmtSeconds(displaySeconds)}
               </span>
             </StatTile>
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 8,
-              }}
-            >
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <Icon name="heart" size={13} color="var(--color-ink-faint)" />
-                <span className="mp-eyebrow">Lives</span>
-              </div>
-              <LivesPips lives={game.livesLeft} />
-            </div>
+            {/* Lives are shown under each player's own board instead of here,
+                so it's never ambiguous whose lives are being displayed. */}
             <div style={{ height: 1, background: "var(--color-line)" }} />
             {game.isGuest && (
               <Chip
