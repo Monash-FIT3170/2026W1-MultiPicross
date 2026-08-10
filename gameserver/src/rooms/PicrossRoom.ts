@@ -67,7 +67,7 @@ export class PicrossRoom extends Room {
   private winnerId = "";
   private forfeit = false;
 
-  async onCreate(options: { width?: number; height?: number }) {
+  async onCreate(options: { width?: number; height?: number; isPublic?: boolean }) {
     const width = options.width ?? 10;
     const height = options.height ?? 10;
 
@@ -96,6 +96,10 @@ export class PicrossRoom extends Room {
 
     await this.setMetadata({ inviteCode: code, width: this.width, height: this.height });
 
+    if (!options.isPublic) {
+      await this.setPrivate(true);
+    }
+
     this.onMessage<{ row: number; col: number }>("fill", (client, msg) => {
       this.handleFill(client.sessionId, msg.row, msg.col);
     });
@@ -122,7 +126,7 @@ export class PicrossRoom extends Room {
     this.players.set(client.sessionId, player);
 
     if (this.players.size === 2) {
-      this.state.phase = "playing";
+      this.setPhase("playing");
     }
 
     client.send("state", this.buildSnapshot());
@@ -137,10 +141,17 @@ export class PicrossRoom extends Room {
         }
       });
       this.forfeit = true;
-      this.state.phase = "finished";
+      this.setPhase("finished");
     }
     this.players.delete(client.sessionId);
     this.broadcast("state", this.buildSnapshot());
+  }
+
+  // Centralizes the "finished rooms must not be joinable/listed" invariant
+  // in one place instead of every phase-transition call site.
+  private setPhase(phase: "waiting" | "playing" | "finished") {
+    this.state.phase = phase;
+    if (phase === "finished") this.lock();
   }
 
   private handleFill(sessionId: string, row: number, col: number) {
@@ -171,7 +182,7 @@ export class PicrossRoom extends Room {
         player.done = true;
         player.won = true;
         this.winnerId = sessionId;
-        this.state.phase = "finished";
+        this.setPhase("finished");
       }
     } else {
       player.revealedEmpty[idx] = true;
@@ -179,7 +190,7 @@ export class PicrossRoom extends Room {
       if (player.livesLeft === 0) {
         player.done = true;
         const allDone = [...this.players.values()].every((p) => p.done);
-        if (allDone) this.state.phase = "finished";
+        if (allDone) this.setPhase("finished");
       }
     }
 
@@ -221,11 +232,11 @@ export class PicrossRoom extends Room {
         player.done = true;
         player.won = true;
         this.winnerId = sessionId;
-        this.state.phase = "finished";
+        this.setPhase("finished");
       } else if (player.livesLeft === 0) {
         player.done = true;
         const allDone = [...this.players.values()].every((p) => p.done);
-        if (allDone) this.state.phase = "finished";
+        if (allDone) this.setPhase("finished");
       }
     } else {
       player.crosses[idx] = markCross;

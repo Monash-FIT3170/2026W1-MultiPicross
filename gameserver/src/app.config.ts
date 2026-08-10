@@ -22,9 +22,11 @@ const server = defineServer({
       try {
         const width = parseInt(String(req.query.width ?? "10"), 10) || 10;
         const height = parseInt(String(req.query.height ?? "10"), 10) || 10;
+        const isPublic = req.query.public === "true";
         const room = await matchMaker.createRoom("picross_room", {
           width,
           height,
+          isPublic,
         });
         res.json({ roomId: room.roomId, inviteCode: room.metadata?.inviteCode });
       } catch (err) {
@@ -48,6 +50,29 @@ const server = defineServer({
         res.json({ roomId: found.roomId });
       } catch (err) {
         console.error("room-by-code error", err);
+        res.status(500).json({ error: "Internal error" });
+      }
+    });
+
+    // List public, joinable rooms for the lobby browser.
+    app.get("/public-rooms", async (_req, res) => {
+      try {
+        const rooms = await matchMaker.query({
+          name: "picross_room",
+          private: false,
+          locked: false,
+        });
+        res.json(
+          rooms.map((r) => ({
+            roomId: r.roomId,
+            width: r.metadata?.width,
+            height: r.metadata?.height,
+            clients: r.clients,
+            maxClients: r.maxClients,
+          })),
+        );
+      } catch (err) {
+        console.error("public-rooms error", err);
         res.status(500).json({ error: "Internal error" });
       }
     });
