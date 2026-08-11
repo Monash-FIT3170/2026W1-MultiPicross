@@ -452,10 +452,10 @@ interface UserDropdownProps {
   onSignOut: () => void;
 }
 
-// Only a service account (admin) can reach the menu with a null handle,
-// since sso accounts are routed to /welcome to choose one first.
+// Every account is now routed to /welcome until it has a handle, so this
+// fallback is defensive and should not appear.
 export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
-  const displayName = handle ?? "Service account";
+  const displayName = handle ?? "Account";
   const [open, setOpen] = useState(false);
   const [panelMounted, setPanelMounted] = useState(false);
   const [panelClosing, setPanelClosing] = useState(false);

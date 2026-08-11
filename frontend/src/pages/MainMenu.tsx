@@ -260,9 +260,11 @@ export default function MainMenu() {
             color: "var(--color-ink-faint)",
           }}
         >
-          {isAuth
-            ? `Welcome back, ${user?.handle ?? "Service account"}.`
-            : "Playing as a guest. Sign in to save progress."}
+          {isAuth && user?.handle
+            ? `Welcome back, ${user.handle}.`
+            : isAuth
+              ? "Welcome back."
+              : "Playing as a guest. Sign in to save progress."}
         </p>
       </div>
     </div>

@@ -97,6 +97,7 @@ export function AuthLayout() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
@@ -254,6 +255,16 @@ export function AuthLayout() {
   useFadeIn(buttonTextRef, buttonLabel, { duration: 150, delay: 30 });
   useFadeIn(errorRef, error, { duration: 150 });
 
+  // Returning via browser back restores this component from bfcache with its
+  // state intact, which would otherwise leave the button stuck mid-redirect.
+  useEffect(() => {
+    function onPageShow(e: PageTransitionEvent) {
+      if (e.persisted) setRedirecting(false);
+    }
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)]">
       <div
@@ -272,10 +283,39 @@ export function AuthLayout() {
 
           <button
             type="button"
-            onClick={() => signIn(from)}
-            className="rounded-xl bg-gray-900 py-2 font-semibold text-white transition hover:bg-black"
+            disabled={redirecting}
+            onClick={() => {
+              setRedirecting(true);
+              signIn(from);
+            }}
+            className="flex items-center justify-center gap-2 rounded-xl bg-gray-900 py-2 font-semibold text-white shadow-sm transition duration-150 hover:bg-black hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 active:translate-y-px active:shadow-sm disabled:cursor-wait disabled:opacity-80 disabled:shadow-sm"
           >
-            {SSO_BUTTON_LABEL}
+            {redirecting && (
+              <svg
+                className="animate-spin"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  opacity="0.25"
+                />
+                <path
+                  d="M22 12a10 10 0 0 0-10-10"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
+              </svg>
+            )}
+            {redirecting ? "Redirecting…" : SSO_BUTTON_LABEL}
           </button>
 
           <button
@@ -285,7 +325,7 @@ export function AuthLayout() {
             aria-controls="service-account-form"
             className="mx-auto flex items-center gap-1 text-xs font-medium text-gray-400 transition hover:text-gray-600"
           >
-            Service account sign-in
+            I&apos;m an admin
             <svg
               width="10"
               height="10"

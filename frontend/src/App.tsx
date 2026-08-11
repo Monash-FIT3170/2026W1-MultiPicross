@@ -17,8 +17,7 @@ export default function App() {
   const { status, user } = useAuth();
   const location = useLocation();
 
-  const needsHandle =
-    status === "authenticated" && user?.kind === "sso" && user.handle === null;
+  const needsHandle = status === "authenticated" && user?.handle === null;
 
   // /auth/error is exempt so a failed sign-in attempt (which can happen while
   // still authenticated from a previous session) never gets silently swapped
