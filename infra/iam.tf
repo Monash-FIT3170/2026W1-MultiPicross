@@ -4,12 +4,16 @@ resource "google_service_account" "vm" {
   account_id   = "${var.project_name}-vm"
   display_name = "MultiPicross application host"
   description  = "Attached to the app VM. Reads container images and secrets, nothing else."
+
+  depends_on = [google_project_service.required]
 }
 
 resource "google_service_account" "deploy" {
   account_id   = "${var.project_name}-deploy"
   display_name = "MultiPicross GitHub Actions deploy"
   description  = "Impersonated by GitHub Actions via Workload Identity Federation to push images and trigger a deploy."
+
+  depends_on = [google_project_service.required]
 }
 
 resource "google_artifact_registry_repository_iam_member" "vm_pull" {
@@ -44,6 +48,8 @@ resource "google_project_iam_custom_role" "vm_snapshot" {
     "compute.snapshots.list",
     "compute.zones.get",
   ]
+
+  depends_on = [google_project_service.required]
 }
 
 resource "google_project_iam_member" "vm_snapshot" {
@@ -55,6 +61,8 @@ resource "google_project_iam_member" "vm_snapshot" {
 resource "google_iam_workload_identity_pool" "github" {
   workload_identity_pool_id = "github"
   display_name              = "GitHub Actions"
+
+  depends_on = [google_project_service.required]
 }
 
 resource "google_iam_workload_identity_pool_provider" "github" {

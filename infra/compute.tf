@@ -4,6 +4,8 @@ resource "google_compute_address" "app" {
   address_type = "EXTERNAL"
   # cheaper for AU egress than Premium, must match access_config below
   network_tier = "STANDARD"
+
+  depends_on = [google_project_service.required]
 }
 
 resource "google_compute_disk" "pgdata" {
@@ -17,6 +19,8 @@ resource "google_compute_disk" "pgdata" {
   lifecycle {
     prevent_destroy = true
   }
+
+  depends_on = [google_project_service.required]
 }
 
 resource "google_compute_instance" "app" {
