@@ -311,29 +311,6 @@ export function Room() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--color-paper)", padding: "24px 24px 80px", overflow: "hidden" }}>
-      {/* Animated SVG swirl filter for the opponent board */}
-      <svg style={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }} aria-hidden="true">
-        <defs>
-          <filter id="opponent-swirl" x="-25%" y="-25%" width="150%" height="150%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.04 0.04" numOctaves="3" result="noise">
-              <animate
-                attributeName="baseFrequency"
-                values="0.04 0.04; 0.10 0.06; 0.04 0.08; 0.08 0.04; 0.04 0.04"
-                dur="5s"
-                repeatCount="indefinite"
-              />
-              <animate
-                attributeName="seed"
-                values="0; 8; 16; 8; 0"
-                dur="9s"
-                repeatCount="indefinite"
-              />
-            </feTurbulence>
-            <feDisplacementMap in="SourceGraphic" in2="noise" scale="45" xChannelSelector="R" yChannelSelector="G" result="displaced" />
-            <feGaussianBlur in="displaced" stdDeviation="8" />
-          </filter>
-        </defs>
-      </svg>
       {/* Top bar */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <button
@@ -414,7 +391,8 @@ export function Room() {
             />
             <div
               style={{
-                filter: isFinished ? "none" : "url(#opponent-swirl)",
+                filter: isFinished ? "none" : "blur(8px)",
+                transition: "filter 0.6s ease",
                 overflow: "hidden",
                 borderRadius: 6,
               }}
