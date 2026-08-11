@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { BackButton, Button, Logo } from "../components/ui";
+import { BackButton, Logo } from "../components/ui";
 
 export function GuestNickname() {
   const navigate = useNavigate();
@@ -45,7 +45,7 @@ export function GuestNickname() {
 
         <Logo size={22} />
 
-        {/* Keeps the logo visually centred */}
+        {/* Keeps the logo centred */}
         <div style={{ width: 100 }} />
       </div>
 
@@ -61,55 +61,43 @@ export function GuestNickname() {
       >
         <form
           onSubmit={handleSubmit}
-          className="mp-surface"
-          style={{
-            width: "100%",
-            maxWidth: 380,
-            padding: 32,
-            display: "flex",
-            flexDirection: "column",
-            gap: 16,
-          }}
+          noValidate
+          className="flex w-full max-w-sm flex-col gap-4 rounded-2xl bg-white px-8 py-10 shadow-lg"
         >
-          <div>
-            <h1
-              style={{
-                margin: "0 0 6px",
-                textAlign: "center",
-                fontSize: 26,
-                fontWeight: 700,
-                color: "var(--color-ink)",
-              }}
-            >
-              Choose a nickname
-            </h1>
-
-            <p
-              style={{
-                margin: 0,
-                textAlign: "center",
-                fontSize: 14,
-                color: "var(--color-ink-muted)",
-              }}
-            >
-              This is how other players will see you.
-            </p>
-          </div>
-
           <div
             style={{
               display: "flex",
               flexDirection: "column",
-              gap: 6,
+              alignItems: "center",
+              gap: 4,
             }}
           >
+            <h1
+              className="text-center text-lg font-semibold text-gray-800"
+              style={{
+                margin: 0,
+                letterSpacing: "0",
+                lineHeight: 1.3,
+              }}
+            >
+              Guest
+            </h1>
+
+            <p
+              className="text-center text-sm text-gray-500"
+              style={{
+                margin: 0,
+                lineHeight: 1.5,
+              }}
+            >
+              Choose a nickname to continue.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-1">
             <label
               htmlFor="nickname"
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: "var(--color-ink-soft)",
-              }}
+              className="text-sm font-medium text-gray-700"
             >
               Nickname
             </label>
@@ -125,38 +113,20 @@ export function GuestNickname() {
               maxLength={20}
               autoFocus
               placeholder="Enter nickname"
-              style={{
-                padding: "10px 14px",
-                border: `1px solid ${
-                  error
-                    ? "var(--color-coral-400)"
-                    : "var(--color-line)"
-                }`,
-                borderRadius: 10,
-                fontFamily: "var(--font-ui)",
-                fontSize: 14,
-                color: "var(--color-ink)",
-                background: "#fff",
-                outline: "none",
-              }}
+              className="rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-[var(--color-accent-primary)] focus:ring-2 focus:ring-[var(--color-accent-primary)]/20"
             />
 
             {error && (
-              <p
-                style={{
-                  margin: 0,
-                  fontSize: 12,
-                  color: "var(--color-coral-500)",
-                }}
-              >
-                {error}
-              </p>
+              <p className="text-xs text-red-600">{error}</p>
             )}
           </div>
 
-          <Button type="submit" variant="primary" size="md">
+          <button
+            type="submit"
+            className="rounded-xl bg-gray-900 py-2 font-semibold text-white transition hover:bg-black"
+          >
             Continue
-          </Button>
+          </button>
         </form>
       </div>
     </div>
