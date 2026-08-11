@@ -3,48 +3,58 @@ import {
   defineRoom,
   monitor,
   playground,
-  createRouter,
-  createEndpoint,
+  matchMaker,
 } from "colyseus";
 
-/**
- * Import your Room files
- */
 import { MyRoom } from "./rooms/MyRoom.js";
+import { PicrossRoom } from "./rooms/PicrossRoom.js";
 
 const server = defineServer({
-  /**
-   * Define your room handlers:
-   */
   rooms: {
     my_room: defineRoom(MyRoom),
+    picross_room: defineRoom(PicrossRoom),
   },
 
-  /**
-   * Experimental: Define API routes. Built-in integration with the "playground" and SDK.
-   *
-   * Usage from SDK:
-   *   client.http.get("/api/hello").then((response) => {})
-   *
-   */
-  routes: createRouter({
-    api_hello: createEndpoint("/api/hello", { method: "GET" }, async (ctx) => {
-      return { message: "Hello World" };
-    }),
-  }),
-
-  /**
-   * Bind your custom express routes here:
-   * Read more: https://expressjs.com/en/starter/basic-routing.html
-   */
   express: (app) => {
-    app.get("/hi", (req, res) => {
-      res.send("It's time to kick ass and chew bubblegum!");
+    // Create a new Picross room server-side; returns roomId + inviteCode.
+    // The client then joins via joinById so we avoid double-connection.
+    app.post("/create-room", async (req, res) => {
+      try {
+        const width = parseInt(String(req.query.width ?? "10"), 10) || 10;
+        const height = parseInt(String(req.query.height ?? "10"), 10) || 10;
+        const room = await matchMaker.createRoom("picross_room", {
+          width,
+          height,
+        });
+        res.json({ roomId: room.roomId, inviteCode: room.metadata?.inviteCode });
+      } catch (err) {
+        console.error("create-room error", err);
+        res.status(500).json({ error: "Failed to create room" });
+      }
     });
 
-    // monitor has no auth of its own, keep both dev-only
+    // Look up a room by its invite code.
+    app.get("/room-by-code/:code", async (req, res) => {
+      try {
+        const { code } = req.params;
+        const rooms = await matchMaker.query({ name: "picross_room" });
+        const found = rooms.find(
+          (r) => r.metadata?.inviteCode === code.toUpperCase(),
+        );
+        if (!found) {
+          res.status(404).json({ error: "Room not found" });
+          return;
+        }
+        res.json({ roomId: found.roomId });
+      } catch (err) {
+        console.error("room-by-code error", err);
+        res.status(500).json({ error: "Internal error" });
+      }
+    });
+
+    app.use("/monitor", monitor());
+
     if (process.env.NODE_ENV !== "production") {
-      app.use("/monitor", monitor());
       app.use("/", playground());
     }
   },
