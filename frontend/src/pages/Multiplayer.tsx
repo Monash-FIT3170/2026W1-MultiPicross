@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo, Icon, BackButton, Chip, Button } from "../components/ui";
+import { useAuth } from "../auth/AuthContext";
 
 const SIZES = ["5 × 5", "10 × 10", "15 × 15", "20 × 20"] as const;
 
 export function Multiplayer() {
   const navigate = useNavigate();
+  const { playerName } = useAuth();
+
   const [createSize, setCreateSize] = useState<string>("10 × 10");
   const [inviteCode, setInviteCode] = useState("");
 
@@ -51,6 +54,24 @@ export function Multiplayer() {
         >
           1v1 head-to-head. First to fill every cell wins.
         </p>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 24,
+            fontSize: 13,
+            color: "var(--color-ink-muted)",
+          }}
+        >
+          <Icon name="user" size={14} color="var(--color-ink-faint)" />
+          <span>
+            Playing as{" "}
+            <strong style={{ color: "var(--color-ink)" }}>
+              {playerName}
+            </strong>
+          </span>
+        </div>
 
         {/* Quick actions */}
         <div
