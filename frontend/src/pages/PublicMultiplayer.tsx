@@ -1,13 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Logo, Icon, BackButton, Chip, Button } from "../components/ui";
-
-const SIZES = ["5 × 5", "10 × 10", "15 × 15", "20 × 20"] as const;
+import { Logo, Icon, BackButton } from "../components/ui";
 
 export function PublicMultiplayer() {
   const navigate = useNavigate();
-  const [createSize, setCreateSize] = useState<string>("10 × 10");
-  const [inviteCode, setInviteCode] = useState("");
 
   return (
     <div
@@ -99,33 +95,6 @@ export function PublicMultiplayer() {
           
       </div>
       </div>
-    </div>
-  );
-}
-
-function IconBadge({
-  color,
-  iconColor,
-  icon,
-}: {
-  color: string;
-  iconColor: string;
-  icon: import("../components/ui").IconName;
-}) {
-  return (
-    <div
-      style={{
-        width: 36,
-        height: 36,
-        borderRadius: 10,
-        background: color,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-      }}
-    >
-      <Icon name={icon} size={18} color={iconColor} />
     </div>
   );
 }

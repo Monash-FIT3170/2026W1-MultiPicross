@@ -488,19 +488,16 @@ export function PicrossRanked() {
                 marginTop: 28,
                 }}
             >
+            
                 <Button
                 variant="ghost"
                 onClick= {startSearching}
+                style={{
+                    fontSize: 16,
+                    fontWeight: 620,
+                } } 
                 >
-                    Keep Searching 
-                </Button>
-
-                
-                <Button
-                variant="ghost"
-                onClick= {cancelSearching}
-                >
-                    Stop Searching
+                    Keep Searching
                 </Button>
                 
              {/*    <Button onClick={simulateMatchFound}>

@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { Logo, Icon, Button, UserDropdown, Chip } from "../components/ui";
+import { Logo, Icon, Button, UserDropdown} from "../components/ui";
 import { animate, stagger } from "animejs";
 import singleplayerIcon from "../assets/singleplayer.svg";
 import multiIcon from "../assets/multiplayer.svg";
@@ -562,32 +562,5 @@ function DropdownItem({
     >
       {label}
     </button>
-  );
-}
-
-function IconBadge({
-  color,
-  iconColor,
-  icon,
-}: {
-  color: string;
-  iconColor: string;
-  icon: import("../components/ui").IconName;
-}) {
-  return (
-    <div
-      style={{
-        width: 36,
-        height: 36,
-        borderRadius: 10,
-        background: color,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-      }}
-    >
-      <Icon name={icon} size={18} color={iconColor} />
-    </div>
   );
 }

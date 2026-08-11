@@ -30,4 +30,4 @@ export default function App() {
        <Route path="/picrossranked" element={<PicrossRanked />} />
     </Routes>
   );
-t}
+}
