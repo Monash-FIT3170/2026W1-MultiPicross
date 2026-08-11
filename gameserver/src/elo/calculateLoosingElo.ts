@@ -1,4 +1,4 @@
-export type WinningEloInput = {
+export type LoosingEloInput = {
   loosingElo: number;
   opponentElo: number;
   loosingMistakes: number;
