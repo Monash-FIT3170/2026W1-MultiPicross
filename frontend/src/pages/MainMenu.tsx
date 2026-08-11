@@ -11,7 +11,13 @@ import settingsIcon from "../assets/settings.svg";
 
 export default function MainMenu() {
   const navigate = useNavigate();
-  const { status, username, logout } = useAuth();
+  const {
+    status,
+    username,
+    guestNickname,
+    playerName,
+    logout,
+  } = useAuth();
 
   const isAuth = status === "authenticated";
 
@@ -267,8 +273,10 @@ export default function MainMenu() {
           }}
         >
           {isAuth
-            ? `Welcome back, ${username ?? ""}.`
-            : "Playing as a guest. Sign in to save progress."}
+            ? `Welcome back, ${playerName ?? ""}.`
+            : guestNickname
+              ? `Playing as ${guestNickname}. Sign in to save progress.`
+              : "Playing as a guest. Sign in to save progress."}
         </p>
       </div>
     </div>
