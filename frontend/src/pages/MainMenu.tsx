@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-import { Logo, Icon, Button, UserDropdown} from "../components/ui";
+import { Logo, Icon, Button, UserDropdown } from "../components/ui";
 import { animate, stagger } from "animejs";
 import singleplayerIcon from "../assets/singleplayer.svg";
 import multiIcon from "../assets/multiplayer.svg";
@@ -32,7 +32,6 @@ export default function MainMenu() {
 
     const headEls = [wordmark, tagline].filter(Boolean) as HTMLElement[];
     const allEls = [...headEls, ...tiles, ...(footer ? [footer] : [])];
-    
 
     allEls.forEach((el) => {
       el.style.opacity = "0";
@@ -162,56 +161,56 @@ export default function MainMenu() {
 
         {/* ELO ranking banner */}
         <div
-            className="elo-banner"
+          className="elo-banner"
+          style={{
+            padding: 28,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            width: 640,
+            height: 220,
+            background: "linear-gradient(135deg, #EAF3FF 0%, #F7FBFF 100%)",
+            border: "1px solid #D6E6FF",
+            borderRadius: 20,
+          }}
+        >
+          {/* Left Side */}
+          <div
             style={{
-              padding: 28,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              width: 640,
-              height: 220,
-              background: "linear-gradient(135deg, #EAF3FF 0%, #F7FBFF 100%)",
-              border: "1px solid #D6E6FF",
-              borderRadius: 20,
-            }}
-          >
-            {/* Left Side */}
-            <div
-              style={{
               display: "flex",
               flexDirection: "column",
               justifyContent: "center",
               gap: 10,
               flex: 1,
               paddingRight: 40,
-  }}
+            }}
+          >
+            <div
+              style={{
+                fontSize: 36,
+                fontWeight: 700,
+                color: "var(--color-ink)",
+              }}
             >
-              <div
-                style={{
-                  fontSize: 36,
-                  fontWeight: 700,
-                  color: "var(--color-ink)",
-                }}
-              >
-                Picross Ranked 
-              </div>
+              Picross Ranked
+            </div>
 
-              <p
+            <p
               style={{
                 margin: 0,
                 fontSize: 20,
                 color: "var(--color-ink-muted)",
               }}
-              >
+            >
               Complete. Climb. Conquer.
-              </p>
+            </p>
 
-              <div
+            <div
               style={{
                 marginTop: 20,
                 color: "var(--color-ink-muted)",
               }}
-              >
+            >
               {isAuth && (
                 <>
                   <div
@@ -220,7 +219,7 @@ export default function MainMenu() {
                       color: "var(--color-ink-muted)",
                     }}
                   >
-                    Current Rating 
+                    Current Rating
                   </div>
 
                   <div
@@ -236,42 +235,44 @@ export default function MainMenu() {
                   </div>
                 </>
               )}
-              </div>
-            </div>
-
-
-
-            {/* Right Side */}
-            <div
-              style={{
-                width: 180,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: 16,
-              }}
-            >
-              <img
-                src={trophyIcon}
-                alt=""
-                style={{ width: 120, height: 120, opacity: 0.85 }}
-              />
-              <Button 
-                variant="primary"
-                size="md" 
-                onClick={isAuth ? () => navigate("/picrossranked") : () => navigate("/login")}
-                style={{
-                  width: 200,
-                  fontSize: 18,
-                  fontWeight: 700,      
-                }}
-                >
-                {isAuth ? "Play Now" : "Sign In To Play"}
-              </Button>
             </div>
           </div>
-        
+
+          {/* Right Side */}
+          <div
+            style={{
+              width: 180,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: 16,
+            }}
+          >
+            <img
+              src={trophyIcon}
+              alt=""
+              style={{ width: 120, height: 120, opacity: 0.85 }}
+            />
+            <Button
+              variant="primary"
+              size="md"
+              onClick={
+                isAuth
+                  ? () => navigate("/picrossranked")
+                  : () => navigate("/login")
+              }
+              style={{
+                width: 200,
+                fontSize: 18,
+                fontWeight: 700,
+              }}
+            >
+              {isAuth ? "Play Now" : "Sign In To Play"}
+            </Button>
+          </div>
+        </div>
+
         {/* Main content */}
         <div
           ref={gridRef}
@@ -393,7 +394,6 @@ export default function MainMenu() {
                 </div>
               )}
             </div>
-
           </div>
 
           {/* Other features */}
@@ -412,7 +412,7 @@ export default function MainMenu() {
               onClick={isAuth ? () => navigate("/collection") : undefined}
               badge={!isAuth ? <SignInHint /> : undefined}
             />
-            
+
             {/* Statistics */}
             <SecondaryTile
               disabled={!isAuth}
@@ -453,26 +453,24 @@ export default function MainMenu() {
               label="Settings"
               onClick={() => navigate("/settings")}
             />
-
-        
           </div>
         </div>
-</div>
-
-        {/* Footer hint */}
-        <p
-          ref={footerRef}
-          style={{
-            marginTop: 36,
-            fontSize: 12,
-            color: "var(--color-ink-faint)",
-          }}
-        >
-          {isAuth
-            ? `Welcome back, ${username ?? ""}.`
-            : "Playing as a guest. Sign in to save progress."}
-        </p>
       </div>
+
+      {/* Footer hint */}
+      <p
+        ref={footerRef}
+        style={{
+          marginTop: 36,
+          fontSize: 12,
+          color: "var(--color-ink-faint)",
+        }}
+      >
+        {isAuth
+          ? `Welcome back, ${username ?? ""}.`
+          : "Playing as a guest. Sign in to save progress."}
+      </p>
+    </div>
   );
 }
 

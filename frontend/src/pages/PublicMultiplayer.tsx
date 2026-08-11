@@ -48,7 +48,7 @@ export function PublicMultiplayer() {
         >
           1v1 head-to-head with your friends. First to fill every cell wins.
         </p>
-        
+
         {/* Public games */}
         <div
           style={{
@@ -91,8 +91,7 @@ export function PublicMultiplayer() {
           <div style={{ fontSize: 14, fontWeight: 600 }}>
             No open games right now.
           </div>
-          
-      </div>
+        </div>
       </div>
     </div>
   );

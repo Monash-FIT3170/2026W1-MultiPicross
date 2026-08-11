@@ -11,7 +11,6 @@ import { AuthLayout } from "./pages/AuthLayout";
 import { GuestOnly } from "./auth/GuestOnly";
 import { PicrossRanked } from "./pages/PicrossRanked";
 
-
 export default function App() {
   return (
     <Routes>
@@ -27,7 +26,7 @@ export default function App() {
         <Route path="/register" element={<AuthLayout />} />
         <Route path="/signup" element={<Navigate to="/register" replace />} />
       </Route>
-       <Route path="/picrossranked" element={<PicrossRanked />} />
+      <Route path="/picrossranked" element={<PicrossRanked />} />
     </Routes>
   );
 }

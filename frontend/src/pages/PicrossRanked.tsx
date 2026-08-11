@@ -7,32 +7,34 @@ import shieldIcon from "../assets/shield.svg";
 //import { start } from "repl";
 
 export function PicrossRanked() {
-    const navigate = useNavigate();
-    const [searching, setSearching] = useState(false);
-    const [timedOut, setTimedOut] = useState(false);
-    const timeoutRef = useRef<number | null>(null);
+  const navigate = useNavigate();
+  const [searching, setSearching] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+  const timeoutRef = useRef<number | null>(null);
 
-    {/* Finding a match */}
-    const startSearching = () => {
-        setSearching(true);
-        setTimedOut(false);
+  {
+    /* Finding a match */
+  }
+  const startSearching = () => {
+    setSearching(true);
+    setTimedOut(false);
 
-        timeoutRef.current = window.setTimeout(() => {
-            setSearching(false);
-            setTimedOut(true);
-        }, 5000);
-    };
+    timeoutRef.current = window.setTimeout(() => {
+      setSearching(false);
+      setTimedOut(true);
+    }, 5000);
+  };
 
-    const cancelSearching = () => {
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-        }
+  const cancelSearching = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
 
-        setSearching(false);
-        setTimedOut(false);
-    };
+    setSearching(false);
+    setTimedOut(false);
+  };
 
-    return (
+  return (
     <div
       style={{
         minHeight: "100vh",
@@ -44,28 +46,25 @@ export function PicrossRanked() {
       <div
         style={{
           display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: 28,
-            position: "relative",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 28,
+          position: "relative",
         }}
       >
         <div
-        style={{
+          style={{
             position: "relative",
-        }}
-        > 
-        <BackButton
-            onClick={() => navigate("/")}
-            label="Main Menu"
-        />
+          }}
+        >
+          <BackButton onClick={() => navigate("/")} label="Main Menu" />
         </div>
 
         <Logo size={34} />
 
         <div style={{ width: 100 }} />
       </div>
-    
+
       {/* Body */}
       <div style={{ maxWidth: 960, margin: "0 auto" }}>
         <h1
@@ -89,7 +88,7 @@ export function PicrossRanked() {
         >
           Complete. Climb. Conquer.
         </p>
-        
+
         <div
           style={{
             display: "grid",
@@ -98,8 +97,8 @@ export function PicrossRanked() {
             marginBottom: 40,
           }}
         >
-            {/* Your Stats - Left column  */}
-            <div
+          {/* Your Stats - Left column  */}
+          <div
             className="mp-surface"
             style={{
               padding: 20,
@@ -110,7 +109,7 @@ export function PicrossRanked() {
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div
+              <div
                 style={{
                   fontSize: 18,
                   fontWeight: 700,
@@ -119,148 +118,144 @@ export function PicrossRanked() {
               >
                 Your Statistics
               </div>
-
             </div>
 
             {/* Rating */}
             <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                paddingTop: 6,
+              }}
+            >
+              <img
+                src={statsIcon}
+                alt=""
+                style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
+              />
+
+              <div
                 style={{
+                  padding: 20,
                   display: "flex",
-                    alignItems: "center",
-                    paddingTop: 6,
+                  flexDirection: "column",
                 }}
+              >
+                <p
+                  style={{
+                    marginLeft: 4,
+                  }}
                 >
-                    <img
-                    src={statsIcon}
-                    alt=""
-                    style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
-                    />
+                  Rating
+                </p>
 
-                    
-                    <div
-                    style={{
-                    padding: 20,
-                    display: "flex",
-                    flexDirection: "column",
-                    }}
-                    >
-                        <p
-                            style={{
-                                marginLeft: 4,
-                            }}
-                        >
-                             Rating
-                        </p>
-
-                        <p
-                            style={{
-                            marginTop: 4,
-                            fontSize: 40,
-                            fontWeight: 700,
-                            }}
-                        >
-                            1200
-                        </p>
-                </div>               
+                <p
+                  style={{
+                    marginTop: 4,
+                    fontSize: 40,
+                    fontWeight: 700,
+                  }}
+                >
+                  1200
+                </p>
+              </div>
             </div>
-                 
+
             {/* Wins */}
             <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                paddingTop: 6,
+              }}
+            >
+              <img
+                src={trohpyIcon}
+                alt=""
+                style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
+              />
+
+              <div
                 style={{
+                  padding: 20,
                   display: "flex",
-                    alignItems: "center",
-                    paddingTop: 6,
+                  flexDirection: "column",
                 }}
+              >
+                <p
+                  style={{
+                    marginLeft: 4,
+                  }}
                 >
-                    <img
-                    src={trohpyIcon}
-                    alt=""
-                    style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
-                    />
+                  Wins
+                </p>
 
-                    
-                    <div
-                    style={{
-                    padding: 20,
-                    display: "flex",
-                    flexDirection: "column",
-                    }}
-                    >
-                        <p
-                            style={{
-                                marginLeft: 4,
-                            }}
-                        >
-                             Wins
-                        </p>
-
-                        <p
-                            style={{
-                            marginTop: 4,
-                            fontSize: 40,
-                            fontWeight: 700,
-                            }}
-                        >
-                            54
-                        </p>
-                </div>               
+                <p
+                  style={{
+                    marginTop: 4,
+                    fontSize: 40,
+                    fontWeight: 700,
+                  }}
+                >
+                  54
+                </p>
+              </div>
             </div>
-            
+
             {/* Losses */}
             <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                paddingTop: 6,
+              }}
+            >
+              <img
+                src={shieldIcon}
+                alt=""
+                style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
+              />
+
+              <div
                 style={{
+                  padding: 20,
                   display: "flex",
-                    alignItems: "center",
-                    paddingTop: 6,
+                  flexDirection: "column",
                 }}
+              >
+                <p
+                  style={{
+                    marginLeft: 4,
+                  }}
                 >
-                    <img
-                    src={shieldIcon}
-                    alt=""
-                    style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
-                    />
+                  Losses
+                </p>
 
-                    <div
-                    style={{
-                    padding: 20,
-                    display: "flex",
-                    flexDirection: "column",
-                    }}
-                    >
-                        <p
-                            style={{
-                                marginLeft: 4,
-                            }}
-                        >
-                             Losses
-                        </p>
-
-                        <p
-                            style={{
-                            marginTop: 4,
-                            fontSize: 40,
-                            fontWeight: 700,
-                            }}
-                        >
-                            54
-                        </p>
-                </div>             
+                <p
+                  style={{
+                    marginTop: 4,
+                    fontSize: 40,
+                    fontWeight: 700,
+                  }}
+                >
+                  54
+                </p>
+              </div>
             </div>
-        </div>
-           
-            {/* Leaderboard - Right column */}
-            <div
+          </div>
+
+          {/* Leaderboard - Right column */}
+          <div
             className="mp-surface"
             style={{
               padding: 20,
               display: "flex",
               flexDirection: "column",
             }}
-            >
-            
+          >
             {/* Leaderboard Heading */}
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div
+              <div
                 style={{
                   fontSize: 18,
                   fontWeight: 700,
@@ -269,57 +264,56 @@ export function PicrossRanked() {
               >
                 Leaderboard
               </div>
-
             </div>
 
             {/* Not Implemented Leaderboard */}
             <div
-                style={{
-                  display: "flex",
-                    alignItems: "center",
-                    paddingTop: 6,
-                }}
-                >
-                    <div
-                    style={{
-                    marginTop: 100,
-                    marginLeft: 210,
-                    alignItems: "center",
-                    flexDirection: "column",
-                    fontWeight: 700,
-                    fontSize: 20,
-                    color: "var(--color-ink-muted)",
-                    }}
-                    >
-                       Not Implemented
-                    </div>    
-            </div>
-
-            </div>  
-    </div>
-
-    {/* Play Game Button */}
-        <div
-            style={{
+              style={{
                 display: "flex",
-                justifyContent: "center",
-            }}
-        >   <Button
+                alignItems: "center",
+                paddingTop: 6,
+              }}
+            >
+              <div
+                style={{
+                  marginTop: 100,
+                  marginLeft: 210,
+                  alignItems: "center",
+                  flexDirection: "column",
+                  fontWeight: 700,
+                  fontSize: 20,
+                  color: "var(--color-ink-muted)",
+                }}
+              >
+                Not Implemented
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Play Game Button */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+          }}
+        >
+          {" "}
+          <Button
             variant="primary"
             size="md"
             onClick={startSearching}
-            style={{ 
-                width: "100%",
-                fontSize: 19,
-                fontWeight: 700,
-               }}
-            >
-              Play Game
-            </Button>
+            style={{
+              width: "100%",
+              fontSize: 19,
+              fontWeight: 700,
+            }}
+          >
+            Play Game
+          </Button>
         </div>
 
-        
-       {/* Searching Modal */}
+        {/* Searching Modal */}
         {searching && (
           <div
             style={{
@@ -343,66 +337,63 @@ export function PicrossRanked() {
                 textAlign: "center",
               }}
             >
-                {/* Cancel button */}
-                <div
-                    onClick={cancelSearching}
-                    style={{
-                        position: "absolute",
-                        top: 16,
-                        right: 16,
-                        width: 32,
-                        height: 32,
-                        border: "none",
-                        borderRadius: 8,
-                        background: "#F3F4F6",
-                        color: "#000",
-                        fontSize: 20,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        transition: "background 0.15s ease",
-                    }}      
-                >
-                    <IconBadge
-                                  iconColor="#000"
-                                  icon="x" color={""}                    />
-                </div>
+              {/* Cancel button */}
+              <div
+                onClick={cancelSearching}
+                style={{
+                  position: "absolute",
+                  top: 16,
+                  right: 16,
+                  width: 32,
+                  height: 32,
+                  border: "none",
+                  borderRadius: 8,
+                  background: "#F3F4F6",
+                  color: "#000",
+                  fontSize: 20,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "background 0.15s ease",
+                }}
+              >
+                <IconBadge iconColor="#000" icon="x" color={""} />
+              </div>
 
+              {/* Loading spinner */}
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  border: "4px solid var(--color-blue-100)",
+                  borderTop: "4px solid var(--color-blue-500)",
+                  borderRadius: "50%",
+                  margin: "0 auto 10px",
+                  animation: "spin 1s linear infinite",
+                }}
+              />
 
-                {/* Loading spinner */}
-                <div
-                    style={{
-                    width: 40,
-                    height: 40,
-                    border: "4px solid var(--color-blue-100)",
-                    borderTop: "4px solid var(--color-blue-500)",
-                    borderRadius: "50%",
-                    margin: "0 auto 10px",
-                    animation: "spin 1s linear infinite",
-                    }}
-                />
+              {/* Loading spinner */}
+              <div
+                style={{
+                  fontSize: 20,
+                  fontWeight: 700,
+                  color: "var(--color-ink)",
+                }}
+              >
+                Please wait...
+              </div>
 
-                {/* Loading spinner */}
-                <div
-                    style={{
-                    fontSize: 20,
-                    fontWeight: 700,
-                    color: "var(--color-ink)",
-                    }}
-                >
-                    Please wait...
-                </div>
-                
-                {/* Finding matches */}
-                <div
-                    style={{
-                    marginTop: 8,
-                    fontSize: 15,
-                    color: "var(--color-ink-muted)",
-                    }}
-                >
+              {/* Finding matches */}
+              <div
+                style={{
+                  marginTop: 8,
+                  fontSize: 15,
+                  color: "var(--color-ink-muted)",
+                }}
+              >
                 Finding matches
               </div>
             </div>
@@ -411,19 +402,19 @@ export function PicrossRanked() {
 
         {/* No Match Modal */}
         {timedOut && (
-        <div
+          <div
             style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.25)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
+              position: "fixed",
+              inset: 0,
+              background: "rgba(0,0,0,0.25)",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
             }}
-        >
+          >
             <div
-            style={{
-                position:"relative",
+              style={{
+                position: "relative",
                 width: 420,
                 height: 200,
                 padding: 32,
@@ -431,84 +422,77 @@ export function PicrossRanked() {
                 borderRadius: 20,
                 textAlign: "center",
                 boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
-            }}
+              }}
             >
-            
-            {/* Cancel button */}
-                <div
-                    onClick={cancelSearching}
-                    style={{
-                        position: "absolute",
-                        top: 16,
-                        right: 16,
-                        width: 32,
-                        height: 32,
-                        border: "none",
-                        borderRadius: 8,
-                        background: "#F3F4F6",
-                        color: "#000",
-                        fontSize: 20,
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        transition: "background 0.15s ease",
-                    }}      
-                >
-                    <IconBadge
-                                  iconColor="#000"
-                                  icon="x" color={""}                    />
-                </div>
-
-
-            <h2
+              {/* Cancel button */}
+              <div
+                onClick={cancelSearching}
                 style={{
-                margin: 0,
-                fontSize: 24,
+                  position: "absolute",
+                  top: 16,
+                  right: 16,
+                  width: 32,
+                  height: 32,
+                  border: "none",
+                  borderRadius: 8,
+                  background: "#F3F4F6",
+                  color: "#000",
+                  fontSize: 20,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "background 0.15s ease",
                 }}
-            >
+              >
+                <IconBadge iconColor="#000" icon="x" color={""} />
+              </div>
+
+              <h2
+                style={{
+                  margin: 0,
+                  fontSize: 24,
+                }}
+              >
                 No match found
-            </h2>
+              </h2>
 
-            <p
+              <p
                 style={{
-                marginTop: 12,
-                color: "var(--color-ink-muted)",
+                  marginTop: 12,
+                  color: "var(--color-ink-muted)",
                 }}
-            >
+              >
                 We've been unable to find an opponent.
-            </p>
+              </p>
 
-            <div
+              <div
                 style={{
-                display: "flex",
-                justifyContent: "center",
-                gap: 14,
-                marginTop: 28,
+                  display: "flex",
+                  justifyContent: "center",
+                  gap: 14,
+                  marginTop: 28,
                 }}
-            >
-            
+              >
                 <Button
-                variant="ghost"
-                onClick= {startSearching}
-                style={{
+                  variant="ghost"
+                  onClick={startSearching}
+                  style={{
                     fontSize: 16,
                     fontWeight: 620,
-                } } 
+                  }}
                 >
-                    Keep Searching
+                  Keep Searching
                 </Button>
-                
-             {/*    <Button onClick={simulateMatchFound}>
+
+                {/*    <Button onClick={simulateMatchFound}>
                     Simulate Match
                 </Button> */}
-                
+              </div>
             </div>
-    </div>
-  </div>
-)}
-
+          </div>
+        )}
       </div>
 
       {/* Spinner animation */}

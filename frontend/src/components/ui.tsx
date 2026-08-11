@@ -326,7 +326,12 @@ interface BackButtonProps {
 
 export function BackButton({ onClick, label = "Back" }: BackButtonProps) {
   return (
-    <Button variant="ghost" size="sm" onClick={onClick} style={{ gap: 6, fontSize: 15 }}>
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={onClick}
+      style={{ gap: 6, fontSize: 15 }}
+    >
       <Icon name="arrow-left" size={14} />
       {label}
     </Button>

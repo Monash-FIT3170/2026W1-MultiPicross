@@ -90,12 +90,14 @@ export function PrivateMultiplayer() {
               </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <span 
+              <span
                 className="mp-eyebrow"
                 style={{
                   fontSize: 14,
                 }}
-                >Size</span>
+              >
+                Size
+              </span>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {SIZES.map((s) => (
                   <button
@@ -121,13 +123,15 @@ export function PrivateMultiplayer() {
                 ))}
               </div>
             </div>
-            <Button 
-              variant="primary" 
-              size="md" disabled
+            <Button
+              variant="primary"
+              size="md"
+              disabled
               style={{
                 fontSize: 16,
                 fontWeight: 700,
-              }}>
+              }}
+            >
               Create
             </Button>
           </div>
@@ -179,9 +183,9 @@ export function PrivateMultiplayer() {
                 paddingTop: 12,
               }}
             />
-            <Button 
-              variant="primary" 
-              size="md" 
+            <Button
+              variant="primary"
+              size="md"
               disabled
               style={{
                 fontSize: 16,
