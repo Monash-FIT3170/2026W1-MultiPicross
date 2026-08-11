@@ -5,6 +5,7 @@ import {
   playerEloHistory,
 } from "../../../api/src/db/schema.js";
 import { db } from "../../../api/src/db/client.js";
+import { eq, desc } from "drizzle-orm";
 
 type RatedQueueEntry = {
   accountId: string;
@@ -22,19 +23,25 @@ export async function getRatedWaitingList() {
     .from(ratedWaitingList);
 
   const rankedPlayers = await Promise.all<RatedQueueEntry>(
-    queuedPlayers.map(async ({ accountId }: { accountId: string }): Promise<RatedQueueEntry> => {
-      const latestRating = await db
-        .select({ elo: playerEloHistory.elo })
-        .from(playerEloHistory)
-        .where(playerEloHistory.accountId.eq(accountId))
-        .orderBy(playerEloHistory.recordedAt, "desc")
-        .limit(1);
-
-      return {
+    queuedPlayers.map(
+      async ({
         accountId,
-        elo: latestRating[0]?.elo ?? 100,
-      };
-    }),
+      }: {
+        accountId: string;
+      }): Promise<RatedQueueEntry> => {
+        const latestRating = await db
+          .select({ elo: playerEloHistory.elo })
+          .from(playerEloHistory)
+          .where(eq(playerEloHistory.accountId, accountId))
+          .orderBy(desc(playerEloHistory.recordedAt))
+          .limit(1);
+
+        return {
+          accountId,
+          elo: latestRating[0]?.elo ?? 100,
+        };
+      },
+    ),
   );
 
   return rankedPlayers.sort((a, b) => a.elo - b.elo);
@@ -48,7 +55,7 @@ export async function addToRatedWaitingList(accountId: string) {
   const existingPlayer = await db
     .select()
     .from(ratedWaitingList)
-    .where(ratedWaitingList.accountId.eq(accountId));
+    .where(eq(ratedWaitingList.accountId, accountId));
 
   if (existingPlayer) {
     return;
@@ -64,5 +71,5 @@ when a match has occurred or when a player leaves the queue.
 export async function removeFromRatedWaitingList(accountId: string) {
   await db
     .delete(ratedWaitingList)
-    .where(ratedWaitingList.accountId.eq(accountId));
+    .where(eq(ratedWaitingList.accountId, accountId));
 }

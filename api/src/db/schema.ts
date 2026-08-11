@@ -8,8 +8,8 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
-} from "@drizzle-orm/pg-core";
-import { sql } from "@drizzle-orm/sql";
+} from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm/sql";
 
 export const accounts = pgTable("accounts", {
   id: uuid("id").defaultRandom().primaryKey(),
