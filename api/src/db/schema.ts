@@ -77,16 +77,26 @@ export const spCompletions = pgTable(
 );
 
 export const playerElo = pgTable("player_elo", {
+  id: uuid("id").defaultRandom().primaryKey(),
   accountId: uuid("account_id")
     .notNull()
     .references(() => accounts.id, { onDelete: "cascade" }),
   elo: integer("elo").notNull().default(100),
 });
 
+export const playerEloHistory = pgTable("player_elo_history", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  accountId: uuid("account_id")
+    .notNull()
+    .references(() => accounts.id, { onDelete: "cascade" }),
+  elo: integer("elo").notNull(),
+});
+
 export const ratedWaitingList = pgTable("rated_waiting_list", {
+  id: uuid("id").defaultRandom().primaryKey(),
   accountId: uuid("account_id")
     .primaryKey()
     .notNull()
     .references(() => accounts.id, { onDelete: "cascade" }),
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
-  });
+});

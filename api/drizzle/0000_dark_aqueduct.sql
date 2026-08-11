@@ -43,11 +43,20 @@ CREATE TABLE "sp_completions" (
 );
 --> statement-breakpoint
 CREATE TABLE "player_elo" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"account_id" uuid NOT NULL,
 	"elo" smallint DEFAULT 100 NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "player_elo_history" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"account_id" uuid NOT NULL,
+	"elo" integer NOT NULL,
+	"recorded_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
 CREATE TABLE "rated_waiting_list" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"account_id" uuid NOT NULL,
 	"joined_at" timestamp DEFAULT now() NOT NULL
 );
@@ -56,6 +65,7 @@ ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_account_id_accounts_
 ALTER TABLE "sp_completions" ADD CONSTRAINT "sp_completions_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sp_completions" ADD CONSTRAINT "sp_completions_puzzle_id_nonograms_id_fk" FOREIGN KEY ("puzzle_id") REFERENCES "public"."nonograms"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "player_elo" ADD CONSTRAINT "player_elo_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "player_elo_history" ADD CONSTRAINT "player_elo_history_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "sp_completions_account_active_idx" ON "sp_completions" USING btree ("account_id") WHERE state = 'active';
 --> statement_breakpoint
 ALTER TABLE "rated_waiting_list" ADD CONSTRAINT "rated_waiting_list_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE cascade ON UPDATE no action; --> statement-breakpoint
