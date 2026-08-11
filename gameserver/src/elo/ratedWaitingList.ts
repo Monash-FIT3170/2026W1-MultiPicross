@@ -5,7 +5,7 @@ import {
   playerEloHistory,
 } from "../../../api/src/db/schema.js";
 import { db } from "../../../api/src/db/client.js";
-import { eq, desc } from "../../../api/node_modules/drizzle-orm/index.js";
+import { eq, desc } from "drizzle-orm";
 
 type RatedQueueEntry = {
   accountId: string;
