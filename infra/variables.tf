@@ -106,7 +106,7 @@ variable "oidc_scopes" {
 }
 
 variable "oidc_client_auth" {
-  description = "Token endpoint authentication method. The only other accepted value is client_secret_post, and the registered client will accept exactly one of the two."
+  description = "Token endpoint authentication method. The other accepted value, client_secret_basic, form-encodes the credentials per RFC 6749 section 2.3.1 and fails against providers that compare them raw."
   type        = string
-  default     = "client_secret_basic"
+  default     = "client_secret_post"
 }
