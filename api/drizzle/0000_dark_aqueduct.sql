@@ -1,30 +1,10 @@
-CREATE TYPE "public"."account_kind" AS ENUM('sso', 'service');--> statement-breakpoint
 CREATE TYPE "public"."sp_completion_state" AS ENUM('active', 'completed', 'failed', 'abandoned');--> statement-breakpoint
 CREATE TABLE "accounts" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"kind" "account_kind" DEFAULT 'sso' NOT NULL,
-	"handle" text,
-	"username" text,
-	"password_hash" text,
-	"created_at" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "accounts_handle_unique" UNIQUE("handle"),
-	CONSTRAINT "accounts_username_unique" UNIQUE("username")
-);
---> statement-breakpoint
-CREATE TABLE "identities" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"account_id" uuid NOT NULL,
-	"provider" text NOT NULL,
-	"subject" text NOT NULL,
-	"issuer" text NOT NULL,
-	"last_login_at" timestamp,
-	"created_at" timestamp DEFAULT now() NOT NULL
-);
---> statement-breakpoint
-CREATE TABLE "login_attempts" (
-	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"username" text NOT NULL,
-	"attempted_at" timestamp DEFAULT now() NOT NULL
+	"password_hash" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "accounts_username_unique" UNIQUE("username")
 );
 --> statement-breakpoint
 CREATE TABLE "nonograms" (
@@ -62,11 +42,7 @@ CREATE TABLE "sp_completions" (
 	"completed_at" timestamp
 );
 --> statement-breakpoint
-ALTER TABLE "identities" ADD CONSTRAINT "identities_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "refresh_tokens" ADD CONSTRAINT "refresh_tokens_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sp_completions" ADD CONSTRAINT "sp_completions_account_id_accounts_id_fk" FOREIGN KEY ("account_id") REFERENCES "public"."accounts"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "sp_completions" ADD CONSTRAINT "sp_completions_puzzle_id_nonograms_id_fk" FOREIGN KEY ("puzzle_id") REFERENCES "public"."nonograms"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE UNIQUE INDEX "identities_provider_subject_idx" ON "identities" USING btree ("provider","subject");--> statement-breakpoint
-CREATE INDEX "identities_account_idx" ON "identities" USING btree ("account_id");--> statement-breakpoint
-CREATE INDEX "login_attempts_username_time_idx" ON "login_attempts" USING btree ("username","attempted_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "sp_completions_account_active_idx" ON "sp_completions" USING btree ("account_id") WHERE state = 'active';
