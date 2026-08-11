@@ -69,7 +69,7 @@ export const spCompletions = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     completedAt: timestamp("completed_at"),
   },
-  (table) => [
+  (table: any) => [
     uniqueIndex("sp_completions_account_active_idx")
       .on(table.accountId)
       .where(sql`state = 'active'`),
