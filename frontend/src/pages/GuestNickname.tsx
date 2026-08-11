@@ -80,7 +80,7 @@ export function GuestNickname() {
                 lineHeight: 1.3,
               }}
             >
-              Guest
+              Guest Mode
             </h1>
 
             <p
