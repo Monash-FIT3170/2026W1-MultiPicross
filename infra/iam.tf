@@ -27,6 +27,31 @@ resource "google_secret_manager_secret_iam_member" "vm_read" {
   member    = "serviceAccount:${google_service_account.vm.email}"
 }
 
+# deploy.sh snapshots the data disk before every rollout, which is the only
+# rollback for a migration, then prunes to the newest ten. Narrower than
+# roles/compute.storageAdmin, which would also let the host delete the disk.
+resource "google_project_iam_custom_role" "vm_snapshot" {
+  project     = var.project_id
+  role_id     = "multipicrossVmSnapshot"
+  title       = "MultiPicross VM snapshot"
+  description = "Create and prune snapshots of the data disk. Cannot touch disks or images."
+  permissions = [
+    "compute.disks.createSnapshot",
+    "compute.disks.get",
+    "compute.snapshots.create",
+    "compute.snapshots.delete",
+    "compute.snapshots.get",
+    "compute.snapshots.list",
+    "compute.zones.get",
+  ]
+}
+
+resource "google_project_iam_member" "vm_snapshot" {
+  project = var.project_id
+  role    = google_project_iam_custom_role.vm_snapshot.id
+  member  = "serviceAccount:${google_service_account.vm.email}"
+}
+
 resource "google_iam_workload_identity_pool" "github" {
   workload_identity_pool_id = "github"
   display_name              = "GitHub Actions"

@@ -35,6 +35,22 @@ gcloud compute disks snapshot "${PGDATA_DISK}" \
   --quiet ||
   echo "warning: pgdata snapshot failed, continuing deploy" >&2
 
+# Oldest first, drop all but the newest SNAPSHOT_KEEP. Runs after the new
+# snapshot exists so a deploy never leaves fewer than the cap behind.
+SNAPSHOT_KEEP=10
+prune_snapshots() {
+  gcloud compute snapshots list \
+    --project="$PROJECT_ID" \
+    --filter="name~^pgdata-" \
+    --sort-by=creationTimestamp \
+    --format="value(name)" |
+    head -n "-${SNAPSHOT_KEEP}" |
+    xargs -r -n1 gcloud compute snapshots delete \
+      --project="$PROJECT_ID" --quiet
+}
+prune_snapshots ||
+  echo "warning: snapshot prune failed, continuing deploy" >&2
+
 umask 077
 : >.env.new
 cat host.env >>.env.new
