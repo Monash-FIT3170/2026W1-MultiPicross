@@ -31,6 +31,8 @@ export default function App() {
   }
 
   return (
+    // Adding a route here also needs RETURN_TO_PATHS in api/src/auth/claims.ts,
+    // or signing in from that page silently drops the user on the main menu.
     <Routes>
       <Route path="/" element={<MainMenu />} />
       <Route path="/singleplayer" element={<Singleplayer />} />
@@ -45,6 +47,8 @@ export default function App() {
       <Route element={<GuestOnly />}>
         <Route path="/login" element={<AuthLayout />} />
       </Route>
+      {/* Without this an unmatched path renders an empty document, with no way back. */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

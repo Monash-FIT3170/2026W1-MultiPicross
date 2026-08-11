@@ -1,12 +1,15 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import {
+  HANDLE_MAX,
+  HANDLE_MIN,
+  HANDLE_PATTERN,
+  HANDLE_RULE,
+  handleInputCls,
+  handleLabelCls,
+} from "../auth/handle";
 import "./PagePlaceholder.css";
-
-const HANDLE_PATTERN = /^[a-zA-Z0-9_-]{3,20}$/;
-
-const inputCls =
-  "rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-[var(--color-accent-primary)] focus:ring-2 focus:ring-[var(--color-accent-primary)]/20";
 
 function HandleSetting() {
   const { user, setHandle } = useAuth();
@@ -18,9 +21,7 @@ function HandleSetting() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!HANDLE_PATTERN.test(value)) {
-      setError(
-        "Handles are 3 to 20 characters: letters, numbers, underscores and hyphens only",
-      );
+      setError(HANDLE_RULE);
       return;
     }
     setError(null);
@@ -38,7 +39,7 @@ function HandleSetting() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-2">
-      <label className="text-sm font-medium text-gray-700" htmlFor="handle">
+      <label className={handleLabelCls} htmlFor="handle">
         Handle
       </label>
       <div className="flex gap-2">
@@ -47,15 +48,15 @@ function HandleSetting() {
           type="text"
           autoComplete="off"
           required
-          minLength={3}
-          maxLength={20}
+          minLength={HANDLE_MIN}
+          maxLength={HANDLE_MAX}
           value={value}
           onChange={(e) => {
             setValue(e.target.value);
             setError(null);
             setSaved(false);
           }}
-          className={inputCls}
+          className={handleInputCls}
         />
         <button
           type="submit"

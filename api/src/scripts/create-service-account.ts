@@ -90,6 +90,14 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Nothing echoes the password and createServiceAccount will not reset it later,
+  // so an unnoticed typo produces an account nobody can sign in to.
+  if ((await readPassword("Confirm password: ")) !== password) {
+    console.error("Passwords do not match.");
+    process.exitCode = 1;
+    return;
+  }
+
   const result = await createServiceAccount(username, password);
   if (!result.created) {
     console.error(`An account with username "${username}" already exists.`);

@@ -115,6 +115,11 @@ async function issueSession(
     tokenHash: hashToken(refreshToken),
     expiresAt: refreshExpiresAt(),
   });
+  if (Math.random() < PRUNE_SAMPLE_RATE) {
+    pruneRefreshTokens().catch((err: unknown) =>
+      console.warn("refresh_tokens prune failed:", err),
+    );
+  }
   setAuthCookies(c, { accessToken, refreshToken, csrfToken });
 }
 
@@ -204,6 +209,12 @@ async function clearLoginFailures(username: string): Promise<void> {
 export async function pruneLoginAttempts(): Promise<void> {
   const cutoff = new Date(Date.now() - 60 * 60 * 1000);
   await db.delete(loginAttempts).where(lt(loginAttempts.attemptedAt, cutoff));
+}
+
+// Sessions that are abandoned rather than logged out leave their row behind, so
+// nothing else ever reclaims these.
+export async function pruneRefreshTokens(): Promise<void> {
+  await db.delete(refreshTokens).where(lt(refreshTokens.expiresAt, new Date()));
 }
 
 let dummyHashPromise: Promise<string> | undefined;
@@ -300,12 +311,14 @@ auth.get(
         expectedNonce: tx.n,
         idTokenExpected: true,
       });
-    } catch {
+    } catch (err) {
+      console.warn("OIDC token exchange failed:", err);
       return c.redirect("/auth/error?code=token_exchange_failed", 302);
     }
 
     const claims = tokens.claims();
     if (!claims) {
+      console.warn("OIDC response carried no id_token claims");
       return c.redirect("/auth/error?code=missing_anchor", 302);
     }
 
@@ -314,6 +327,10 @@ auth.get(
       anchor = extractAnchor(claims);
     } catch (err) {
       if (err instanceof AuthClaimError) {
+        // Names only. Claim values identify a real person and must not reach the logs.
+        console.warn(
+          `${err.message}. Claims present: ${Object.keys(claims).join(", ")}`,
+        );
         return c.redirect("/auth/error?code=missing_anchor", 302);
       }
       throw err;

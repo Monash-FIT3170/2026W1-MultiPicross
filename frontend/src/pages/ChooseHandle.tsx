@@ -1,12 +1,14 @@
 import { useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
-
-const HANDLE_PATTERN = /^[a-zA-Z0-9_-]{3,20}$/;
-
-const inputCls =
-  "rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-[var(--color-accent-primary)] focus:ring-2 focus:ring-[var(--color-accent-primary)]/20";
-const labelCls = "text-sm font-medium text-gray-700";
+import {
+  HANDLE_MAX,
+  HANDLE_MIN,
+  HANDLE_PATTERN,
+  HANDLE_RULE,
+  handleInputCls,
+  handleLabelCls,
+} from "../auth/handle";
 
 export function ChooseHandle() {
   const { status, user, setHandle } = useAuth();
@@ -33,9 +35,7 @@ export function ChooseHandle() {
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!HANDLE_PATTERN.test(handle)) {
-      setError(
-        "Handles are 3 to 20 characters: letters, numbers, underscores and hyphens only",
-      );
+      setError(HANDLE_RULE);
       return;
     }
     setError(null);
@@ -66,7 +66,7 @@ export function ChooseHandle() {
           </p>
 
           <div className="flex flex-col gap-1">
-            <label className={labelCls} htmlFor="handle">
+            <label className={handleLabelCls} htmlFor="handle">
               Handle
             </label>
             <input
@@ -74,14 +74,14 @@ export function ChooseHandle() {
               type="text"
               autoComplete="off"
               required
-              minLength={3}
-              maxLength={20}
+              minLength={HANDLE_MIN}
+              maxLength={HANDLE_MAX}
               value={handle}
               onChange={(e) => {
                 setHandleInput(e.target.value);
                 setError(null);
               }}
-              className={inputCls}
+              className={handleInputCls}
             />
           </div>
 

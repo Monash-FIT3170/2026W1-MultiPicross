@@ -41,10 +41,27 @@ export async function getOidcConfig(): Promise<Configuration> {
   return cached;
 }
 
+const REQUIRED = [
+  "APP_BASE_URL",
+  "OIDC_ISSUER",
+  "OIDC_CLIENT_ID",
+  "OIDC_CLIENT_SECRET",
+  "OIDC_PROVIDER_ID",
+  "OIDC_ANCHOR_CLAIM",
+  "OIDC_STATE_SECRET",
+];
+
 export function assertOidcEnv(): void {
   if (envBool("OIDC_ALLOW_INSECURE") && env("NODE_ENV", "") === "production") {
     throw new Error("OIDC_ALLOW_INSECURE must not be set in production");
   }
+  // Without this the container starts, passes its healthcheck, and only fails on
+  // the first sign-in attempt.
+  const missing = REQUIRED.filter((name) => !process.env[name]);
+  if (missing.length > 0) {
+    throw new Error(`Missing OIDC configuration: ${missing.join(", ")}`);
+  }
+  clientAuth();
 }
 
 export function oidcRedirectUri(): string {

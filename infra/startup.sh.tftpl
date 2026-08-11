@@ -66,7 +66,9 @@ chmod 700 /mnt/data/letsencrypt
 mkdir -p /opt/multipicross
 cd /opt/multipicross
 
-cat >host.env <<EOF
+# Quoted delimiter: templatefile has already substituted every value, so a dollar
+# sign inside one must not be expanded again by the shell.
+cat >host.env <<'EOF'
 DOMAIN="${domain_name}"
 ACME_EMAIL="${acme_email}"
 ACME_CASERVER="${acme_caserver}"

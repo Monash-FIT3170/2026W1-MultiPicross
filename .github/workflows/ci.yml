@@ -31,7 +31,7 @@ jobs:
 
       # The root config ignores frontend/, which has its own config and React plugins.
       - name: Install frontend dependencies
-        run: npm install
+        run: npm ci
         working-directory: frontend
 
       - name: Run ESLint (frontend)
@@ -132,8 +132,14 @@ jobs:
           cache-dependency-path: ${{ matrix.service }}/package-lock.json
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
         working-directory: ${{ matrix.service }}
+
+      # The build stage's tsc excludes test/, so nothing else typechecks these files.
+      - name: Typecheck (including tests)
+        if: matrix.service == 'api'
+        run: npm run typecheck
+        working-directory: api
 
       - name: Apply database migrations
         if: matrix.service == 'api'
