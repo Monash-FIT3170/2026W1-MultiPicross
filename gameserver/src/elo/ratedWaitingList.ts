@@ -5,8 +5,11 @@ import {
   playerEloHistory,
 } from "../../../api/src/db/schema.js";
 import { db } from "../../../api/src/db/client.js";
-import { desc, eq } from "drizzle-orm";
 
+type RatedQueueEntry = {
+  accountId: string;
+  elo: number;
+};
 /*
 getRatedWaitingList() retrieves the current state of the waiting list for the rated game mode.
 It returns the list.
@@ -18,13 +21,13 @@ export async function getRatedWaitingList() {
     })
     .from(ratedWaitingList);
 
-  const rankedPlayers = await Promise.all(
-    queuedPlayers.map(async ({ accountId }) => {
+  const rankedPlayers = await Promise.all<RatedQueueEntry>(
+    queuedPlayers.map(async ({ accountId }: { accountId: string }): Promise<RatedQueueEntry> => {
       const latestRating = await db
         .select({ elo: playerEloHistory.elo })
         .from(playerEloHistory)
-        .where(eq(playerEloHistory.accountId, accountId))
-        .orderBy(desc(playerEloHistory.recordedAt))
+        .where(playerEloHistory.accountId.eq(accountId))
+        .orderBy(playerEloHistory.recordedAt, "desc")
         .limit(1);
 
       return {
@@ -45,7 +48,7 @@ export async function addToRatedWaitingList(accountId: string) {
   const existingPlayer = await db
     .select()
     .from(ratedWaitingList)
-    .where(eq(ratedWaitingList.accountId, accountId));
+    .where(ratedWaitingList.accountId.eq(accountId));
 
   if (existingPlayer) {
     return;
@@ -61,5 +64,5 @@ when a match has occurred or when a player leaves the queue.
 export async function removeFromRatedWaitingList(accountId: string) {
   await db
     .delete(ratedWaitingList)
-    .where(eq(ratedWaitingList.accountId, accountId));
+    .where(ratedWaitingList.accountId.eq(accountId));
 }

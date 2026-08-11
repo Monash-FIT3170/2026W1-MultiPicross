@@ -11,5 +11,11 @@
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "lint:fix": "eslint --fix ."
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^1.0.0-rc.4",
+    "pg": "^8.23.0",
+    "postgres": "^3.4.9"
   }
 }

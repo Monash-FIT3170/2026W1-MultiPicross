@@ -8,8 +8,8 @@ import {
   timestamp,
   uniqueIndex,
   uuid,
-} from "drizzle-orm/pg-core";
-import { sql } from "drizzle-orm";
+} from "@drizzle-orm/pg-core";
+import { sql } from "@drizzle-orm/sql";
 
 export const accounts = pgTable("accounts", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -69,7 +69,7 @@ export const spCompletions = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     completedAt: timestamp("completed_at"),
   },
-  (table) => [
+  (table: any) => [
     uniqueIndex("sp_completions_account_active_idx")
       .on(table.accountId)
       .where(sql`state = 'active'`),
