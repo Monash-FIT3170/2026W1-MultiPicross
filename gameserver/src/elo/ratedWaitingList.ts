@@ -1,11 +1,7 @@
 //Create a sorted list of players waiting to play a game, sorted by their Elo rating
 //Players can be added to the waiting list when looking for a game, and removed when matched with another player or leave the waiting list
-import {
-  ratedWaitingList,
-  playerEloHistory,
-} from "../../../api/src/db/schema.js";
-import { db } from "../../../api/src/db/client.js";
-import { eq, desc } from "drizzle-orm";
+import { ratedWaitingList, playerEloHistory } from "@api/db/schema.js";
+import { db } from "@api/db/client.js";
 
 type RatedQueueEntry = {
   accountId: string;

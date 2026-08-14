@@ -1,9 +1,13 @@
 {
   "compilerOptions": {
+    "rootDir": "..",
     "outDir": "build",
     "target": "ESNext",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    "paths": {
+      "@api/*": ["../api/src/*"]
+    },
     "strict": true,
     "allowJs": true,
     "strictNullChecks": false,
