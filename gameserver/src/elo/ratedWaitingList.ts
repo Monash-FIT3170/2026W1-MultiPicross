@@ -2,6 +2,7 @@
 //Players can be added to the waiting list when looking for a game, and removed when matched with another player or leave the waiting list
 import { ratedWaitingList, playerEloHistory } from "@api/db/schema.js";
 import { db } from "@api/db/client.js";
+import { desc, eq } from "drizzle-orm";
 
 type RatedQueueEntry = {
   accountId: string;
@@ -53,7 +54,7 @@ export async function addToRatedWaitingList(accountId: string) {
     .from(ratedWaitingList)
     .where(eq(ratedWaitingList.accountId, accountId));
 
-  if (existingPlayer) {
+  if (existingPlayer.length > 0) {
     return;
   }
 
