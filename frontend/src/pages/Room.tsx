@@ -309,6 +309,41 @@ export function Room() {
 
   const cs = autoCellSize(width, height);
 
+  const totalSolutionCells = rowClues
+    .flat()
+    .reduce((sum, clue) => sum + clue, 0);
+  const myProgress = getProgress(me);
+  const opponentProgress = opponent ? getProgress(opponent) : 0;
+
+  function getProgress(player: PlayerSnapshot) {
+    const filled = player.confirmedFilled.filter(Boolean).length;
+    return totalSolutionCells === 0 ? 0 : filled / totalSolutionCells;
+  }
+
+  function ProgressBar({ value }: { value: number }) {
+    return (
+      <div
+        style={{
+          width: "100%",
+          height: 8,
+          background: "var(--color-line)",
+          borderRadius: 999,
+          overflow: "hidden",
+          marginTop: 8,
+        }}
+      >
+        <div
+          style={{
+            width: `${Math.round(value * 100)}%`,
+            height: "100%",
+            background: "var(--color-sage-500)",
+            transition: "width 0.2s ease",
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--color-paper)", padding: "24px 24px 80px", overflow: "hidden" }}>
       {/* Top bar */}
@@ -345,6 +380,7 @@ export function Room() {
             won={me.won}
             isWinner={iWon}
           />
+          <ProgressBar value={myProgress} />
           <NonogramGrid
             rowClues={rowClues}
             colClues={colClues}
@@ -389,6 +425,7 @@ export function Room() {
               won={opponent.won}
               isWinner={opponentWon}
             />
+            <ProgressBar value={opponentProgress} />
             <div
               style={{
                 filter: isFinished ? "none" : "blur(8px)",
