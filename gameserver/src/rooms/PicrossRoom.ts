@@ -51,6 +51,7 @@ interface PlayerData {
   livesLeft: number;
   done: boolean;
   won: boolean;
+  doneAtMs: number | null;
 }
 
 export class PicrossRoom extends Room {
@@ -66,6 +67,7 @@ export class PicrossRoom extends Room {
   private height = 0;
   private winnerId = "";
   private forfeit = false;
+  private playingStartedAtMs = 0;
 
   async onCreate(options: { width?: number; height?: number }) {
     const width = options.width ?? 10;
@@ -118,11 +120,13 @@ export class PicrossRoom extends Room {
       livesLeft: 3,
       done: false,
       won: false,
+      doneAtMs: null,
     };
     this.players.set(client.sessionId, player);
 
     if (this.players.size === 2) {
       this.state.phase = "playing";
+      this.playingStartedAtMs = Date.now();
     }
 
     client.send("state", this.buildSnapshot());
@@ -168,7 +172,7 @@ export class PicrossRoom extends Room {
         (v, i) => v === 0 || player.confirmedFilled[i],
       );
       if (isComplete) {
-        player.done = true;
+        this.markDone(player);
         player.won = true;
         this.winnerId = sessionId;
         this.state.phase = "finished";
@@ -177,9 +181,8 @@ export class PicrossRoom extends Room {
       player.revealedEmpty[idx] = true;
       player.livesLeft = Math.max(0, player.livesLeft - 1);
       if (player.livesLeft === 0) {
-        player.done = true;
-        const allDone = [...this.players.values()].every((p) => p.done);
-        if (allDone) this.state.phase = "finished";
+        this.markDone(player);
+        this.finishByProgressIfAllDone();
       }
     }
 
@@ -218,20 +221,68 @@ export class PicrossRoom extends Room {
         (v, i) => v === 0 || player.confirmedFilled[i],
       );
       if (isComplete) {
-        player.done = true;
+        this.markDone(player);
         player.won = true;
         this.winnerId = sessionId;
         this.state.phase = "finished";
       } else if (player.livesLeft === 0) {
-        player.done = true;
-        const allDone = [...this.players.values()].every((p) => p.done);
-        if (allDone) this.state.phase = "finished";
+        this.markDone(player);
+        this.finishByProgressIfAllDone();
       }
     } else {
       player.crosses[idx] = markCross;
     }
 
     this.broadcast("state", this.buildSnapshot());
+  }
+
+  private markDone(player: PlayerData) {
+    player.done = true;
+    player.doneAtMs ??= Date.now() - this.playingStartedAtMs;
+  }
+
+  private finishByProgressIfAllDone() {
+    const allDone = [...this.players.values()].every((p) => p.done);
+    if (!allDone) return;
+
+    const progress = [...this.players.entries()].map(([sessionId, player]) => ({
+      sessionId,
+      doneAtMs: player.doneAtMs,
+      filledCount: this.solution.reduce(
+        (count, cell, i) =>
+          count + (cell === 1 && player.confirmedFilled[i] ? 1 : 0),
+        0,
+      ),
+    }));
+
+    progress.sort((a, b) => {
+      if (b.filledCount !== a.filledCount) {
+        return b.filledCount - a.filledCount;
+      }
+      return (a.doneAtMs ?? Infinity) - (b.doneAtMs ?? Infinity);
+    });
+
+    const leader = progress[0];
+    const runnerUp = progress[1];
+    const leaderWinsByProgress =
+      leader && runnerUp && leader.filledCount > runnerUp.filledCount;
+    const leaderWinsByTime =
+      leader &&
+      runnerUp &&
+      leader.filledCount === runnerUp.filledCount &&
+      leader.doneAtMs !== null &&
+      runnerUp.doneAtMs !== null &&
+      leader.doneAtMs < runnerUp.doneAtMs;
+
+    if (leaderWinsByProgress || leaderWinsByTime) {
+      const winner = this.players.get(progress[0].sessionId);
+      if (winner) {
+        winner.won = true;
+        this.winnerId = progress[0].sessionId;
+      }
+    }
+
+    this.state.phase = "finished";
   }
 
   private buildSnapshot() {
