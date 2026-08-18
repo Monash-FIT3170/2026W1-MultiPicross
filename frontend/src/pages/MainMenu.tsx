@@ -492,7 +492,6 @@ export default function MainMenu() {
               : "Playing as a guest. Sign in to save progress."}
         </p>
       </div>
-    </div>
   );
 }
 
