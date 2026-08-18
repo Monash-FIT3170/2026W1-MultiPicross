@@ -10,18 +10,26 @@ import { Settings } from "./pages/Settings";
 import { AuthLayout } from "./pages/AuthLayout";
 import { GuestOnly } from "./auth/GuestOnly";
 import { PicrossRanked } from "./pages/PicrossRanked";
+import { GuestNickname } from "./pages/GuestNickname";
+import { PlayerNameRoute } from "./auth/PlayerNameRoute";
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<MainMenu />} />
       <Route path="/singleplayer" element={<Singleplayer />} />
-      <Route path="/publicmultiplayer" element={<PublicMultiplayer />} />
-      <Route path="/privatemultiplayer" element={<PrivateMultiplayer />} />
+
+      <Route element={<PlayerNameRoute />}>
+        <Route path="/publicmultiplayer" element={<PublicMultiplayer />} />
+        <Route path="/privatemultiplayer" element={<PrivateMultiplayer />} />
+      </Route>
+
       <Route path="/statistics" element={<Statistics />} />
       <Route path="/tutorial" element={<Tutorial />} />
       <Route path="/settings" element={<Settings />} />
+
       <Route element={<GuestOnly />}>
+        <Route path="/nickname" element={<GuestNickname />} />
         <Route path="/login" element={<AuthLayout />} />
         <Route path="/register" element={<AuthLayout />} />
         <Route path="/signup" element={<Navigate to="/register" replace />} />
