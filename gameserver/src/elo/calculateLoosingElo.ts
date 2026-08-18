@@ -47,5 +47,8 @@ export function calculateLoosingEloGain({
   const rankMultiplier =
     eloDifference > 0 ? 1 + (eloDifference / 100) * 0.15 : 1;
 
-  return Math.min(Math.round((baseLoss + mistakeModifier) * rankMultiplier),40);
+  return Math.min(
+    Math.round((baseLoss + mistakeModifier) * rankMultiplier),
+    40,
+  );
 }
