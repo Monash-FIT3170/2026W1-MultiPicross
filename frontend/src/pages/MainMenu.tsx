@@ -456,7 +456,7 @@ export default function MainMenu() {
           </div>
         </div>
       </div>
-      
+
       {/* Footer hint */}
       <p
         ref={footerRef}
