@@ -32,7 +32,10 @@ export function PublicMultiplayer() {
     }
 
     void fetchPublicRooms();
-    const interval = setInterval(() => void fetchPublicRooms(), PUBLIC_ROOMS_POLL_MS);
+    const interval = setInterval(
+      () => void fetchPublicRooms(),
+      PUBLIC_ROOMS_POLL_MS,
+    );
     return () => {
       cancelled = true;
       clearInterval(interval);

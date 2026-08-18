@@ -80,7 +80,11 @@ export class PicrossRoom extends Room {
   private winnerId = "";
   private forfeit = false;
 
-  async onCreate(options: { width?: number; height?: number; isPublic?: boolean }) {
+  async onCreate(options: {
+    width?: number;
+    height?: number;
+    isPublic?: boolean;
+  }) {
     const width = options.width ?? 10;
     const height = options.height ?? 10;
 
@@ -107,7 +111,11 @@ export class PicrossRoom extends Room {
     const code = generateCode();
     this.state.inviteCode = code;
 
-    await this.setMetadata({ inviteCode: code, width: this.width, height: this.height });
+    await this.setMetadata({
+      inviteCode: code,
+      width: this.width,
+      height: this.height,
+    });
 
     if (!options.isPublic) {
       await this.setPrivate(true);

@@ -37,7 +37,9 @@ export function PrivateMultiplayer() {
       const { roomId } = (await res.json()) as { roomId: string };
       navigate(`/room/${roomId}`);
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : "Failed to create room");
+      setCreateError(
+        err instanceof Error ? err.message : "Failed to create room",
+      );
     } finally {
       setCreateLoading(false);
     }
@@ -194,7 +196,13 @@ export function PrivateMultiplayer() {
               Public — anyone can find and join
             </label>
             {createError && (
-              <p style={{ margin: 0, fontSize: 12, color: "var(--color-coral-500)" }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 12,
+                  color: "var(--color-coral-500)",
+                }}
+              >
                 {createError}
               </p>
             )}
@@ -260,7 +268,13 @@ export function PrivateMultiplayer() {
               }}
             />
             {joinError && (
-              <p style={{ margin: 0, fontSize: 12, color: "var(--color-coral-500)" }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 12,
+                  color: "var(--color-coral-500)",
+                }}
+              >
                 {joinError}
               </p>
             )}

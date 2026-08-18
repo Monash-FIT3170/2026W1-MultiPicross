@@ -28,7 +28,10 @@ const server = defineServer({
           height,
           isPublic,
         });
-        res.json({ roomId: room.roomId, inviteCode: room.metadata?.inviteCode });
+        res.json({
+          roomId: room.roomId,
+          inviteCode: room.metadata?.inviteCode,
+        });
       } catch (err) {
         console.error("create-room error", err);
         res.status(500).json({ error: "Failed to create room" });
