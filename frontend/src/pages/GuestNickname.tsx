@@ -9,8 +9,8 @@ export function GuestNickname() {
   const { setGuestNickname } = useAuth();
 
   const from =
-    (location.state as { from?: { pathname: string } } | null)?.from?.pathname ??
-    "/";
+    (location.state as { from?: { pathname: string } } | null)?.from
+      ?.pathname ?? "/";
 
   const [nickname, setNickname] = useState("");
   const [error, setError] = useState<string | null>(null);

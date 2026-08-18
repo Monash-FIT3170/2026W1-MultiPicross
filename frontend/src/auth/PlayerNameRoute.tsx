@@ -14,13 +14,7 @@ export function PlayerNameRoute() {
   }
 
   if (!playerName) {
-    return (
-      <Navigate
-        to="/nickname"
-        replace
-        state={{ from: location }}
-      />
-    );
+    return <Navigate to="/nickname" replace state={{ from: location }} />;
   }
 
   return <Outlet />;
