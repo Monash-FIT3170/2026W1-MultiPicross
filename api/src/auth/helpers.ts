@@ -13,6 +13,7 @@ const REFRESH_SECRET = requireEnv("JWT_REFRESH_SECRET");
 
 const ACCESS_TTL_SECONDS = 15 * 60;
 const REFRESH_TTL_SECONDS = 7 * 24 * 60 * 60;
+const ROOM_TTL_SECONDS = 60;
 
 export async function hashPassword(plain: string): Promise<string> {
   return hash(plain);
@@ -34,6 +35,20 @@ export async function signAccessToken(payload: {
       ...payload,
       type: "access",
       exp: Math.floor(Date.now() / 1000) + ACCESS_TTL_SECONDS,
+    },
+    ACCESS_SECRET,
+  );
+}
+
+export async function signRoomToken(payload: {
+  sub: string;
+  username: string;
+}): Promise<string> {
+  return sign(
+    {
+      ...payload,
+      type: "room",
+      exp: Math.floor(Date.now() / 1000) + ROOM_TTL_SECONDS,
     },
     ACCESS_SECRET,
   );

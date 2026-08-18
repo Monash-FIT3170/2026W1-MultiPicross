@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { Room as ColyseusRoom } from "@colyseus/sdk";
 import { gameserverClient } from "../colyseus";
+import { apiFetch } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import NonogramGrid, {
   type CellValue,
@@ -57,7 +58,7 @@ function buildGrid(p: PlayerSnapshot): CellValue[] {
 export function Room() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
-  const { status, username: authUsername } = useAuth();
+  const { status } = useAuth();
 
   const roomRef = useRef<ColyseusRoom | null>(null);
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
@@ -76,10 +77,18 @@ export function Room() {
 
     async function connect() {
       try {
-        const username =
-          status === "authenticated" && authUsername ? authUsername : "Guest";
+        let joinOptions: { token: string } | { username: string };
 
-        const room = await gameserverClient.joinById(roomId!, { username });
+        if (status === "authenticated") {
+          const res = await apiFetch("/auth/room-token", { method: "POST" });
+          if (!res.ok) throw new Error("Could not authenticate for room.");
+          const { token } = (await res.json()) as { token: string };
+          joinOptions = { token };
+        } else {
+          joinOptions = { username: "Guest" };
+        }
+
+        const room = await gameserverClient.joinById(roomId!, joinOptions);
 
         if (cancelled) {
           room.leave();

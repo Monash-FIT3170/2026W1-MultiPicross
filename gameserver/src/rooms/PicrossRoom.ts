@@ -1,6 +1,19 @@
-import { Room, Client } from "colyseus";
+import { Room, Client, ServerError } from "colyseus";
 import { PicrossRoomState } from "./schema/PicrossRoomState.js";
 import { sql } from "../db/client.js";
+import { verifyRoomToken } from "../auth/roomToken.js";
+
+function requireEnv(name: string): string {
+  const val = process.env[name];
+  if (!val) throw new Error(`${name} must be set`);
+  return val;
+}
+
+const JWT_ACCESS_SECRET = requireEnv("JWT_ACCESS_SECRET");
+
+interface RoomAuth {
+  username: string | null;
+}
 
 function generateCode(): string {
   // Unambiguous characters only
@@ -112,10 +125,40 @@ export class PicrossRoom extends Room {
     );
   }
 
+  async onAuth(
+    _client: Client,
+    options: { token?: string },
+  ): Promise<RoomAuth> {
+    if (!options.token) return { username: null };
+
+    const payload = verifyRoomToken(options.token, JWT_ACCESS_SECRET);
+    if (!payload) {
+      throw new ServerError(401, "Invalid or expired room token");
+    }
+    return { username: payload.username };
+  }
+
+  // Trusted (server-verified) identity wins; free-text client input is only
+  // ever used as a display name for unauthenticated guests, and even then
+  // it's sanitized and de-duplicated against the other player in the room.
+  private resolveUsername(client: Client, rawUsername?: string): string {
+    const auth = client.auth as RoomAuth | undefined;
+    if (auth?.username) return auth.username;
+
+    const trimmed = (rawUsername ?? "").trim().slice(0, 20);
+    const base = trimmed.length > 0 ? trimmed : "Guest";
+    const taken = new Set([...this.players.values()].map((p) => p.username));
+    if (!taken.has(base)) return base;
+
+    let suffix = 2;
+    while (taken.has(`${base} (${suffix})`)) suffix++;
+    return `${base} (${suffix})`;
+  }
+
   onJoin(client: Client, options: { username?: string }) {
     const cellCount = this.width * this.height;
     const player: PlayerData = {
-      username: options.username ?? "Player",
+      username: this.resolveUsername(client, options.username),
       confirmedFilled: Array(cellCount).fill(false),
       crosses: Array(cellCount).fill(false),
       revealedEmpty: Array(cellCount).fill(false),
