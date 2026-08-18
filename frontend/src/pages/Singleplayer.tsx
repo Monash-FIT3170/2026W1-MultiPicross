@@ -685,6 +685,7 @@ function SizeSelectScreen({
           fontSize: 30,
           fontWeight: 700,
           color: "var(--color-ink)",
+          letterSpacing: "0.01em",
         }}
       >
         Singleplayer
@@ -891,7 +892,9 @@ function PlayingScreen({
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: 24,
+          marginBottom: 28,
+          position: "relative",
+          zIndex: 200,
         }}
       >
         <button
@@ -1056,7 +1059,7 @@ function PlayingScreen({
             alignItems: "center",
             gap: 16,
             boxShadow: "0 18px 38px -12px rgba(76,175,120,0.25)",
-            zIndex: 200,
+            zIndex: 100,
             whiteSpace: "nowrap",
           }}
         >
@@ -1092,7 +1095,7 @@ function PlayingScreen({
               Play again
             </Button>
             <Button variant="primary" size="sm" onClick={onMainMenu}>
-              Main menu
+              Main Menu
             </Button>
           </div>
         </div>

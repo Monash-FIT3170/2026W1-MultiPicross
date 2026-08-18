@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { Logo, Icon, Button, UserDropdown } from "../components/ui";
@@ -8,6 +8,7 @@ import multiIcon from "../assets/multiplayer.svg";
 import statsIcon from "../assets/stats.svg";
 import tutorialIcon from "../assets/tutorial.svg";
 import settingsIcon from "../assets/settings.svg";
+import trophyIcon from "../assets/trophy.webp";
 
 export default function MainMenu() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function MainMenu() {
   const taglineRef = useRef<HTMLParagraphElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const footerRef = useRef<HTMLParagraphElement>(null);
+  const [showMultiplayerMenu, setShowMultiplayerMenu] = useState(false);
 
   useLayoutEffect(() => {
     const wordmark = wordmarkRef.current;
@@ -32,6 +34,7 @@ export default function MainMenu() {
 
     const headEls = [wordmark, tagline].filter(Boolean) as HTMLElement[];
     const allEls = [...headEls, ...tiles, ...(footer ? [footer] : [])];
+
     allEls.forEach((el) => {
       el.style.opacity = "0";
     });
@@ -146,23 +149,147 @@ export default function MainMenu() {
           Nonograms, now social.
         </p>
 
-        {/* Tile grid, 2 primary + 4 secondary */}
+        {/* ELO ranking banner */}
+        <div
+          className="elo-banner"
+          style={{
+            padding: 28,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            width: 640,
+            height: 220,
+            background: "linear-gradient(135deg, #EAF3FF 0%, #F7FBFF 100%)",
+            border: "1px solid #D6E6FF",
+            borderRadius: 20,
+          }}
+        >
+          {/* Left Side */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              gap: 10,
+              flex: 1,
+              paddingRight: 40,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 36,
+                fontWeight: 700,
+                color: "var(--color-ink)",
+              }}
+            >
+              Picross Ranked
+            </div>
+
+            <p
+              style={{
+                margin: 0,
+                fontSize: 20,
+                color: "var(--color-ink-muted)",
+              }}
+            >
+              Complete. Climb. Conquer.
+            </p>
+
+            <div
+              style={{
+                marginTop: 20,
+                color: "var(--color-ink-muted)",
+              }}
+            >
+              {isAuth && (
+                <>
+                  <div
+                    style={{
+                      fontSize: 18,
+                      color: "var(--color-ink-muted)",
+                    }}
+                  >
+                    Current Rating
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: 60,
+                      fontWeight: 600,
+                      marginTop: 12,
+                      wordSpacing: "0.04em",
+                      color: "var(--color-ink)",
+                    }}
+                  >
+                    1200
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Right Side */}
+          <div
+            style={{
+              width: 180,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              alignItems: "center",
+              gap: 16,
+            }}
+          >
+            <img
+              src={trophyIcon}
+              alt=""
+              style={{ width: 120, height: 120, opacity: 0.85 }}
+            />
+            <Button
+              variant="primary"
+              size="md"
+              onClick={
+                isAuth
+                  ? () => navigate("/picrossranked")
+                  : () => navigate("/login")
+              }
+              style={{
+                width: 200,
+                fontSize: 18,
+                fontWeight: 700,
+              }}
+            >
+              {isAuth ? "Play Now" : "Sign In To Play"}
+            </Button>
+          </div>
+        </div>
+
+        {/* Main content */}
         <div
           ref={gridRef}
           style={{
+            width: 640,
             display: "flex",
+            flexDirection: "column",
             gap: 20,
-            flexWrap: "wrap",
-            justifyContent: "center",
+            marginTop: 24,
           }}
         >
-          {/* Left column, primary tiles */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div className="tile-enter" style={{ alignSelf: "flex-start" }}>
+          {/* Player options */}
+          <div
+            style={{
+              display: "flex",
+              gap: 20,
+            }}
+          >
+            {/* Singleplayer */}
+            <div className="tile-enter" style={{ flex: 1, display: "flex" }}>
               <button
                 className="tile"
                 onClick={() => navigate("/singleplayer")}
-                style={{ width: 320, height: 120 }}
+                style={{
+                  flex: 1,
+                  height: 120,
+                }}
               >
                 <img
                   src={singleplayerIcon}
@@ -180,17 +307,35 @@ export default function MainMenu() {
                 </span>
               </button>
             </div>
-            <div className="tile-enter" style={{ alignSelf: "flex-start" }}>
+
+            {/* Multiplayer */}
+            <div
+              className="tile-enter"
+              style={{
+                position: "relative",
+                flex: 1,
+              }}
+              onMouseEnter={() => setShowMultiplayerMenu(true)}
+              onMouseLeave={() => setShowMultiplayerMenu(false)}
+            >
               <button
                 className="tile"
-                onClick={() => navigate("/multiplayer")}
-                style={{ width: 320, height: 120 }}
+                onClick={() => setShowMultiplayerMenu((prev) => !prev)}
+                style={{
+                  width: "100%",
+                  height: 120,
+                }}
               >
                 <img
                   src={multiIcon}
                   alt=""
-                  style={{ width: 40, height: 40, opacity: 0.85 }}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    opacity: 0.85,
+                  }}
                 />
+
                 <span
                   style={{
                     fontSize: 20,
@@ -201,11 +346,58 @@ export default function MainMenu() {
                   Multiplayer
                 </span>
               </button>
+
+              {showMultiplayerMenu && (
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    width: "100%",
+                    background: "white",
+                    borderRadius: 16,
+                    border: "1px solid #E5E7EB",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+                    overflow: "hidden",
+                    zIndex: 100,
+                  }}
+                >
+                  <DropdownItem
+                    label="Private Game"
+                    onClick={() => {
+                      setShowMultiplayerMenu(false);
+                      navigate("/privatemultiplayer");
+                    }}
+                  />
+
+                  <DropdownItem
+                    label="Public Game"
+                    onClick={() => {
+                      setShowMultiplayerMenu(false);
+                      navigate("/publicmultiplayer");
+                    }}
+                  />
+
+                  <DropdownItem
+                    label="Picross Ranked Game"
+                    onClick={() => {
+                      setShowMultiplayerMenu(false);
+                      navigate("/picrossranked");
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Right column, secondary tiles */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {/* Other features */}
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+            }}
+          >
+            {/* Collection */}
             <SecondaryTile
               disabled={!isAuth}
               icon={<Icon name="grid" size={20} color="var(--color-ink)" />}
@@ -213,6 +405,8 @@ export default function MainMenu() {
               onClick={isAuth ? () => navigate("/collection") : undefined}
               badge={!isAuth ? <SignInHint /> : undefined}
             />
+
+            {/* Statistics */}
             <SecondaryTile
               disabled={!isAuth}
               icon={
@@ -226,6 +420,8 @@ export default function MainMenu() {
               onClick={isAuth ? () => navigate("/statistics") : undefined}
               badge={!isAuth ? <SignInHint /> : undefined}
             />
+
+            {/* Tutorial */}
             <SecondaryTile
               icon={
                 <img
@@ -237,6 +433,8 @@ export default function MainMenu() {
               label="Tutorial"
               onClick={() => navigate("/tutorial")}
             />
+
+            {/* Settings */}
             <SecondaryTile
               icon={
                 <img
@@ -250,23 +448,23 @@ export default function MainMenu() {
             />
           </div>
         </div>
-
-        {/* Footer hint */}
-        <p
-          ref={footerRef}
-          style={{
-            marginTop: 36,
-            fontSize: 12,
-            color: "var(--color-ink-faint)",
-          }}
-        >
-          {isAuth && user?.handle
-            ? `Welcome back, ${user.handle}.`
-            : isAuth
-              ? "Welcome back."
-              : "Playing as a guest. Sign in to save progress."}
-        </p>
       </div>
+
+      {/* Footer hint */}
+      <p
+        ref={footerRef}
+        style={{
+          marginTop: 36,
+          fontSize: 12,
+          color: "var(--color-ink-faint)",
+        }}
+      >
+        {isAuth && user?.handle
+          ? `Welcome back, ${user.handle}.`
+          : isAuth
+            ? "Welcome back."
+            : "Playing as a guest. Sign in to save progress."}
+      </p>
     </div>
   );
 }
@@ -275,9 +473,10 @@ function SignInHint() {
   return (
     <span
       style={{
-        fontSize: 11,
+        fontSize: 14,
         color: "var(--color-ink-faint)",
-        fontWeight: 500,
+        fontWeight: 600,
+        padding: "2px 14px",
         letterSpacing: "0.02em",
       }}
     >
@@ -300,28 +499,63 @@ function SecondaryTile({
   badge?: React.ReactNode;
 }) {
   return (
-    <div className="tile-enter" style={{ alignSelf: "flex-start" }}>
+    <div className="tile-enter">
       <button
         className="tile"
         disabled={disabled}
         onClick={onClick}
         style={{
-          width: 320,
+          width: 640,
           height: 56,
           flexDirection: "row",
-          gap: 12,
+          gap: 24,
           padding: "0 18px",
           justifyContent: "flex-start",
         }}
       >
         {icon}
         <span
-          style={{ fontSize: 15, fontWeight: 600, color: "var(--color-ink)" }}
+          style={{ fontSize: 18, fontWeight: 600, color: "var(--color-ink)" }}
         >
           {label}
         </span>
         {badge && <span style={{ marginLeft: "auto" }}>{badge}</span>}
       </button>
     </div>
+  );
+}
+
+function DropdownItem({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = "#F5F9FF";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = "white";
+      }}
+      style={{
+        width: "100%",
+        padding: "14px 18px",
+        background: "white",
+        border: "none",
+        borderBottom: "1px solid #F1F5F9",
+        cursor: "pointer",
+        textAlign: "left",
+        fontSize: 16,
+        fontWeight: 600,
+        color: "var(--color-ink)",
+        transition: "background 0.15s ease",
+      }}
+    >
+      {label}
+    </button>
   );
 }

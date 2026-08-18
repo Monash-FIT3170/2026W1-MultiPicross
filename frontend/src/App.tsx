@@ -2,7 +2,8 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import MainMenu from "./pages/MainMenu";
 import { Singleplayer } from "./pages/Singleplayer";
-import { Multiplayer } from "./pages/Multiplayer";
+import { PublicMultiplayer } from "./pages/PublicMultiplayer";
+import { PrivateMultiplayer } from "./pages/PrivateMultiplayer";
 import { Statistics } from "./pages/Statistics";
 import { Tutorial } from "./pages/Tutorial";
 import { Settings } from "./pages/Settings";
@@ -10,6 +11,7 @@ import { AuthLayout } from "./pages/AuthLayout";
 import { ChooseHandle } from "./pages/ChooseHandle";
 import { AuthError } from "./pages/AuthError";
 import { GuestOnly } from "./auth/GuestOnly";
+import { PicrossRanked } from "./pages/PicrossRanked";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { useAuth } from "./auth/AuthContext";
 
@@ -35,7 +37,9 @@ export default function App() {
     <Routes>
       <Route path="/" element={<MainMenu />} />
       <Route path="/singleplayer" element={<Singleplayer />} />
-      <Route path="/multiplayer" element={<Multiplayer />} />
+      <Route path="/publicmultiplayer" element={<PublicMultiplayer />} />
+      <Route path="/privatemultiplayer" element={<PrivateMultiplayer />} />
+      <Route path="/picrossranked" element={<PicrossRanked />} />
       <Route path="/tutorial" element={<Tutorial />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="/welcome" element={<ChooseHandle />} />
