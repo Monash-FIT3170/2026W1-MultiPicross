@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import MainMenu from "./pages/MainMenu";
 import { Singleplayer } from "./pages/Singleplayer";
 import { Multiplayer } from "./pages/Multiplayer";
+import { Room } from "./pages/Room";
 import { Statistics } from "./pages/Statistics";
 import { Tutorial } from "./pages/Tutorial";
 import { Settings } from "./pages/Settings";
@@ -15,6 +16,7 @@ export default function App() {
       <Route path="/" element={<MainMenu />} />
       <Route path="/singleplayer" element={<Singleplayer />} />
       <Route path="/multiplayer" element={<Multiplayer />} />
+      <Route path="/room/:roomId" element={<Room />} />
       <Route path="/statistics" element={<Statistics />} />
       <Route path="/tutorial" element={<Tutorial />} />
       <Route path="/settings" element={<Settings />} />

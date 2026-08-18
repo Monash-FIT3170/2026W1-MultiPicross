@@ -1,13 +1,98 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo, Icon, BackButton, Chip, Button } from "../components/ui";
 
 const SIZES = ["5 × 5", "10 × 10", "15 × 15", "20 × 20"] as const;
+const PUBLIC_ROOMS_POLL_MS = 5000;
+
+function sizeToWH(size: string): { width: number; height: number } {
+  const [w, h] = size.split(" × ").map(Number);
+  return { width: w, height: h };
+}
+
+const GS_BASE = `${window.location.protocol}//${window.location.host}/gs`;
+
+interface PublicRoom {
+  roomId: string;
+  width: number;
+  height: number;
+  clients: number;
+  maxClients: number;
+}
 
 export function Multiplayer() {
   const navigate = useNavigate();
-  const [createSize, setCreateSize] = useState<string>("10 × 10");
+  const [createSize, setCreateSize] = useState<string>("15 × 15");
+  const [isPublicCreate, setIsPublicCreate] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
+  const [createLoading, setCreateLoading] = useState(false);
+  const [joinLoading, setJoinLoading] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [joinError, setJoinError] = useState<string | null>(null);
+  const [publicRooms, setPublicRooms] = useState<PublicRoom[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchPublicRooms() {
+      try {
+        const res = await fetch(`${GS_BASE}/public-rooms`);
+        if (!res.ok) return;
+        const rooms = (await res.json()) as PublicRoom[];
+        if (!cancelled) setPublicRooms(rooms);
+      } catch {
+        // Keep the last known list on transient network errors.
+      }
+    }
+
+    void fetchPublicRooms();
+    const interval = setInterval(() => void fetchPublicRooms(), PUBLIC_ROOMS_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
+  async function handleCreate() {
+    setCreateLoading(true);
+    setCreateError(null);
+    try {
+      const { width, height } = sizeToWH(createSize);
+      const res = await fetch(
+        `${GS_BASE}/create-room?width=${width}&height=${height}&public=${isPublicCreate}`,
+        { method: "POST" },
+      );
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: string };
+        throw new Error(body.error ?? "Failed to create room");
+      }
+      const { roomId } = (await res.json()) as { roomId: string };
+      navigate(`/room/${roomId}`);
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "Failed to create room");
+    } finally {
+      setCreateLoading(false);
+    }
+  }
+
+  async function handleJoin() {
+    if (!inviteCode.trim()) return;
+    setJoinLoading(true);
+    setJoinError(null);
+    try {
+      const res = await fetch(`${GS_BASE}/room-by-code/${inviteCode.trim()}`);
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: string };
+        throw new Error(body.error ?? "Room not found");
+      }
+      const { roomId } = (await res.json()) as { roomId: string };
+      navigate(`/room/${roomId}`);
+    } catch (err) {
+      setJoinError(err instanceof Error ? err.message : "Room not found");
+    } finally {
+      setJoinLoading(false);
+    }
+  }
 
   return (
     <div
@@ -114,8 +199,35 @@ export function Multiplayer() {
                 ))}
               </div>
             </div>
-            <Button variant="primary" size="md" disabled>
-              Create
+            <label
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: 13,
+                color: "var(--color-ink-soft)",
+                cursor: "pointer",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={isPublicCreate}
+                onChange={(e) => setIsPublicCreate(e.target.checked)}
+              />
+              Public — anyone can find and join
+            </label>
+            {createError && (
+              <p style={{ margin: 0, fontSize: 12, color: "var(--color-coral-500)" }}>
+                {createError}
+              </p>
+            )}
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => void handleCreate()}
+              disabled={createLoading}
+            >
+              {createLoading ? "Creating…" : "Create"}
             </Button>
           </div>
 
@@ -164,8 +276,18 @@ export function Multiplayer() {
                 letterSpacing: "0.2em",
               }}
             />
-            <Button variant="primary" size="md" disabled>
-              Join
+            {joinError && (
+              <p style={{ margin: 0, fontSize: 12, color: "var(--color-coral-500)" }}>
+                {joinError}
+              </p>
+            )}
+            <Button
+              variant="primary"
+              size="md"
+              onClick={() => void handleJoin()}
+              disabled={joinLoading || !inviteCode.trim()}
+            >
+              {joinLoading ? "Joining…" : "Join"}
             </Button>
           </div>
 
@@ -234,28 +356,79 @@ export function Multiplayer() {
           </h2>
         </div>
 
-        <div
-          className="mp-surface"
-          style={{
-            padding: 40,
-            textAlign: "center",
-            color: "var(--color-ink-muted)",
-          }}
-        >
-          <Icon
-            name="users"
-            size={32}
-            color="var(--color-line-strong)"
+        {publicRooms === null || publicRooms.length === 0 ? (
+          <div
+            className="mp-surface"
             style={{
-              marginBottom: 12,
-              display: "block",
-              margin: "0 auto 12px",
+              padding: 40,
+              textAlign: "center",
+              color: "var(--color-ink-muted)",
             }}
-          />
-          <div style={{ fontSize: 14, fontWeight: 600 }}>
-            No open games right now.
+          >
+            <Icon
+              name="users"
+              size={32}
+              color="var(--color-line-strong)"
+              style={{
+                marginBottom: 12,
+                display: "block",
+                margin: "0 auto 12px",
+              }}
+            />
+            <div style={{ fontSize: 14, fontWeight: 600 }}>
+              {publicRooms === null
+                ? "Loading public games…"
+                : "No open games right now."}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {publicRooms.map((room) => (
+              <div
+                key={room.roomId}
+                className="mp-surface"
+                style={{
+                  padding: "14px 20px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 16,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <IconBadge
+                    color="var(--color-sage-50)"
+                    iconColor="var(--color-sage-500)"
+                    icon="users"
+                  />
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: "var(--color-ink)",
+                      }}
+                    >
+                      {room.width} × {room.height}
+                    </div>
+                    <div
+                      style={{ fontSize: 12, color: "var(--color-ink-muted)" }}
+                    >
+                      {room.clients}/{room.maxClients} · waiting for opponent
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => navigate(`/room/${room.roomId}`)}
+                >
+                  Join
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
