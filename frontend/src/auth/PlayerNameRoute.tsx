@@ -1,8 +1,9 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 
 export function PlayerNameRoute() {
   const { status, playerName } = useAuth();
+  const location = useLocation();
 
   if (status === "loading") {
     return (
@@ -13,7 +14,13 @@ export function PlayerNameRoute() {
   }
 
   if (!playerName) {
-    return <Navigate to="/nickname" replace />;
+    return (
+      <Navigate
+        to="/nickname"
+        replace
+        state={{ from: location }}
+      />
+    );
   }
 
   return <Outlet />;

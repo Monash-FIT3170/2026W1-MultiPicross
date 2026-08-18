@@ -1,8 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { Logo, Icon, BackButton } from "../components/ui";
+import { useAuth } from "../auth/AuthContext";
 
 export function PublicMultiplayer() {
   const navigate = useNavigate();
+  const { playerName } = useAuth();
 
   return (
     <div
@@ -48,6 +50,26 @@ export function PublicMultiplayer() {
         >
           1v1 head-to-head with your friends. First to fill every cell wins.
         </p>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            marginBottom: 24,
+            fontSize: 13,
+            color: "var(--color-ink-muted)",
+          }}
+        >
+          <Icon name="user" size={14} color="var(--color-ink-faint)" />
+
+          <span>
+            Playing as{" "}
+            <strong style={{ color: "var(--color-ink)" }}>
+              {playerName}
+            </strong>
+          </span>
+        </div>
 
         {/* Public games */}
         <div

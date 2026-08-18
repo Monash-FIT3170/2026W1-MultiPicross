@@ -456,20 +456,7 @@ export default function MainMenu() {
           </div>
         </div>
       </div>
-
-      {/* Footer hint */}
-      <p
-        ref={footerRef}
-        style={{
-          marginTop: 36,
-          fontSize: 12,
-          color: "var(--color-ink-faint)",
-        }}
-      >
-        {isAuth
-          ? `Welcome back, ${username ?? ""}.`
-          : "Playing as a guest. Sign in to save progress."}
-      </p>
+      
       {/* Footer hint */}
       <p
         ref={footerRef}

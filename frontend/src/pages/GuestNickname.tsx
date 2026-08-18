@@ -1,11 +1,16 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { BackButton, Logo } from "../components/ui";
 
 export function GuestNickname() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setGuestNickname } = useAuth();
+
+  const from =
+    (location.state as { from?: { pathname: string } } | null)?.from?.pathname ??
+    "/";
 
   const [nickname, setNickname] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +26,7 @@ export function GuestNickname() {
     }
 
     setGuestNickname(trimmedNickname);
-    navigate("/multiplayer", { replace: true });
+    navigate(from, { replace: true });
   }
 
   return (
