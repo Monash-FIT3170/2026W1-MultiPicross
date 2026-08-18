@@ -448,25 +448,25 @@ export default function MainMenu() {
             />
           </div>
         </div>
-      </div>
 
-      {/* Footer hint */}
-      <p
-        ref={footerRef}
-        style={{
-          marginTop: 36,
-          fontSize: 12,
-          color: "var(--color-ink-faint)",
-        }}
-      >
-        {isAuth && playerName
-          ? `Welcome back, ${playerName}.`
-          : isAuth
-            ? "Welcome back."
-            : guestNickname
-              ? `Playing as ${guestNickname}. Sign in to save progress.`
-              : "Playing as a guest. Sign in to save progress."}
-      </p>
+        {/* Footer hint */}
+        <p
+          ref={footerRef}
+          style={{
+            marginTop: 36,
+            fontSize: 12,
+            color: "var(--color-ink-faint)",
+          }}
+        >
+          {isAuth && playerName
+            ? `Welcome back, ${playerName}.`
+            : isAuth
+              ? "Welcome back."
+              : guestNickname
+                ? `Playing as ${guestNickname}. Sign in to save progress.`
+                : "Playing as a guest. Sign in to save progress."}
+        </p>
+      </div>
     </div>
   );
 }
