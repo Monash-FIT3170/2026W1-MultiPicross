@@ -4,6 +4,8 @@ resource "google_compute_address" "app" {
   address_type = "EXTERNAL"
   # cheaper for AU egress than Premium, must match access_config below
   network_tier = "STANDARD"
+
+  depends_on = [google_project_service.required]
 }
 
 resource "google_compute_disk" "pgdata" {
@@ -17,6 +19,8 @@ resource "google_compute_disk" "pgdata" {
   lifecycle {
     prevent_destroy = true
   }
+
+  depends_on = [google_project_service.required]
 }
 
 resource "google_compute_instance" "app" {
@@ -71,6 +75,13 @@ resource "google_compute_instance" "app" {
       # OS Login POSIX username: "sa_" + unique_id, truncated to 32 chars
       deploy_sa_user    = substr("sa_${google_service_account.deploy.unique_id}", 0, 32)
       deploy_script_b64 = filebase64("${path.module}/files/deploy.sh")
+
+      oidc_issuer       = var.oidc_issuer
+      oidc_provider_id  = var.oidc_provider_id
+      oidc_client_id    = var.oidc_client_id
+      oidc_anchor_claim = var.oidc_anchor_claim
+      oidc_scopes       = var.oidc_scopes
+      oidc_client_auth  = var.oidc_client_auth
     })
   }
 

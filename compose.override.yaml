@@ -1,4 +1,4 @@
-# Dev overrides — auto-loaded by `docker compose up`
+# Dev overrides, auto-loaded by `docker compose up`
 services:
   api:
     build:
@@ -29,8 +29,6 @@ services:
   frontend:
     build:
       target: dev
-    ports:
-      - "3000:3000"
     labels:
       - "traefik.http.services.frontend.loadbalancer.server.port=3000"
     develop:

@@ -5,27 +5,23 @@ import {
   useState,
   type SubmitEvent,
 } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { animate } from "animejs";
+import { ApiError } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
-
-const PAGE_TITLES: Record<string, string> = {
-  "/login": "Sign in",
-  "/register": "Create account",
-};
+import { SSO_BUTTON_LABEL } from "../auth/ssoLabel";
 
 const inputCls =
   "rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-[var(--color-accent-primary)] focus:ring-2 focus:ring-[var(--color-accent-primary)]/20";
 const labelCls = "text-sm font-medium text-gray-700";
 
-// gap-4 = 1rem = 16px — used to collapse the confirm-password top margin only.
-// We do NOT cancel the bottom gap so the button always has consistent spacing above it.
+// gap-4 = 1rem = 16px, cancelled via marginTop while the credentials block is
+// collapsed: flexbox `gap` still inserts space around a zero-height child.
 const GAP = 16;
 
 type FieldErrors = {
   username?: string;
   password?: string;
-  confirmPassword?: string;
 };
 
 function useFadeIn(
@@ -81,46 +77,40 @@ function FieldError({ message }: { message: string }) {
 }
 
 export function AuthLayout() {
-  const { login, register } = useAuth();
+  const { login, signIn } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { pathname } = location;
 
   const from =
     (location.state as { from?: { pathname: string } } | null)?.from
       ?.pathname ?? "/";
 
+  const startExpanded =
+    new URLSearchParams(location.search).get("admin") === "1";
+
   const cardRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLFormElement>(null);
-  const confirmRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
+  const credentialsRef = useRef<HTMLDivElement>(null);
   const buttonTextRef = useRef<HTMLSpanElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
-  const footerRef = useRef<HTMLParagraphElement>(null);
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
-  const isRegister = pathname === "/register";
+  // `expanded` drives aria-expanded and the animation direction. `mounted`
+  // controls whether the credentials block exists in the DOM at all: it stays
+  // true for the duration of the close animation, then flips false once the
+  // animation completes, so the form is only ever briefly present while it is
+  // visibly opening or closing, never while sitting collapsed.
+  const [expanded, setExpanded] = useState(startExpanded);
+  const [mounted, setMounted] = useState(startExpanded);
+  const pendingOpen = useRef(false);
 
-  const buttonLabel = isRegister
-    ? loading
-      ? "Creating account…"
-      : "Create account"
-    : loading
-      ? "Signing in…"
-      : "Sign in";
-
-  useEffect(() => {
-    setLoading(false);
-    setConfirmPassword("");
-    setError(null);
-    setFieldErrors({});
-  }, [pathname]);
+  const buttonLabel = loading ? "Signing in…" : "Sign in";
 
   function clearFieldError(field: keyof FieldErrors) {
     setFieldErrors((prev) => {
@@ -133,19 +123,8 @@ export function AuthLayout() {
 
   function validate(): FieldErrors {
     const errs: FieldErrors = {};
-    if (!username.trim()) {
-      errs.username = "Username is required";
-    } else if (isRegister && username.length < 3) {
-      errs.username = "Must be at least 3 characters";
-    }
-    if (!password) {
-      errs.password = "Password is required";
-    } else if (isRegister && password.length < 8) {
-      errs.password = "Must be at least 8 characters";
-    }
-    if (isRegister && password !== confirmPassword) {
-      errs.confirmPassword = "Passwords do not match";
-    }
+    if (!username.trim()) errs.username = "Username is required";
+    if (!password) errs.password = "Password is required";
     return errs;
   }
 
@@ -160,22 +139,32 @@ export function AuthLayout() {
     setError(null);
     setLoading(true);
     try {
-      if (isRegister) {
-        await register(username, password);
-        navigate("/", { replace: true });
-      } else {
-        await login(username, password);
-        navigate(from, { replace: true });
-      }
+      await login(username, password);
+      navigate(from, { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      if (err instanceof ApiError && err.status === 429) {
+        setError("Too many attempts. Please wait a few minutes and try again.");
+      } else {
+        setError(err instanceof Error ? err.message : "Something went wrong");
+      }
     } finally {
       setLoading(false);
     }
   }
 
-  // Card height tracks the wrapper frame-by-frame — no CSS transition so the
-  // ResizeObserver stays in sync with the anime.js confirm-password animation.
+  function toggleExpanded() {
+    if (expanded) {
+      setError(null);
+      setExpanded(false);
+    } else {
+      pendingOpen.current = true;
+      setMounted(true);
+      setExpanded(true);
+    }
+  }
+
+  // Card height tracks the wrapper frame-by-frame, no CSS transition so the
+  // ResizeObserver stays in sync with the anime.js credentials-block animation.
   useLayoutEffect(() => {
     const card = cardRef.current;
     const wrapper = wrapperRef.current;
@@ -193,31 +182,41 @@ export function AuthLayout() {
     return () => ro.disconnect();
   }, []);
 
-  // Collapse confirm-password wrapper before first paint when starting on /login.
-  // Only marginTop is zeroed out — the gap below the collapsed field is intentionally
-  // kept so the button has consistent spacing regardless of route.
+  // A block that just mounted to be animated open must start from height 0
+  // before the browser paints, otherwise it flashes at full height for a
+  // frame before the open animation (a regular effect, which runs after
+  // paint) gets a chance to collapse it back down first.
   useLayoutEffect(() => {
-    const el = confirmRef.current;
-    if (!el || isRegister) return;
-    el.style.height = "0px";
-    el.style.marginTop = `${-GAP}px`;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!mounted || !pendingOpen.current) return;
+    const el = credentialsRef.current;
+    if (el) {
+      el.style.height = "0px";
+      el.style.marginTop = `${-GAP}px`;
+    }
+  }, [mounted]);
 
-  // Animate confirm-password on route change.
+  // Animate the credentials block open or closed on toggle.
   const isFirstRender = useRef(true);
   useEffect(() => {
-    const el = confirmRef.current;
+    // Flip this unconditionally, before the `!el` bailout below. Otherwise,
+    // when the block starts unmounted, the true first run (el still null)
+    // would never clear the flag, and the first *real* open (the next run,
+    // once el exists) would be mistaken for the initial render and skip
+    // its animation entirely.
+    const wasFirstRender = isFirstRender.current;
+    isFirstRender.current = false;
+
+    const el = credentialsRef.current;
     if (!el) return;
 
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
+    if (wasFirstRender) {
+      pendingOpen.current = false;
       return;
     }
 
     let anim: ReturnType<typeof animate>;
 
-    if (isRegister) {
+    if (expanded) {
       el.style.height = "auto";
       const targetH = el.scrollHeight;
       el.style.height = "0px";
@@ -232,7 +231,7 @@ export function AuthLayout() {
         },
       });
     } else {
-      // Pin to a pixel value before animating — anime.js can't tween from "auto".
+      // Pin to a pixel value before animating, anime.js can't tween from "auto".
       el.style.height = `${el.offsetHeight}px`;
 
       anim = animate(el, {
@@ -240,18 +239,31 @@ export function AuthLayout() {
         marginTop: -GAP,
         duration: 350,
         ease: "inOutCubic",
+        onComplete: () => {
+          setMounted(false);
+        },
       });
     }
+
+    pendingOpen.current = false;
 
     return () => {
       anim.cancel();
     };
-  }, [isRegister]);
+  }, [expanded]);
 
-  useFadeIn(titleRef, pathname, { duration: 150, delay: 30 });
   useFadeIn(buttonTextRef, buttonLabel, { duration: 150, delay: 30 });
-  useFadeIn(footerRef, pathname, { duration: 150, delay: 60 });
   useFadeIn(errorRef, error, { duration: 150 });
+
+  // Returning via browser back restores this component from bfcache with its
+  // state intact, which would otherwise leave the button stuck mid-redirect.
+  useEffect(() => {
+    function onPageShow(e: PageTransitionEvent) {
+      if (e.persisted) setRedirecting(false);
+    }
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)]">
@@ -265,119 +277,146 @@ export function AuthLayout() {
           noValidate
           className="flex flex-col gap-4 px-8 py-10"
         >
-          <h2
-            ref={titleRef}
-            className="text-center text-lg font-semibold text-gray-800"
-          >
-            {PAGE_TITLES[pathname]}
+          <h2 className="text-center text-lg font-semibold text-gray-800">
+            Sign in
           </h2>
 
-          <div className="flex flex-col gap-1">
-            <label className={labelCls} htmlFor="username">
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              autoComplete="username"
-              required
-              minLength={isRegister ? 3 : undefined}
-              value={username}
-              onChange={(e) => {
-                setUsername(e.target.value);
-                clearFieldError("username");
-              }}
-              className={inputCls}
-            />
-            {fieldErrors.username && (
-              <FieldError
-                key={fieldErrors.username}
-                message={fieldErrors.username}
-              />
-            )}
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className={labelCls} htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete={isRegister ? "new-password" : "current-password"}
-              required
-              minLength={isRegister ? 8 : undefined}
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                clearFieldError("password");
-                clearFieldError("confirmPassword");
-              }}
-              className={inputCls}
-            />
-            {fieldErrors.password && (
-              <FieldError
-                key={fieldErrors.password}
-                message={fieldErrors.password}
-              />
-            )}
-          </div>
-
-          {/* Confirm-password — height and top margin animated by anime.js */}
-          <div
-            ref={confirmRef}
-            style={{ overflow: "hidden" }}
-            className="flex flex-col gap-1"
-          >
-            <label className={labelCls} htmlFor="confirmPassword">
-              Confirm password
-            </label>
-            <input
-              id="confirmPassword"
-              type="password"
-              autoComplete="new-password"
-              required={isRegister}
-              value={confirmPassword}
-              onChange={(e) => {
-                setConfirmPassword(e.target.value);
-                clearFieldError("confirmPassword");
-              }}
-              className={inputCls}
-            />
-            {fieldErrors.confirmPassword && (
-              <FieldError
-                key={fieldErrors.confirmPassword}
-                message={fieldErrors.confirmPassword}
-              />
-            )}
-          </div>
-
-          {error && (
-            <div
-              ref={errorRef}
-              className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700"
-            >
-              {error}
-            </div>
-          )}
-
           <button
-            type="submit"
-            disabled={loading}
-            className="rounded-xl bg-gray-900 py-2 font-semibold text-white transition hover:bg-black disabled:opacity-60"
+            type="button"
+            disabled={redirecting}
+            onClick={() => {
+              setRedirecting(true);
+              signIn(from);
+            }}
+            className="flex items-center justify-center gap-2 rounded-xl bg-gray-900 py-2 font-semibold text-white shadow-sm transition duration-150 hover:bg-black hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 active:translate-y-px active:shadow-sm disabled:cursor-wait disabled:opacity-80 disabled:shadow-sm"
           >
-            <span ref={buttonTextRef}>{buttonLabel}</span>
+            {redirecting && (
+              <svg
+                className="animate-spin"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  opacity="0.25"
+                />
+                <path
+                  d="M22 12a10 10 0 0 0-10-10"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
+              </svg>
+            )}
+            {redirecting ? "Redirecting…" : SSO_BUTTON_LABEL}
           </button>
 
-          <p ref={footerRef} className="text-center text-sm text-gray-500">
-            {isRegister ? "Already have an account? " : "No account? "}
-            <Link
-              to={isRegister ? "/login" : "/register"}
-              className="font-medium text-[var(--color-accent-primary)] hover:underline"
+          <button
+            type="button"
+            onClick={toggleExpanded}
+            aria-expanded={expanded}
+            aria-controls="service-account-form"
+            className="mx-auto flex items-center gap-1 text-xs font-medium text-gray-400 transition hover:text-gray-600"
+          >
+            I&apos;m an admin
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{
+                transform: expanded ? "rotate(180deg)" : "rotate(0deg)",
+                transition: "transform 220ms ease",
+              }}
             >
-              {isRegister ? "Log in →" : "Register here →"}
-            </Link>
-          </p>
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
+
+          {mounted && (
+            <div
+              id="service-account-form"
+              ref={credentialsRef}
+              style={{ overflow: "hidden" }}
+              className="flex flex-col gap-4"
+            >
+              <div className="flex flex-col gap-1">
+                <label className={labelCls} htmlFor="username">
+                  Username
+                </label>
+                <input
+                  id="username"
+                  type="text"
+                  autoComplete="username"
+                  required
+                  value={username}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    clearFieldError("username");
+                  }}
+                  className={inputCls}
+                />
+                {fieldErrors.username && (
+                  <FieldError
+                    key={fieldErrors.username}
+                    message={fieldErrors.username}
+                  />
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className={labelCls} htmlFor="password">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    clearFieldError("password");
+                  }}
+                  className={inputCls}
+                />
+                {fieldErrors.password && (
+                  <FieldError
+                    key={fieldErrors.password}
+                    message={fieldErrors.password}
+                  />
+                )}
+              </div>
+
+              {error && (
+                <div
+                  ref={errorRef}
+                  className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700"
+                >
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="rounded-xl border border-gray-300 py-2 font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
+              >
+                <span ref={buttonTextRef}>{buttonLabel}</span>
+              </button>
+            </div>
+          )}
         </form>
       </div>
     </div>

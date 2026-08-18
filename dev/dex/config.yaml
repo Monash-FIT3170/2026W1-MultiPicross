@@ -1,0 +1,30 @@
+# Local dev OIDC provider standing in for the real IdP. Reachable at the same
+# hostname from both the api container and the browser (see compose.yaml's
+# traefik network alias) so the `iss` claim matches on both sides.
+issuer: http://dex.multipicross.localhost
+
+storage:
+  # In-memory: no volume to manage, resets clean on every `compose up`.
+  type: memory
+
+web:
+  http: 0.0.0.0:5556
+
+oauth2:
+  skipApprovalScreen: true
+
+enablePasswordDB: true
+
+staticPasswords:
+  - email: "dev@multipicross.localhost"
+    username: "dev"
+    userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
+    # bcrypt hash of "picross-dev" (verify with: htpasswd -bnBC 10 "" picross-dev)
+    hash: "$2y$10$XDxNLWnbgA/yyeagQ0jQTuPYIpDGlmLNGaMqJoOlxItEs.w1Bg0NS"
+
+staticClients:
+  - id: multipicross-dev
+    secret: multipicross-dev-secret
+    name: "MultiPicross Dev"
+    redirectURIs:
+      - "http://multipicross.localhost/api/auth/callback"

@@ -12,7 +12,7 @@ import trophyIcon from "../assets/trophy.webp";
 
 export default function MainMenu() {
   const navigate = useNavigate();
-  const { status, username, guestNickname, playerName, logout } = useAuth();
+  const { status, user, guestNickname, playerName, logout } = useAuth();
 
   const isAuth = status === "authenticated";
 
@@ -26,7 +26,9 @@ export default function MainMenu() {
     const wordmark = wordmarkRef.current;
     const tagline = taglineRef.current;
     const tiles = gridRef.current
-      ? (Array.from(gridRef.current.querySelectorAll(".tile")) as HTMLElement[])
+      ? (Array.from(
+          gridRef.current.querySelectorAll(".tile-enter"),
+        ) as HTMLElement[])
       : [];
     const footer = footerRef.current;
 
@@ -52,9 +54,6 @@ export default function MainMenu() {
         delay: stagger(55, { start: 140 }),
         duration: 300,
         ease: "outExpo",
-        // After entrance, remove inline opacity so disabled tiles revert to CSS opacity: 0.55
-        onComplete: () =>
-          tiles.forEach((el) => el.style.removeProperty("opacity")),
       });
     }
 
@@ -98,26 +97,17 @@ export default function MainMenu() {
         >
           {isAuth ? (
             <UserDropdown
-              username={username ?? ""}
+              handle={user?.handle ?? null}
               onSignOut={() => void logout()}
             />
           ) : (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/login")}
-              >
-                Sign in
-              </Button>
-              <Button
-                variant="dark"
-                size="sm"
-                onClick={() => navigate("/register")}
-              >
-                Sign up
-              </Button>
-            </>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/login")}
+            >
+              Sign in
+            </Button>
           )}
         </div>
       </div>
@@ -259,7 +249,7 @@ export default function MainMenu() {
               size="md"
               onClick={
                 isAuth
-                  ? () => navigate("/picrossranked")
+                  ? () => navigate("/multiplayer/ranked")
                   : () => navigate("/login")
               }
               style={{
@@ -292,32 +282,35 @@ export default function MainMenu() {
             }}
           >
             {/* Singleplayer */}
-            <button
-              className="tile"
-              onClick={() => navigate("/singleplayer")}
-              style={{
-                flex: 1,
-                height: 120,
-              }}
-            >
-              <img
-                src={singleplayerIcon}
-                alt=""
-                style={{ width: 40, height: 40, opacity: 0.85 }}
-              />
-              <span
+            <div className="tile-enter" style={{ flex: 1, display: "flex" }}>
+              <button
+                className="tile"
+                onClick={() => navigate("/singleplayer")}
                 style={{
-                  fontSize: 20,
-                  fontWeight: 700,
-                  color: "var(--color-ink)",
+                  flex: 1,
+                  height: 120,
                 }}
               >
-                Singleplayer
-              </span>
-            </button>
+                <img
+                  src={singleplayerIcon}
+                  alt=""
+                  style={{ width: 40, height: 40, opacity: 0.85 }}
+                />
+                <span
+                  style={{
+                    fontSize: 20,
+                    fontWeight: 700,
+                    color: "var(--color-ink)",
+                  }}
+                >
+                  Singleplayer
+                </span>
+              </button>
+            </div>
 
             {/* Multiplayer */}
             <div
+              className="tile-enter"
               style={{
                 position: "relative",
                 flex: 1,
@@ -372,7 +365,7 @@ export default function MainMenu() {
                     label="Private Game"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
-                      navigate("/privatemultiplayer");
+                      navigate("/multiplayer/private");
                     }}
                   />
 
@@ -380,7 +373,7 @@ export default function MainMenu() {
                     label="Public Game"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
-                      navigate("/publicmultiplayer");
+                      navigate("/multiplayer/public");
                     }}
                   />
 
@@ -388,7 +381,7 @@ export default function MainMenu() {
                     label="Picross Ranked Game"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
-                      navigate("/picrossranked");
+                      navigate("/multiplayer/ranked");
                     }}
                   />
                 </div>
@@ -455,23 +448,25 @@ export default function MainMenu() {
             />
           </div>
         </div>
-      </div>
 
-      {/* Footer hint */}
-      <p
-        ref={footerRef}
-        style={{
-          marginTop: 36,
-          fontSize: 12,
-          color: "var(--color-ink-faint)",
-        }}
-      >
-        {isAuth
-          ? `Welcome back, ${playerName ?? ""}.`
-          : guestNickname
-            ? `Playing as ${guestNickname}. Sign in to save progress.`
-            : "Playing as a guest. Sign in to save progress."}
-      </p>
+        {/* Footer hint */}
+        <p
+          ref={footerRef}
+          style={{
+            marginTop: 36,
+            fontSize: 12,
+            color: "var(--color-ink-faint)",
+          }}
+        >
+          {isAuth && playerName
+            ? `Welcome back, ${playerName}.`
+            : isAuth
+              ? "Welcome back."
+              : guestNickname
+                ? `Playing as ${guestNickname}. Sign in to save progress.`
+                : "Playing as a guest. Sign in to save progress."}
+        </p>
+      </div>
     </div>
   );
 }
@@ -506,27 +501,29 @@ function SecondaryTile({
   badge?: React.ReactNode;
 }) {
   return (
-    <button
-      className="tile"
-      disabled={disabled}
-      onClick={onClick}
-      style={{
-        width: 640,
-        height: 56,
-        flexDirection: "row",
-        gap: 24,
-        padding: "0 18px",
-        justifyContent: "flex-start",
-      }}
-    >
-      {icon}
-      <span
-        style={{ fontSize: 18, fontWeight: 600, color: "var(--color-ink)" }}
+    <div className="tile-enter">
+      <button
+        className="tile"
+        disabled={disabled}
+        onClick={onClick}
+        style={{
+          width: 640,
+          height: 56,
+          flexDirection: "row",
+          gap: 24,
+          padding: "0 18px",
+          justifyContent: "flex-start",
+        }}
       >
-        {label}
-      </span>
-      {badge && <span style={{ marginLeft: "auto" }}>{badge}</span>}
-    </button>
+        {icon}
+        <span
+          style={{ fontSize: 18, fontWeight: 600, color: "var(--color-ink)" }}
+        >
+          {label}
+        </span>
+        {badge && <span style={{ marginLeft: "auto" }}>{badge}</span>}
+      </button>
+    </div>
   );
 }
 
