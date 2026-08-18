@@ -44,16 +44,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (res.ok) {
           const body = (await res.json()) as { username: string };
           sessionStorage.removeItem("guestNickname");
-          setState({ 
-            status: "authenticated", 
+          setState({
+            status: "authenticated",
             username: body.username,
-            guestNickname: null
+            guestNickname: null,
           });
         } else {
           setState((prev) => ({
             ...prev,
-            status: "unauthenticated", 
-            username: null 
+            status: "unauthenticated",
+            username: null,
           }));
         }
       })
@@ -86,9 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const playerName =
-    state.status === "authenticated"
-      ? state.username
-      : state.guestNickname;
+    state.status === "authenticated" ? state.username : state.guestNickname;
 
   async function login(username: string, password: string): Promise<void> {
     const res = await apiFetch("/auth/login", {
@@ -134,11 +132,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ 
+      value={{
         ...state,
         playerName,
-        login, 
-        register, 
+        login,
+        register,
         logout,
         setGuestNickname,
       }}

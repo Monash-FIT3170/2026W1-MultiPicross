@@ -12,13 +12,7 @@ import trophyIcon from "../assets/trophy.webp";
 
 export default function MainMenu() {
   const navigate = useNavigate();
-  const {
-    status,
-    username,
-    guestNickname,
-    playerName,
-    logout,
-  } = useAuth();
+  const { status, username, guestNickname, playerName, logout } = useAuth();
 
   const isAuth = status === "authenticated";
 
@@ -476,22 +470,22 @@ export default function MainMenu() {
           ? `Welcome back, ${username ?? ""}.`
           : "Playing as a guest. Sign in to save progress."}
       </p>
-        {/* Footer hint */}
-        <p
-          ref={footerRef}
-          style={{
-            marginTop: 36,
-            fontSize: 12,
-            color: "var(--color-ink-faint)",
-          }}
-        >
-          {isAuth
-            ? `Welcome back, ${playerName ?? ""}.`
-            : guestNickname
-              ? `Playing as ${guestNickname}. Sign in to save progress.`
-              : "Playing as a guest. Sign in to save progress."}
-        </p>
-      </div>
+      {/* Footer hint */}
+      <p
+        ref={footerRef}
+        style={{
+          marginTop: 36,
+          fontSize: 12,
+          color: "var(--color-ink-faint)",
+        }}
+      >
+        {isAuth
+          ? `Welcome back, ${playerName ?? ""}.`
+          : guestNickname
+            ? `Playing as ${guestNickname}. Sign in to save progress.`
+            : "Playing as a guest. Sign in to save progress."}
+      </p>
+    </div>
   );
 }
 

@@ -116,9 +116,7 @@ export function GuestNickname() {
               className="rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-[var(--color-accent-primary)] focus:ring-2 focus:ring-[var(--color-accent-primary)]/20"
             />
 
-            {error && (
-              <p className="text-xs text-red-600">{error}</p>
-            )}
+            {error && <p className="text-xs text-red-600">{error}</p>}
           </div>
 
           <button

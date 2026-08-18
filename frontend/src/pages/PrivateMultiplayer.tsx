@@ -70,9 +70,7 @@ export function PrivateMultiplayer() {
           <Icon name="user" size={14} color="var(--color-ink-faint)" />
           <span>
             Playing as{" "}
-            <strong style={{ color: "var(--color-ink)" }}>
-              {playerName}
-            </strong>
+            <strong style={{ color: "var(--color-ink)" }}>{playerName}</strong>
           </span>
         </div>
 
