@@ -2,20 +2,23 @@ import { Navigate, Route, Routes } from "react-router-dom";
 
 import MainMenu from "./pages/MainMenu";
 import { Singleplayer } from "./pages/Singleplayer";
-import { Multiplayer } from "./pages/Multiplayer";
+import { PublicMultiplayer } from "./pages/PublicMultiplayer";
+import { PrivateMultiplayer } from "./pages/PrivateMultiplayer";
 import { Room } from "./pages/Room";
 import { Statistics } from "./pages/Statistics";
 import { Tutorial } from "./pages/Tutorial";
 import { Settings } from "./pages/Settings";
 import { AuthLayout } from "./pages/AuthLayout";
 import { GuestOnly } from "./auth/GuestOnly";
+import { PicrossRanked } from "./pages/PicrossRanked";
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<MainMenu />} />
       <Route path="/singleplayer" element={<Singleplayer />} />
-      <Route path="/multiplayer" element={<Multiplayer />} />
+      <Route path="/publicmultiplayer" element={<PublicMultiplayer />} />
+      <Route path="/privatemultiplayer" element={<PrivateMultiplayer />} />
       <Route path="/room/:roomId" element={<Room />} />
       <Route path="/statistics" element={<Statistics />} />
       <Route path="/tutorial" element={<Tutorial />} />
@@ -25,6 +28,7 @@ export default function App() {
         <Route path="/register" element={<AuthLayout />} />
         <Route path="/signup" element={<Navigate to="/register" replace />} />
       </Route>
+      <Route path="/picrossranked" element={<PicrossRanked />} />
     </Routes>
   );
 }

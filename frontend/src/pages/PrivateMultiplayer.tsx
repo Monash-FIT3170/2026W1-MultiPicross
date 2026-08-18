@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Logo, Icon, BackButton, Chip, Button } from "../components/ui";
+import { Logo, Icon, BackButton, Button } from "../components/ui";
 
 const SIZES = ["5 × 5", "10 × 10", "15 × 15", "20 × 20"] as const;
-const PUBLIC_ROOMS_POLL_MS = 5000;
 
 function sizeToWH(size: string): { width: number; height: number } {
   const [w, h] = size.split(" × ").map(Number);
@@ -12,46 +11,15 @@ function sizeToWH(size: string): { width: number; height: number } {
 
 const GS_BASE = `${window.location.protocol}//${window.location.host}/gs`;
 
-interface PublicRoom {
-  roomId: string;
-  width: number;
-  height: number;
-  clients: number;
-  maxClients: number;
-}
-
-export function Multiplayer() {
+export function PrivateMultiplayer() {
   const navigate = useNavigate();
-  const [createSize, setCreateSize] = useState<string>("15 × 15");
+  const [createSize, setCreateSize] = useState<string>("10 × 10");
   const [isPublicCreate, setIsPublicCreate] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
   const [createLoading, setCreateLoading] = useState(false);
   const [joinLoading, setJoinLoading] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
-  const [publicRooms, setPublicRooms] = useState<PublicRoom[] | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchPublicRooms() {
-      try {
-        const res = await fetch(`${GS_BASE}/public-rooms`);
-        if (!res.ok) return;
-        const rooms = (await res.json()) as PublicRoom[];
-        if (!cancelled) setPublicRooms(rooms);
-      } catch {
-        // Keep the last known list on transient network errors.
-      }
-    }
-
-    void fetchPublicRooms();
-    const interval = setInterval(() => void fetchPublicRooms(), PUBLIC_ROOMS_POLL_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, []);
 
   async function handleCreate() {
     setCreateLoading(true);
@@ -111,8 +79,8 @@ export function Multiplayer() {
           marginBottom: 28,
         }}
       >
-        <BackButton onClick={() => navigate("/")} label="Main menu" />
-        <Logo size={22} />
+        <BackButton onClick={() => navigate("/")} label="Main Menu" />
+        <Logo size={34} />
         <div style={{ width: 100 }} />
       </div>
 
@@ -122,26 +90,28 @@ export function Multiplayer() {
             margin: "0 0 4px",
             fontSize: 30,
             fontWeight: 700,
+            letterSpacing: "-0.01em",
             color: "var(--color-ink)",
           }}
         >
-          Multiplayer
+          Private Multiplayer
         </h1>
         <p
           style={{
             margin: "0 0 28px",
             color: "var(--color-ink-muted)",
-            fontSize: 15,
+            marginTop: 10,
+            fontSize: 18,
           }}
         >
           1v1 head-to-head. First to fill every cell wins.
         </p>
 
-        {/* Quick actions */}
+        {/* Options */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
+            gridTemplateColumns: "1fr 1fr",
             gap: 16,
             marginBottom: 40,
           }}
@@ -164,7 +134,7 @@ export function Multiplayer() {
               />
               <div
                 style={{
-                  fontSize: 15,
+                  fontSize: 18,
                   fontWeight: 700,
                   color: "var(--color-ink)",
                 }}
@@ -173,7 +143,14 @@ export function Multiplayer() {
               </div>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <span className="mp-eyebrow">Size</span>
+              <span
+                className="mp-eyebrow"
+                style={{
+                  fontSize: 14,
+                }}
+              >
+                Size
+              </span>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {SIZES.map((s) => (
                   <button
@@ -187,7 +164,7 @@ export function Multiplayer() {
                         createSize === s ? "#fff" : "var(--color-ink-soft)",
                       border: `1px solid ${createSize === s ? "var(--color-blue-500)" : "var(--color-line)"}`,
                       borderRadius: 999,
-                      fontSize: 12,
+                      fontSize: 16,
                       fontWeight: 600,
                       cursor: "pointer",
                       fontFamily: "var(--font-ui)",
@@ -226,6 +203,10 @@ export function Multiplayer() {
               size="md"
               onClick={() => void handleCreate()}
               disabled={createLoading}
+              style={{
+                fontSize: 16,
+                fontWeight: 700,
+              }}
             >
               {createLoading ? "Creating…" : "Create"}
             </Button>
@@ -249,7 +230,7 @@ export function Multiplayer() {
               />
               <div
                 style={{
-                  fontSize: 15,
+                  fontSize: 18,
                   fontWeight: 700,
                   color: "var(--color-ink)",
                 }}
@@ -267,13 +248,15 @@ export function Multiplayer() {
                 padding: "10px 14px",
                 border: "1px solid var(--color-line)",
                 borderRadius: 10,
-                fontSize: 14,
+                fontSize: 16,
                 fontFamily: "var(--font-ui)",
                 background: "#fff",
                 color: "var(--color-ink)",
                 outline: "none",
                 textAlign: "center",
                 letterSpacing: "0.2em",
+                marginTop: 10,
+                paddingTop: 12,
               }}
             />
             {joinError && (
@@ -286,149 +269,16 @@ export function Multiplayer() {
               size="md"
               onClick={() => void handleJoin()}
               disabled={joinLoading || !inviteCode.trim()}
+              style={{
+                fontSize: 16,
+                fontWeight: 700,
+                marginTop: 8,
+              }}
             >
               {joinLoading ? "Joining…" : "Join"}
             </Button>
           </div>
-
-          {/* Quick match */}
-          <div
-            className="mp-surface"
-            style={{
-              padding: 20,
-              display: "flex",
-              flexDirection: "column",
-              gap: 14,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <IconBadge
-                color="var(--color-sage-50)"
-                iconColor="var(--color-sage-500)"
-                icon="trophy"
-              />
-              <div
-                style={{
-                  fontSize: 15,
-                  fontWeight: 700,
-                  color: "var(--color-ink)",
-                }}
-              >
-                Quick match
-              </div>
-            </div>
-            <p
-              style={{
-                margin: 0,
-                fontSize: 13,
-                color: "var(--color-ink-muted)",
-              }}
-            >
-              Pair me with the next available player.
-            </p>
-            <Chip tone="sage" style={{ alignSelf: "flex-start" }}>
-              ~30s wait
-            </Chip>
-            <Button variant="primary" size="md" disabled>
-              Match me
-            </Button>
-          </div>
         </div>
-
-        {/* Public games */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "baseline",
-            justifyContent: "space-between",
-            marginBottom: 12,
-          }}
-        >
-          <h2
-            style={{
-              margin: 0,
-              fontSize: 20,
-              fontWeight: 600,
-              color: "var(--color-ink)",
-            }}
-          >
-            Public games
-          </h2>
-        </div>
-
-        {publicRooms === null || publicRooms.length === 0 ? (
-          <div
-            className="mp-surface"
-            style={{
-              padding: 40,
-              textAlign: "center",
-              color: "var(--color-ink-muted)",
-            }}
-          >
-            <Icon
-              name="users"
-              size={32}
-              color="var(--color-line-strong)"
-              style={{
-                marginBottom: 12,
-                display: "block",
-                margin: "0 auto 12px",
-              }}
-            />
-            <div style={{ fontSize: 14, fontWeight: 600 }}>
-              {publicRooms === null
-                ? "Loading public games…"
-                : "No open games right now."}
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {publicRooms.map((room) => (
-              <div
-                key={room.roomId}
-                className="mp-surface"
-                style={{
-                  padding: "14px 20px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 16,
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <IconBadge
-                    color="var(--color-sage-50)"
-                    iconColor="var(--color-sage-500)"
-                    icon="users"
-                  />
-                  <div>
-                    <div
-                      style={{
-                        fontSize: 14,
-                        fontWeight: 700,
-                        color: "var(--color-ink)",
-                      }}
-                    >
-                      {room.width} × {room.height}
-                    </div>
-                    <div
-                      style={{ fontSize: 12, color: "var(--color-ink-muted)" }}
-                    >
-                      {room.clients}/{room.maxClients} · waiting for opponent
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  variant="primary"
-                  size="md"
-                  onClick={() => navigate(`/room/${room.roomId}`)}
-                >
-                  Join
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
