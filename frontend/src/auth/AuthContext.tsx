@@ -24,13 +24,16 @@ interface AuthUser {
 interface AuthState {
   status: AuthStatus;
   user: AuthUser | null;
+  guestNickname: string | null;
 }
 
 interface AuthContextValue extends AuthState {
+  playerName: string | null;
   login: (username: string, password: string) => Promise<void>;
   signIn: (returnTo?: string) => void;
   setHandle: (handle: string) => Promise<void>;
   logout: () => Promise<void>;
+  setGuestNickname: (nickname: string) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -39,7 +42,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>({
     status: "loading",
     user: null,
+    guestNickname: sessionStorage.getItem("guestNickname"),
   });
+
   const bootstrapped = useRef(false);
 
   useEffect(() => {
@@ -50,21 +55,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then(async (res) => {
         if (res.ok) {
           const body = (await res.json()) as AuthUser;
-          setState({ status: "authenticated", user: body });
+          sessionStorage.removeItem("guestNickname");
+          setState({
+            status: "authenticated",
+            user: body,
+            guestNickname: null,
+          });
         } else {
-          setState({ status: "unauthenticated", user: null });
+          setState((prev) => ({
+            ...prev,
+            status: "unauthenticated",
+            user: null,
+          }));
         }
       })
       .catch(() => {
-        setState({ status: "unauthenticated", user: null });
+        setState((prev) => ({
+          ...prev,
+          status: "unauthenticated",
+          user: null,
+        }));
       });
   }, []);
 
   useEffect(() => {
     setLogoutHandler(() => {
-      setState({ status: "unauthenticated", user: null });
+      setState((prev) => ({ ...prev, status: "unauthenticated", user: null }));
     });
   }, []);
+
+  function setGuestNickname(nickname: string) {
+    sessionStorage.setItem("guestNickname", nickname);
+
+    setState((prev) => ({
+      ...prev,
+      guestNickname: nickname,
+    }));
+  }
+
+  const playerName =
+    state.status === "authenticated"
+      ? (state.user?.handle ?? null)
+      : state.guestNickname;
 
   async function login(username: string, password: string): Promise<void> {
     const res = await apiFetch("/auth/login", {
@@ -75,7 +107,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await throwApiError(res);
     }
     const body = (await res.json()) as AuthUser;
-    setState({ status: "authenticated", user: body });
+
+    sessionStorage.removeItem("guestNickname");
+
+    setState({ status: "authenticated", user: body, guestNickname: null });
   }
 
   function signIn(returnTo?: string): void {
@@ -100,12 +135,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function logout(): Promise<void> {
     await apiFetch("/auth/logout", { method: "POST" });
-    setState({ status: "unauthenticated", user: null });
+
+    sessionStorage.removeItem("guestNickname");
+
+    setState({ status: "unauthenticated", user: null, guestNickname: null });
   }
 
   return (
     <AuthContext.Provider
-      value={{ ...state, login, signIn, setHandle, logout }}
+      value={{
+        ...state,
+        playerName,
+        login,
+        signIn,
+        setHandle,
+        logout,
+        setGuestNickname,
+      }}
     >
       {children}
     </AuthContext.Provider>

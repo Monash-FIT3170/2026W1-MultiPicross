@@ -12,7 +12,7 @@ import trophyIcon from "../assets/trophy.webp";
 
 export default function MainMenu() {
   const navigate = useNavigate();
-  const { status, user, logout } = useAuth();
+  const { status, user, guestNickname, playerName, logout } = useAuth();
 
   const isAuth = status === "authenticated";
 
@@ -249,7 +249,7 @@ export default function MainMenu() {
               size="md"
               onClick={
                 isAuth
-                  ? () => navigate("/picrossranked")
+                  ? () => navigate("/multiplayer/ranked")
                   : () => navigate("/login")
               }
               style={{
@@ -365,7 +365,7 @@ export default function MainMenu() {
                     label="Private Game"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
-                      navigate("/privatemultiplayer");
+                      navigate("/multiplayer/private");
                     }}
                   />
 
@@ -373,7 +373,7 @@ export default function MainMenu() {
                     label="Public Game"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
-                      navigate("/publicmultiplayer");
+                      navigate("/multiplayer/public");
                     }}
                   />
 
@@ -381,7 +381,7 @@ export default function MainMenu() {
                     label="Picross Ranked Game"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
-                      navigate("/picrossranked");
+                      navigate("/multiplayer/ranked");
                     }}
                   />
                 </div>
@@ -459,11 +459,13 @@ export default function MainMenu() {
           color: "var(--color-ink-faint)",
         }}
       >
-        {isAuth && user?.handle
-          ? `Welcome back, ${user.handle}.`
+        {isAuth && playerName
+          ? `Welcome back, ${playerName}.`
           : isAuth
             ? "Welcome back."
-            : "Playing as a guest. Sign in to save progress."}
+            : guestNickname
+              ? `Playing as ${guestNickname}. Sign in to save progress.`
+              : "Playing as a guest. Sign in to save progress."}
       </p>
     </div>
   );

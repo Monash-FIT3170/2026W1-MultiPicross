@@ -15,9 +15,9 @@ export function extractAnchor(claims: Record<string, unknown>): string {
 const RETURN_TO_PATHS = new Set([
   "/",
   "/singleplayer",
-  "/publicmultiplayer",
-  "/privatemultiplayer",
-  "/picrossranked",
+  "/multiplayer/public",
+  "/multiplayer/private",
+  "/multiplayer/ranked",
   "/statistics",
   "/tutorial",
   "/settings",
