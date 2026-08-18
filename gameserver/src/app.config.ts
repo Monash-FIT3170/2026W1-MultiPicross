@@ -11,6 +11,7 @@ import {
  * Import your Room files
  */
 import { MyRoom } from "./rooms/MyRoom.js";
+import { RatedMatchmakingRoom } from "./rooms/RatedMatchmakingRoom.js";
 
 const server = defineServer({
   /**
@@ -18,6 +19,7 @@ const server = defineServer({
    */
   rooms: {
     my_room: defineRoom(MyRoom),
+    rated_matchmaking: defineRoom(RatedMatchmakingRoom),
   },
 
   /**
