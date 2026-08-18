@@ -6,7 +6,9 @@ import { db } from "@api/db/client.js";
 import { desc, eq } from "drizzle-orm";
 import {
   processRatedQueueJoin,
+  processRatedQueueTimeout,
   type JoinRatedQueueResult,
+  type QueueTimeoutResult,
   type RatedQueueEntry,
 } from "./ratedQueueLogic.js";
 
@@ -93,6 +95,17 @@ export async function joinRatedQueue(
   accountId: string,
 ): Promise<JoinRatedQueueResult> {
   return processRatedQueueJoin(accountId, {
+    getWaitingList: getRatedWaitingList,
+    getPlayerElo,
+    addPlayer: addToRatedWaitingList,
+    removePlayer: removeFromRatedWaitingList,
+  });
+}
+
+export async function handleRatedQueueTimeout(
+  accountId: string,
+): Promise<QueueTimeoutResult> {
+  return processRatedQueueTimeout(accountId, {
     getWaitingList: getRatedWaitingList,
     getPlayerElo,
     addPlayer: addToRatedWaitingList,

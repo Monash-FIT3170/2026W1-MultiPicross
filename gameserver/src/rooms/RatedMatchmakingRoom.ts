@@ -80,6 +80,14 @@ export class RatedMatchmakingRoom extends Room {
     this.onMessage("joinQueue", (client) => {
       void this.handleJoinQueue(client);
     });
+
+    this.onMessage("stayInQueue", (client) => {
+      void this.handleStayInQueue(client);
+    });
+
+    this.onMessage("leaveQueue", (client) => {
+      void this.handleLeaveQueue(client);
+    });
   }
 
   onJoin(client: Client): void {
@@ -140,11 +148,9 @@ export class RatedMatchmakingRoom extends Room {
       return;
     }
 
-    const opponentClient = this.clients.find((waitingClient) => {
-      const waitingPlayer = waitingClient.auth as AuthenticatedPlayer;
-
-      return waitingPlayer.accountId === result.opponent.accountId;
-    });
+    const opponentClient = this.findClientByAccountId(
+      result.opponent.accountId,
+    );
 
     /*
     A database entry could remain after a server restart or an unexpected
@@ -162,20 +168,116 @@ export class RatedMatchmakingRoom extends Room {
       return;
     }
 
+    await this.createGameForPlayers(client, opponentClient);
+  }
+
+  private async handleStayInQueue(client: Client): Promise<void> {
+    const player = client.auth as AuthenticatedPlayer;
+
+    const { addToRatedWaitingList } =
+      await import("../elo/ratedWaitingList.js");
+
+    /*
+    Adding is idempotent, so the player will not be duplicated if they
+    are still present in the waiting list.
+    */
+    await addToRatedWaitingList(player.accountId);
+
+    client.send("queueStatus", {
+      status: "queued",
+    });
+
+    this.startQueueTimer(client);
+  }
+
+  private async handleLeaveQueue(client: Client): Promise<void> {
+    const player = client.auth as AuthenticatedPlayer;
+
     this.clearQueueTimer(player.accountId);
-    this.clearQueueTimer(result.opponent.accountId);
+
+    const { removeFromRatedWaitingList } =
+      await import("../elo/ratedWaitingList.js");
+
+    await removeFromRatedWaitingList(player.accountId);
+
+    client.send("queueStatus", {
+      status: "left",
+    });
+  }
+
+  private async handleQueueTimeout(client: Client): Promise<void> {
+    const player = client.auth as AuthenticatedPlayer;
+
+    this.queueTimers.delete(player.accountId);
+
+    const { addToRatedWaitingList, handleRatedQueueTimeout } =
+      await import("../elo/ratedWaitingList.js");
+
+    const result = await handleRatedQueueTimeout(player.accountId);
+
+    if (result.status === "not-queued") {
+      return;
+    }
+
+    if (result.status === "waiting-alone") {
+      this.sendQueueTimeoutEmpty(client);
+      return;
+    }
+
+    const opponentClient = this.findClientByAccountId(
+      result.opponent.accountId,
+    );
+
+    /*
+    If the closest database entry belongs to a disconnected player,
+    keep the current player queued and ask them whether they want to
+    continue waiting.
+    */
+    if (!opponentClient) {
+      await addToRatedWaitingList(player.accountId);
+      this.sendQueueTimeoutEmpty(client);
+      return;
+    }
+
+    await this.createGameForPlayers(client, opponentClient);
+  }
+
+  private findClientByAccountId(accountId: string): Client | undefined {
+    return this.clients.find((waitingClient) => {
+      const waitingPlayer = waitingClient.auth as AuthenticatedPlayer;
+
+      return waitingPlayer.accountId === accountId;
+    });
+  }
+
+  private sendQueueTimeoutEmpty(client: Client): void {
+    client.send("queueTimeoutEmpty", {
+      message:
+        "No one else is in the queue at the moment. Would you like to wait another minute?",
+    });
+  }
+
+  private async createGameForPlayers(
+    firstClient: Client,
+    secondClient: Client,
+  ): Promise<void> {
+    const firstPlayer = firstClient.auth as AuthenticatedPlayer;
+    const secondPlayer = secondClient.auth as AuthenticatedPlayer;
+
+    this.clearQueueTimer(firstPlayer.accountId);
+    this.clearQueueTimer(secondPlayer.accountId);
 
     const gameRoom = await matchMaker.createRoom("my_room", {
-      playerOneAccountId: player.accountId,
-      playerTwoAccountId: result.opponent.accountId,
+      playerOneAccountId: firstPlayer.accountId,
+      playerTwoAccountId: secondPlayer.accountId,
     });
 
     const matchMessage = {
       roomId: gameRoom.roomId,
     };
 
-    client.send("matched", matchMessage);
-    opponentClient.send("matched", matchMessage);
+    firstClient.send("matched", matchMessage);
+    secondClient.send("matched", matchMessage);
   }
 
   private startQueueTimer(client: Client): void {
@@ -184,8 +286,7 @@ export class RatedMatchmakingRoom extends Room {
     this.clearQueueTimer(player.accountId);
 
     const timer = setTimeout(() => {
-      client.send("queueTimerExpired");
-      this.queueTimers.delete(player.accountId);
+      void this.handleQueueTimeout(client);
     }, QUEUE_WAIT_TIME_MS);
 
     this.queueTimers.set(player.accountId, timer);

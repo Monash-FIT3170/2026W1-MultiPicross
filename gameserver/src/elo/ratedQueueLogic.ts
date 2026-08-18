@@ -12,6 +12,18 @@ export type JoinRatedQueueResult =
       status: "queued";
     };
 
+export type QueueTimeoutResult =
+  | {
+      status: "matched";
+      opponent: RatedQueueEntry;
+    }
+  | {
+      status: "waiting-alone";
+    }
+  | {
+      status: "not-queued";
+    };
+
 export type RatedQueueOperations = {
   getWaitingList: () => Promise<RatedQueueEntry[]>;
   getPlayerElo: (accountId: string) => Promise<number>;
@@ -120,4 +132,44 @@ export async function processRatedQueueJoin(
   await operations.addPlayer(accountId);
 
   return { status: "queued" };
+}
+
+export async function processRatedQueueTimeout(
+  accountId: string,
+  operations: RatedQueueOperations,
+): Promise<QueueTimeoutResult> {
+  const waitingList = await operations.getWaitingList();
+
+  const playerIsQueued = waitingList.some(
+    (player) => player.accountId === accountId,
+  );
+
+  if (!playerIsQueued) {
+    return { status: "not-queued" };
+  }
+
+  const otherPlayers = waitingList.filter(
+    (player) => player.accountId !== accountId,
+  );
+
+  if (otherPlayers.length === 0) {
+    return { status: "waiting-alone" };
+  }
+
+  const playerElo = await operations.getPlayerElo(accountId);
+  const opponent = findClosestPlayer(otherPlayers, playerElo);
+
+  if (!opponent) {
+    return { status: "waiting-alone" };
+  }
+
+  await Promise.all([
+    operations.removePlayer(accountId),
+    operations.removePlayer(opponent.accountId),
+  ]);
+
+  return {
+    status: "matched",
+    opponent,
+  };
 }

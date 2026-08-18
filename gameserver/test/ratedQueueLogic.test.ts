@@ -4,6 +4,7 @@ import {
   findEligibleOpponent,
   findInsertionIndex,
   processRatedQueueJoin,
+  processRatedQueueTimeout,
   type RatedQueueEntry,
   type RatedQueueOperations,
 } from "../src/elo/ratedQueueLogic.js";
@@ -157,6 +158,83 @@ describe("processRatedQueueJoin", () => {
     assert.deepStrictEqual(result, { status: "queued" });
     assert.strictEqual(playerEloRequested, false);
     assert.deepStrictEqual(addedPlayers, []);
+    assert.deepStrictEqual(removedPlayers, []);
+  });
+});
+
+describe("processRatedQueueTimeout", () => {
+  it("matches the closest player without the 200-point limit", async () => {
+    const removedPlayers: string[] = [];
+
+    const operations: RatedQueueOperations = {
+      getWaitingList: async () => [
+        { accountId: "waiting-player", elo: 100 },
+        { accountId: "closest-opponent", elo: 500 },
+        { accountId: "farther-opponent", elo: 800 },
+      ],
+      getPlayerElo: async () => 100,
+      addPlayer: async () => {},
+      removePlayer: async (accountId) => {
+        removedPlayers.push(accountId);
+      },
+    };
+
+    const result = await processRatedQueueTimeout("waiting-player", operations);
+
+    assert.strictEqual(result.status, "matched");
+
+    if (result.status === "matched") {
+      assert.strictEqual(result.opponent.accountId, "closest-opponent");
+    }
+
+    assert.deepStrictEqual(removedPlayers, [
+      "waiting-player",
+      "closest-opponent",
+    ]);
+  });
+
+  it("returns waiting-alone when no other player is queued", async () => {
+    const removedPlayers: string[] = [];
+
+    const operations: RatedQueueOperations = {
+      getWaitingList: async () => [{ accountId: "waiting-player", elo: 100 }],
+      getPlayerElo: async () => 100,
+      addPlayer: async () => {},
+      removePlayer: async (accountId) => {
+        removedPlayers.push(accountId);
+      },
+    };
+
+    const result = await processRatedQueueTimeout("waiting-player", operations);
+
+    assert.deepStrictEqual(result, {
+      status: "waiting-alone",
+    });
+    assert.deepStrictEqual(removedPlayers, []);
+  });
+
+  it("returns not-queued when the player has already left", async () => {
+    let playerEloRequested = false;
+    const removedPlayers: string[] = [];
+
+    const operations: RatedQueueOperations = {
+      getWaitingList: async () => [{ accountId: "someone-else", elo: 300 }],
+      getPlayerElo: async () => {
+        playerEloRequested = true;
+        return 100;
+      },
+      addPlayer: async () => {},
+      removePlayer: async (accountId) => {
+        removedPlayers.push(accountId);
+      },
+    };
+
+    const result = await processRatedQueueTimeout("waiting-player", operations);
+
+    assert.deepStrictEqual(result, {
+      status: "not-queued",
+    });
+    assert.strictEqual(playerEloRequested, false);
     assert.deepStrictEqual(removedPlayers, []);
   });
 });
