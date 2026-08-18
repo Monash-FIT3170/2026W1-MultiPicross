@@ -4,6 +4,7 @@ import MainMenu from "./pages/MainMenu";
 import { Singleplayer } from "./pages/Singleplayer";
 import { PublicMultiplayer } from "./pages/PublicMultiplayer";
 import { PrivateMultiplayer } from "./pages/PrivateMultiplayer";
+import { Room } from "./pages/Room";
 import { Statistics } from "./pages/Statistics";
 import { Tutorial } from "./pages/Tutorial";
 import { Settings } from "./pages/Settings";
@@ -18,6 +19,7 @@ export default function App() {
       <Route path="/singleplayer" element={<Singleplayer />} />
       <Route path="/publicmultiplayer" element={<PublicMultiplayer />} />
       <Route path="/privatemultiplayer" element={<PrivateMultiplayer />} />
+      <Route path="/room/:roomId" element={<Room />} />
       <Route path="/statistics" element={<Statistics />} />
       <Route path="/tutorial" element={<Tutorial />} />
       <Route path="/settings" element={<Settings />} />

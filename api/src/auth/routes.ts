@@ -14,6 +14,7 @@ import {
   verifyPassword,
   signAccessToken,
   signRefreshToken,
+  signRoomToken,
   verifyRefreshToken,
   hashToken,
   refreshExpiresAt,
@@ -303,6 +304,39 @@ auth.get(
   (c) => {
     const payload = c.get("jwtPayload") as { sub: string; username: string };
     return c.json({ id: payload.sub, username: payload.username });
+  },
+);
+
+auth.post(
+  "/room-token",
+  requireAuth,
+  describeRoute({
+    tags: ["Auth"],
+    summary: "Mint a short-lived token for joining a multiplayer room",
+    description:
+      "Proves the caller's identity to the gameserver without exposing the session cookie to it.",
+    responses: {
+      200: {
+        description: "Room token issued",
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: { token: { type: "string" } },
+            },
+          },
+        },
+      },
+      401: { description: "Not authenticated", content: errorContent },
+    },
+  }),
+  async (c) => {
+    const payload = c.get("jwtPayload") as { sub: string; username: string };
+    const token = await signRoomToken({
+      sub: payload.sub,
+      username: payload.username,
+    });
+    return c.json({ token });
   },
 );
 
