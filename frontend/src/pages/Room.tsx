@@ -41,6 +41,9 @@ interface RoomSnapshot {
   colors?: string[];
 }
 
+
+const OPPONENT_BOARD_DELAY_MS = 1500;
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function buildGrid(p: PlayerSnapshot): CellValue[] {
@@ -66,6 +69,10 @@ export function Room() {
   const [copied, setCopied] = useState(false);
   const [displaySeconds, setDisplaySeconds] = useState(0);
   const playingStartRef = useRef<number | null>(null);
+  const [delayedOpponentGrid, setDelayedOpponentGrid] = useState<
+    CellValue[] | null
+  >(null);
+  const opponentDelayTimers = useRef<number[]>([]);
 
   // ── Connect to room ────────────────────────────────────────────────────────
 
@@ -138,6 +145,39 @@ export function Room() {
     );
     return () => clearInterval(id);
   }, [snapshot?.phase]);
+
+  // ── Delayed opponent board ────────────────────────────────────────────────
+  // Each new snapshot schedules its own delayed apply rather than debouncing,
+  // so the board keeps catching up smoothly instead of stalling while the
+  // opponent is actively filling cells.
+
+  useEffect(() => {
+    const sessionIds = snapshot ? Object.keys(snapshot.players) : [];
+    const myId = mySessionId ?? sessionIds[0];
+    const opponentId = sessionIds.find((id) => id !== myId) ?? null;
+    const opponentSnap =
+      snapshot && opponentId ? snapshot.players[opponentId] : null;
+
+    if (!opponentSnap) {
+      setDelayedOpponentGrid(null);
+      return;
+    }
+
+    const grid = buildGrid(opponentSnap);
+    const id: number = window.setTimeout(() => {
+      setDelayedOpponentGrid(grid);
+      opponentDelayTimers.current = opponentDelayTimers.current.filter(
+        (t: number) => t !== id,
+      );
+    }, OPPONENT_BOARD_DELAY_MS);
+    opponentDelayTimers.current.push(id);
+  }, [snapshot, mySessionId]);
+
+  useEffect(() => {
+    return () => {
+      opponentDelayTimers.current.forEach((id: number) => window.clearTimeout(id));
+    };
+  }, []);
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
@@ -303,6 +343,12 @@ export function Room() {
   const opponentGrid = opponent ? buildGrid(opponent) : null;
 
   const isFinished = phase === "finished";
+  // While the game is live, render the delayed snapshot so the blurred board
+  // trails the opponent's actual moves; once finished, snap to the real grid
+  // immediately so the reveal isn't held back by a stale timer.
+  const displayedOpponentGrid = isFinished
+    ? opponentGrid
+    : (delayedOpponentGrid ?? opponentGrid);
   const iWon = isFinished && winnerId === myId;
   const opponentWon = isFinished && winnerId === opponentId;
   const isDraw = isFinished && !winnerId;
@@ -416,7 +462,7 @@ export function Room() {
         </div>
 
         {/* Opponent board */}
-        {opponent && opponentGrid ? (
+        {opponent && displayedOpponentGrid ? (
           <div>
             <PlayerLabel
               name={opponent.username}
@@ -437,7 +483,7 @@ export function Room() {
               <NonogramGrid
                 rowClues={rowClues}
                 colClues={colClues}
-                grid={opponentGrid}
+                grid={displayedOpponentGrid}
                 width={width}
                 height={height}
                 interactive={false}
