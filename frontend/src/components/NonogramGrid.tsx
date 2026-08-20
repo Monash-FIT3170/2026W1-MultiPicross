@@ -15,6 +15,7 @@ interface NonogramGridProps {
   completed?: boolean;
   mistakeCrossIdx?: number | null;
   mistakeCrossIndices?: number[];
+  showGridLines?: boolean;
   onFill?: (row: number, col: number) => void;
   onCross?: (row: number, col: number, markCross: boolean) => void;
 }
@@ -47,6 +48,7 @@ export default function NonogramGrid({
   completed = false,
   mistakeCrossIdx,
   mistakeCrossIndices,
+  showGridLines = true,
   onFill,
   onCross,
 }: NonogramGridProps) {
@@ -297,6 +299,38 @@ export default function NonogramGrid({
     const innerBorder = "1px solid #d6d2c8";
     const groupBorder = "2px solid var(--color-line-strong)";
 
+    const borderLeft =
+      !showGridLines
+        ? "none"
+        : col === 0
+          ? groupBorder
+          : undefined;
+
+    const borderTop =
+      !showGridLines
+        ? "none"
+        : row === 0
+          ? groupBorder
+          : undefined;
+
+    const borderRight =
+      !showGridLines
+        ? "none"
+        : isLastCol
+          ? groupBorder
+          : isEveryFiveRight
+            ? groupBorder
+            : innerBorder;
+
+    const borderBottom =
+      !showGridLines
+        ? "none"
+        : isLastRow
+          ? groupBorder
+          : isEveryFiveBottom
+            ? groupBorder
+            : innerBorder;
+
     const base: React.CSSProperties = {
       width: cs,
       height: cs,
@@ -306,18 +340,10 @@ export default function NonogramGrid({
       position: "relative",
       transition: "background-color 80ms ease",
       boxSizing: "border-box",
-      borderLeft: col === 0 ? groupBorder : undefined,
-      borderTop: row === 0 ? groupBorder : undefined,
-      borderRight: isLastCol
-        ? groupBorder
-        : isEveryFiveRight
-          ? groupBorder
-          : innerBorder,
-      borderBottom: isLastRow
-        ? groupBorder
-        : isEveryFiveBottom
-          ? groupBorder
-          : innerBorder,
+      borderLeft,
+      borderTop,
+      borderRight,
+      borderBottom,
       outline: "none",
       // Keep opacity: 0 in React's virtual DOM while the intro animation is
       // running. React diffs 0→0 on re-renders and never touches the real
