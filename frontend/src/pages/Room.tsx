@@ -416,7 +416,7 @@ export function Room() {
         Left-click to fill · Right-click to mark empty
       </p>
 
-      <div style={{ display: "flex", gap: 40, justifyContent: "center", alignItems: "flex-start", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 10, justifyContent: "center", alignItems: "flex-start", flexWrap: "nowrap", minWidth: "max-content" }}>
         {/* My board */}
         <div>
           <PlayerLabel
@@ -489,7 +489,7 @@ export function Room() {
                 interactive={false}
                 colors={isFinished ? colors : undefined}
                 completed={opponent.won}
-                cellSize={Math.max(12, cs - 8)}
+                cellSize={Math.max(8, cs - 12)}
                 showGridLines={false
                 }
               />
