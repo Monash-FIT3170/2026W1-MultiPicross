@@ -490,6 +490,8 @@ export function Room() {
                 colors={isFinished ? colors : undefined}
                 completed={opponent.won}
                 cellSize={Math.max(12, cs - 8)}
+                showGridLines={false
+                }
               />
             </div>
           </div>
