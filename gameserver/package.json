@@ -35,6 +35,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@colyseus/auth": "^0.17.9",
     "@colyseus/schema": "^4.0.30",
     "@colyseus/tools": "^0.17.20",
     "colyseus": "^0.17.10",
