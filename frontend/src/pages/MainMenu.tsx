@@ -78,6 +78,7 @@ export default function MainMenu() {
         background: "var(--color-paper)",
         position: "relative",
       }}
+      onClick={() => setShowMultiplayerMenu(false)}
     >
       {/* Top bar */}
       <div
@@ -318,80 +319,61 @@ export default function MainMenu() {
 
             {/* Multiplayer */}
             <div
+              onClick={(event) => event.stopPropagation()}
               style={{
                 position: "relative",
                 flex: 1,
               }}
-              onMouseEnter={() => setShowMultiplayerMenu(true)}
-              onMouseLeave={() => setShowMultiplayerMenu(false)}
             >
-              <button
-                className="tile"
-                onClick={() => setShowMultiplayerMenu((prev) => !prev)}
-                style={{
-                  width: "100%",
-                  height: 120,
-                }}
-              >
-                <img
-                  src={multiIcon}
-                  alt=""
-                  style={{
-                    width: 40,
-                    height: 40,
-                    opacity: 0.85,
-                  }}
-                />
-
-                <span
-                  style={{
-                    fontSize: 20,
-                    fontWeight: 700,
-                    color: "var(--color-ink)",
-                  }}
-                >
-                  Multiplayer
-                </span>
-              </button>
-
-              {showMultiplayerMenu && (
+              {showMultiplayerMenu ? (
                 <div
                   style={{
-                    position: "absolute",
-                    left: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
                     width: "100%",
-                    background: "white",
-                    borderRadius: 16,
-                    border: "1px solid #E5E7EB",
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
-                    overflow: "hidden",
-                    zIndex: 100,
+                    height: 120,
                   }}
                 >
-                  <DropdownItem
-                    label="Private Game"
+                  <ModeButton
+                    label="Unrated"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
-                      navigate("/privatemultiplayer");
+                      navigate("/multiplayer/unrated");
                     }}
                   />
-
-                  <DropdownItem
-                    label="Public Game"
+                  <ModeButton
+                    label="Ranked"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
-                      navigate("/publicmultiplayer");
-                    }}
-                  />
-
-                  <DropdownItem
-                    label="Picross Ranked Game"
-                    onClick={() => {
-                      setShowMultiplayerMenu(false);
-                      navigate("/picrossranked");
+                      navigate("/multiplayer/ranked");
                     }}
                   />
                 </div>
+              ) : (
+                <button
+                  className="tile"
+                  onClick={() => setShowMultiplayerMenu(true)}
+                  style={{
+                    width: "100%",
+                    height: 120,
+                  }}
+                >
+                  <img
+                    src={multiIcon}
+                    alt=""
+                    style={{ width: 40, height: 40, opacity: 0.85 }}
+                  />
+                  <span
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 700,
+                      color: "var(--color-ink)",
+                    }}
+                  >
+                    Multiplayer
+                  </span>
+                </button>
               )}
             </div>
           </div>
@@ -528,7 +510,7 @@ function SecondaryTile({
   );
 }
 
-function DropdownItem({
+function ModeButton({
   label,
   onClick,
 }: {
@@ -537,25 +519,21 @@ function DropdownItem({
 }) {
   return (
     <button
+      className="mode-button"
       onClick={onClick}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = "#F5F9FF";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "white";
-      }}
       style={{
+        display: "block",
         width: "100%",
-        padding: "14px 18px",
-        background: "white",
-        border: "none",
-        borderBottom: "1px solid #F1F5F9",
+        height: 56,
+        padding: "10px 8px",
+        background: "var(--color-white)",
+        border: "1px solid #D6E6FF",
+        borderRadius: 10,
         cursor: "pointer",
-        textAlign: "left",
-        fontSize: 16,
+        textAlign: "center",
+        fontSize: 18,
         fontWeight: 600,
         color: "var(--color-ink)",
-        transition: "background 0.15s ease",
       }}
     >
       {label}
