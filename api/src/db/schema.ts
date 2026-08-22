@@ -69,9 +69,26 @@ export const spCompletions = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     completedAt: timestamp("completed_at"),
   },
-  (table) => [
+  (table: any) => [
     uniqueIndex("sp_completions_account_active_idx")
       .on(table.accountId)
       .where(sql`state = 'active'`),
   ],
 );
+
+export const playerEloHistory = pgTable("player_elo_history", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  accountId: uuid("account_id")
+    .notNull()
+    .references(() => accounts.id, { onDelete: "cascade" }),
+  elo: integer("elo").notNull(),
+  recordedAt: timestamp("recorded_at").defaultNow().notNull(),
+});
+
+export const ratedWaitingList = pgTable("rated_waiting_list", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  accountId: uuid("account_id")
+    .notNull()
+    .references(() => accounts.id, { onDelete: "cascade" }),
+  joinedAt: timestamp("joined_at").defaultNow().notNull(),
+});
