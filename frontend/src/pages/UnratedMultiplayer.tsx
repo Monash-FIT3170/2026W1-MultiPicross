@@ -4,7 +4,7 @@ import { Logo, Icon, BackButton, Button } from "../components/ui";
 
 const SIZES = ["5 × 5", "10 × 10", "15 × 15", "20 × 20"] as const;
 
-export function PrivateMultiplayer() {
+export function UnratedMultiplayer() {
   const navigate = useNavigate();
   const [createSize, setCreateSize] = useState<string>("10 × 10");
   const [inviteCode, setInviteCode] = useState("");
@@ -41,7 +41,7 @@ export function PrivateMultiplayer() {
             color: "var(--color-ink)",
           }}
         >
-          Private Multiplayer
+          Unrated Multiplayer
         </h1>
         <p
           style={{
@@ -195,6 +195,49 @@ export function PrivateMultiplayer() {
             >
               Join
             </Button>
+          </div>
+        </div>
+        {/* Public games */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            marginBottom: 12,
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 20,
+              fontWeight: 600,
+              color: "var(--color-ink)",
+            }}
+          >
+            Public games
+          </h2>
+        </div>
+
+        <div
+          className="mp-surface"
+          style={{
+            padding: 40,
+            textAlign: "center",
+            color: "var(--color-ink-muted)",
+          }}
+        >
+          <Icon
+            name="users"
+            size={32}
+            color="var(--color-line-strong)"
+            style={{
+              marginBottom: 12,
+              display: "block",
+              margin: "0 auto 12px",
+            }}
+          />
+          <div style={{ fontSize: 14, fontWeight: 600 }}>
+            No open games right now.
           </div>
         </div>
       </div>
