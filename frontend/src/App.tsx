@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import { useState, useEffect } from "react";
 
 import MainMenu from "./pages/MainMenu";
 import { Singleplayer } from "./pages/Singleplayer";
@@ -11,8 +12,9 @@ import { GuestOnly } from "./auth/GuestOnly";
 import { RankedMultiplayer } from "./pages/RankedMultiplayer";
 import { GuestNickname } from "./pages/GuestNickname";
 import { PlayerNameRoute } from "./auth/PlayerNameRoute";
+import { MobileApp } from "./MobileApp";
 
-export default function App() {
+export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<MainMenu />} />
@@ -34,4 +36,27 @@ export default function App() {
       </Route>
     </Routes>
   );
+}
+
+export default function App() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkIfMobile = () => {
+      // Check based on user agent (for device type) or screen width
+      const userAgentMatch = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isNarrowScreen = window.innerWidth <= 768;
+      setIsMobile(userAgentMatch || isNarrowScreen);
+    };
+
+    checkIfMobile();
+    window.addEventListener("resize", checkIfMobile);
+    return () => window.removeEventListener("resize", checkIfMobile);
+  }, []);
+
+  if (isMobile) {
+    return <MobileApp />;
+  }
+
+  return <AppRoutes />;
 }

@@ -168,11 +168,13 @@ export default function MainMenu() {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            width: 640,
-            height: 220,
+            width: "100%",
+            maxWidth: 640,
             background: "linear-gradient(135deg, #EAF3FF 0%, #F7FBFF 100%)",
             border: "1px solid #D6E6FF",
             borderRadius: 20,
+            flexWrap: "wrap",
+            gap: 20,
           }}
         >
           {/* Left Side */}
@@ -278,7 +280,8 @@ export default function MainMenu() {
         <div
           ref={gridRef}
           style={{
-            width: 640,
+            width: "100%",
+            maxWidth: 640,
             display: "flex",
             flexDirection: "column",
             gap: 20,
@@ -289,6 +292,7 @@ export default function MainMenu() {
           <div
             style={{
               display: "flex",
+              flexWrap: "wrap",
               gap: 20,
             }}
           >
@@ -493,7 +497,7 @@ function SecondaryTile({
       disabled={disabled}
       onClick={onClick}
       style={{
-        width: 640,
+        width: '100%', maxWidth: 640,
         height: 56,
         flexDirection: "row",
         gap: 24,

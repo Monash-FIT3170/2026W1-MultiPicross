@@ -21,6 +21,15 @@ interface NonogramGridProps {
 
 export function autoCellSize(w: number, h: number): number {
   const dim = Math.max(w, h);
+  const isMobile = window.innerWidth <= 600;
+  
+  if (isMobile) {
+    if (dim <= 5) return 36;
+    if (dim <= 10) return 22;
+    if (dim <= 15) return 16;
+    return 12;
+  }
+  
   if (dim <= 5) return 48;
   if (dim <= 10) return 38;
   if (dim <= 15) return 30;

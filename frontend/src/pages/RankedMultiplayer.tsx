@@ -328,7 +328,7 @@ export function RankedMultiplayer() {
             <div
               style={{
                 position: "relative",
-                width: 420,
+                width: '100%', maxWidth: 420,
                 height: 200,
                 padding: 32,
                 background: "var(--color-paper)",
@@ -415,7 +415,7 @@ export function RankedMultiplayer() {
             <div
               style={{
                 position: "relative",
-                width: 420,
+                width: '100%', maxWidth: 420,
                 height: 200,
                 padding: 32,
                 background: "var(--color-paper)",
