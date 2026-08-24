@@ -260,7 +260,7 @@ export default function MainMenu() {
               size="md"
               onClick={
                 isAuth
-                  ? () => navigate("/picrossranked")
+                  ? () => navigate("/multiplayer/ranked")
                   : () => navigate("/login")
               }
               style={{
