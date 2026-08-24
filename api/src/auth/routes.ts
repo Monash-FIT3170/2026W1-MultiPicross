@@ -3,12 +3,12 @@ import { describeRoute } from "hono-openapi";
 import { sValidator } from "@hono/standard-validator";
 import { getCookie } from "hono/cookie";
 import { requireAuth } from "./middleware.js";
-import { and, eq } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import * as v from "valibot";
 import { toJsonSchema } from "@valibot/to-json-schema";
 import type { OpenAPIV3 } from "openapi-types";
 import { db } from "../db/client.js";
-import { accounts, refreshTokens } from "../db/schema.js";
+import { accounts, refreshTokens, playerEloHistory } from "../db/schema.js";
 import {
   hashPassword,
   verifyPassword,
@@ -317,5 +317,20 @@ function isUniqueViolation(err: unknown): boolean {
     "code" in err && (err as { code: string }).code === PG_UNIQUE_VIOLATION
   );
 }
+
+auth.get("/elo", requireAuth, async (c) => {
+  const payload = c.get("jwtPayload") as { sub: string };
+
+  const latestRating = await db
+    .select({ elo: playerEloHistory.elo })
+    .from(playerEloHistory)
+    .where(eq(playerEloHistory.accountId, payload.sub))
+    .orderBy(desc(playerEloHistory.recordedAt))
+    .limit(1);
+
+  return c.json({
+    elo: latestRating[0]?.elo ?? 100,
+  });
+});
 
 export default auth;
