@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "./client";
 
-export function useElo(enabled: boolean) {
+/*
+elo gets the player's current Elo. It fetches this through the API and returns 
+the result if the request is not cancelled. 
+*/
+export function elo(enabled: boolean) {
   const [playerElo, setPlayerElo] = useState<number | null>(null);
 
   useEffect(() => {
