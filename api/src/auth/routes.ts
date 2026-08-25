@@ -3,7 +3,7 @@ import { describeRoute } from "hono-openapi";
 import { sValidator } from "@hono/standard-validator";
 import { getCookie } from "hono/cookie";
 import { requireAuth } from "./middleware.js";
-import { and, eq, gte, lt, count } from "drizzle-orm";
+import { and, eq, desc, gte, lt, count } from "drizzle-orm";
 import * as v from "valibot";
 import { toJsonSchema } from "@valibot/to-json-schema";
 import type { OpenAPIV3 } from "openapi-types";
@@ -16,7 +16,15 @@ import {
   authorizationCodeGrant,
 } from "openid-client";
 import { db } from "../db/client.js";
-import { accounts, refreshTokens } from "../db/schema.js";
+import {
+  accounts,
+  identities,
+  loginAttempts,
+  refreshTokens, 
+  playerEloHistory,
+} from "../db/schema.js";
+import { isUniqueViolation } from "../db/errors.js";
+import { env } from "../env.js";
 import {
   hashPassword,
   verifyPassword,
@@ -579,22 +587,19 @@ auth.get(
       404: { description: "Account not found", content: errorContent },
     },
   }),
-  (c) => {
-    const payload = c.get("jwtPayload") as { sub: string; username: string };
-    return c.json({ id: payload.sub, username: payload.username });
+  async (c) => {
+    const { sub: accountId } = c.get("jwtPayload") as { sub: string };
+    const account = await db.query.accounts.findFirst({
+      where: eq(accounts.id, accountId),
+      columns: { id: true, handle: true, kind: true },
+    });
+    if (!account) return c.json({ error: "Account not found" }, 404);
+    return c.json({
+      id: account.id,
+      handle: account.handle,
+      kind: account.kind,
+    });
   },
 );
-
-const PG_UNIQUE_VIOLATION = "23505";
-
-function isUniqueViolation(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-  const pg = (err as { cause?: unknown }).cause;
-  if (pg instanceof Error && "code" in pg)
-    return (pg as { code: string }).code === PG_UNIQUE_VIOLATION;
-  return (
-    "code" in err && (err as { code: string }).code === PG_UNIQUE_VIOLATION
-  );
-}
 
 export default auth;
