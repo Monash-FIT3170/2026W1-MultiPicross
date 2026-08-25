@@ -12,8 +12,4 @@
     "lint": "eslint .",
     "lint:fix": "eslint --fix ."
   },
-  "dependencies": {
-    "animejs": "^4.5.0",
-    "react-router-dom": "^7.18.2"
-  }
 }
