@@ -9,7 +9,7 @@ import { Tutorial } from "./pages/Tutorial";
 import { Settings } from "./pages/Settings";
 import { AuthLayout } from "./pages/AuthLayout";
 import { GuestOnly } from "./auth/GuestOnly";
-import { MultiplayerGame } from "./pages/MultiplayerGame";
+
 
 export default function App() {
   return (
@@ -21,7 +21,6 @@ export default function App() {
       <Route path="/statistics" element={<Statistics />} />
       <Route path="/tutorial" element={<Tutorial />} />
       <Route path="/settings" element={<Settings />} />
-      <Route path="/multiplayer-game" element={<MultiplayerGame />} />
       <Route element={<GuestOnly />}>
         <Route path="/login" element={<AuthLayout />} />
         <Route path="/register" element={<AuthLayout />} />
