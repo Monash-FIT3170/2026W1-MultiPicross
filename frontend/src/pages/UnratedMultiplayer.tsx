@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo, Icon, BackButton, Button } from "../components/ui";
 import { useAuth } from "../auth/AuthContext";
+import { GAMESERVER_BASE_URL } from "../colyseus";
 
 const SIZES = ["5 × 5", "10 × 10", "15 × 15", "20 × 20"] as const;
 const PUBLIC_ROOMS_POLL_MS = 5000;
@@ -10,8 +11,6 @@ function sizeToWH(size: string): { width: number; height: number } {
   const [w, h] = size.split(" × ").map(Number);
   return { width: w, height: h };
 }
-
-const GS_BASE = `${window.location.protocol}//${window.location.host}/gs`;
 
 interface PublicRoom {
   roomId: string;
@@ -39,7 +38,7 @@ export function UnratedMultiplayer() {
 
     async function fetchPublicRooms() {
       try {
-        const res = await fetch(`${GS_BASE}/public-rooms`);
+        const res = await fetch(`${GAMESERVER_BASE_URL}/public-rooms`);
         if (!res.ok) return;
         const rooms = (await res.json()) as PublicRoom[];
         if (!cancelled) setPublicRooms(rooms);
@@ -65,7 +64,7 @@ export function UnratedMultiplayer() {
     try {
       const { width, height } = sizeToWH(createSize);
       const res = await fetch(
-        `${GS_BASE}/create-room?width=${width}&height=${height}&public=${isPublicCreate}`,
+        `${GAMESERVER_BASE_URL}/create-room?width=${width}&height=${height}&public=${isPublicCreate}`,
         { method: "POST" },
       );
       if (!res.ok) {
@@ -88,7 +87,9 @@ export function UnratedMultiplayer() {
     setJoinLoading(true);
     setJoinError(null);
     try {
-      const res = await fetch(`${GS_BASE}/room-by-code/${inviteCode.trim()}`);
+      const res = await fetch(
+        `${GAMESERVER_BASE_URL}/room-by-code/${inviteCode.trim()}`,
+      );
       if (!res.ok) {
         const body = (await res.json()) as { error?: string };
         throw new Error(body.error ?? "Room not found");

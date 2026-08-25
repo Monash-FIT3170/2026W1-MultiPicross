@@ -2,12 +2,7 @@ import { Room, Client, ServerError, matchMaker } from "colyseus";
 import { PicrossRoomState } from "./schema/PicrossRoomState.js";
 import { sql } from "../db/client.js";
 import { verifyRoomToken } from "../auth/roomToken.js";
-
-function requireEnv(name: string): string {
-  const val = process.env[name];
-  if (!val) throw new Error(`${name} must be set`);
-  return val;
-}
+import { requireEnv } from "../env.js";
 
 interface RoomAuth {
   username: string | null;
@@ -53,6 +48,17 @@ function generateCode(): string {
   ).join("");
 }
 
+/**
+ * After a correct fill, cross out every remaining empty cell in any row or
+ * column whose clue total is now satisfied. 0-clue lines satisfy immediately.
+ *
+ * DUPLICATED, ON PURPOSE: frontend/src/pages/Singleplayer.tsx has the same
+ * algorithm over a CellValue[] grid instead of boolean[] pairs. The two must
+ * stay in sync — a change here needs the matching change there. They cannot
+ * share code: the frontend and gameserver have separate Docker build contexts
+ * (see compose.yaml) and this repo has no shared package, so neither can
+ * import from the other.
+ */
 function applyAutoComplete(
   filled: boolean[],
   crosses: boolean[],

@@ -7,6 +7,7 @@ import { useAuth } from "../auth/AuthContext";
 import NonogramGrid, {
   type CellValue,
   autoCellSize,
+  cellsToGrid,
   fmtSeconds,
 } from "../components/NonogramGrid";
 import { Logo, Icon, Button, LivesPips, StatTile } from "../components/ui";
@@ -41,12 +42,7 @@ interface RoomSnapshot {
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function buildGrid(p: PlayerSnapshot): CellValue[] {
-  return p.confirmedFilled.map((filled, i) => {
-    if (filled) return 1;
-    if (p.revealedEmpty[i]) return 3;
-    if (p.crosses[i]) return 2;
-    return 0;
-  });
+  return cellsToGrid(p.confirmedFilled, p.crosses, p.revealedEmpty);
 }
 
 /**

@@ -27,6 +27,24 @@ export function autoCellSize(w: number, h: number): number {
   return 24;
 }
 
+/**
+ * Turns the three per-cell boolean arrays a board is stored as (both the
+ * singleplayer completion record and the multiplayer room snapshot use this
+ * shape) into the CellValue[] the grid renders.
+ *
+ * Precedence is load-bearing: a confirmed fill wins over a server-revealed
+ * empty, which wins over a cross the player placed themselves.
+ */
+export function cellsToGrid(
+  confirmedFilled: boolean[],
+  crosses: boolean[],
+  revealedEmpty: boolean[],
+): CellValue[] {
+  return confirmedFilled.map((filled, i) =>
+    filled ? 1 : revealedEmpty[i] ? 3 : crosses[i] ? 2 : 0,
+  );
+}
+
 function fmtSeconds(s: number): string {
   const m = Math.floor(s / 60);
   const sec = s % 60;
