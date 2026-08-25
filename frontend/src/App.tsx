@@ -42,8 +42,16 @@ export default function App() {
       <Route element={<PlayerNameRoute />}>
         <Route path="/multiplayer/unrated" element={<UnratedMultiplayer />} />
         <Route path="/multiplayer/ranked" element={<RankedMultiplayer />} />
+        {/* Guests arriving on an invite link are bounced to /nickname, which
+            navigates back here once a name is set. */}
+        <Route path="/room/:roomId" element={<Room />} />
       </Route>
-      <Route path="/room/:roomId" element={<Room />} />
+      {/* Bare /multiplayer has no page of its own; without this it would hit the
+          catch-all below and silently land on the main menu. */}
+      <Route
+        path="/multiplayer"
+        element={<Navigate to="/multiplayer/unrated" replace />}
+      />
       <Route path="/tutorial" element={<Tutorial />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="/welcome" element={<ChooseHandle />} />

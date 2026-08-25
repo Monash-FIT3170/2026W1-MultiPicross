@@ -52,7 +52,7 @@ function buildGrid(p: PlayerSnapshot): CellValue[] {
 export function Room() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
-  const { status } = useAuth();
+  const { status, playerName } = useAuth();
 
   const roomRef = useRef<ColyseusRoom | null>(null);
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
@@ -81,7 +81,7 @@ export function Room() {
           const { token } = (await res.json()) as { token: string };
           joinOptions = { token };
         } else {
-          joinOptions = { username: "Guest" };
+          joinOptions = { username: playerName ?? "Guest" };
         }
 
         const room = await gameserverClient.joinById(roomId!, joinOptions);
@@ -187,7 +187,7 @@ export function Room() {
     if (snapshot?.phase === "playing") {
       setConfirmingAbandon(true);
     } else {
-      navigate("/multiplayer");
+      navigate("/multiplayer/unrated");
     }
   }
 
@@ -208,7 +208,7 @@ export function Room() {
       /* ignore — navigating away regardless */
     }
     roomRef.current = null;
-    navigate("/multiplayer");
+    navigate("/multiplayer/unrated");
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -223,7 +223,7 @@ export function Room() {
         <Button
           variant="primary"
           size="sm"
-          onClick={() => navigate("/multiplayer")}
+          onClick={() => navigate("/multiplayer/unrated")}
         >
           Back to lobby
         </Button>
@@ -715,7 +715,7 @@ export function Room() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/multiplayer")}
+              onClick={() => navigate("/multiplayer/unrated")}
             >
               Play again
             </Button>
