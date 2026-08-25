@@ -6,3 +6,9 @@ acme_email = "you@example.com"
 # Leave on staging until DNS and HTTP-01 are proven end to end. Then
 # switch to production:
 # acme_caserver = "https://acme-v02.api.letsencrypt.org/directory"
+
+# OIDC provider details, from the registered client.
+oidc_issuer       = "https://idp.example.com"
+oidc_provider_id  = "prod"
+oidc_client_id    = "multipicross-prod"
+oidc_anchor_claim = "sub"

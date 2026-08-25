@@ -11,3 +11,5 @@ node_modules
 !*.tfvars.example
 backend.hcl
 crash.log
+# Local deploy tool config, contains project ids
+tools/environments.json
