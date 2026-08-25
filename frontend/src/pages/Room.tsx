@@ -21,6 +21,8 @@ interface PlayerSnapshot {
   livesLeft: number;
   done: boolean;
   won: boolean;
+  /** False while the player is inside their server-side reconnection window. */
+  connected: boolean;
 }
 
 interface RoomSnapshot {
@@ -47,6 +49,19 @@ function buildGrid(p: PlayerSnapshot): CellValue[] {
   });
 }
 
+/**
+ * leave() writes to the socket, which throws while one is mid-handshake — an
+ * SDK reconnect attempt in flight when the user navigates away. Nothing to do
+ * about it either way: the connection is going.
+ */
+function leaveQuietly(room: ColyseusRoom | null) {
+  try {
+    room?.leave();
+  } catch {
+    /* already gone */
+  }
+}
+
 // ── Main component ───────────────────────────────────────────────────────────
 
 export function Room() {
@@ -58,38 +73,74 @@ export function Room() {
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
   const [mySessionId, setMySessionId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reconnecting, setReconnecting] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
   const [copied, setCopied] = useState(false);
   const [displaySeconds, setDisplaySeconds] = useState(0);
   const playingStartRef = useRef<number | null>(null);
   const [confirmingAbandon, setConfirmingAbandon] = useState(false);
   const intentionalLeaveRef = useRef(false);
 
+  // ── Auth, captured once ────────────────────────────────────────────────────
+
+  // Auth decides HOW we join (room token vs guest name), but only at connect
+  // time. apiFetch() calls onLogout() whenever a token refresh fails, which
+  // flips `status` in AuthContext — and while `status` was a dependency of the
+  // connect effect below, that tore the live socket down and rebuilt it. The
+  // server reads a teardown mid-match as a quit: forfeit, opponent crowned,
+  // room locked, and the rebuild then lands on a locked room. A 15-minute
+  // access token expiring was enough to lose a match.
+  //
+  // So the connect effect reads auth through this ref instead, and depends
+  // only on `authReady` below. This effect is declared first so the ref is
+  // already up to date when the connect effect runs in the same commit.
+  const authRef = useRef({ status, playerName });
+
+  useEffect(() => {
+    authRef.current = { status, playerName };
+  }, [status, playerName]);
+
+  // A one-way latch, not a live view of auth: AuthProvider only ever sets
+  // "loading" in its initial state, so this flips false→true once when the
+  // bootstrap resolves and never flips back. That gives the connect effect a
+  // dependency that waits for the first resolution without re-running on the
+  // authenticated↔unauthenticated transitions that follow.
+  const authReady = status !== "loading";
+
   // ── Connect to room ────────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (!roomId || status === "loading") return;
+    if (!roomId || !authReady) return;
 
     let cancelled = false;
 
     async function connect() {
       try {
+        const { status: authStatus, playerName: name } = authRef.current;
         let joinOptions: { token: string } | { username: string };
 
-        if (status === "authenticated") {
+        if (authStatus === "authenticated") {
           const res = await apiFetch("/auth/room-token", { method: "POST" });
           if (!res.ok) throw new Error("Could not authenticate for room.");
           const { token } = (await res.json()) as { token: string };
           joinOptions = { token };
         } else {
-          joinOptions = { username: playerName ?? "Guest" };
+          joinOptions = { username: name ?? "Guest" };
         }
 
         const room = await gameserverClient.joinById(roomId!, joinOptions);
 
         if (cancelled) {
-          room.leave();
+          leaveQuietly(room);
           return;
         }
+
+        // The server holds a dropped seat open for ~20s
+        // (RECONNECTION_WINDOW_SECONDS). The SDK's backoff is 2^n x 100ms
+        // capped at 5s, so 8 attempts span ~21s: stop retrying roughly when
+        // the seat expires rather than spinning for the default 15 attempts
+        // (~60s) long after the match has already been forfeited.
+        room.reconnection.maxRetries = 8;
 
         roomRef.current = room;
         setMySessionId(room.sessionId);
@@ -98,9 +149,23 @@ export function Room() {
           setSnapshot(msg);
         });
 
+        // A dropped connection is not a leave — the SDK re-establishes the
+        // session with its reconnection token while the server holds the
+        // seat, so show it as a transient state rather than a dead end.
+        room.onDrop(() => {
+          if (!cancelled) setReconnecting(true);
+        });
+
+        room.onReconnect(() => {
+          if (!cancelled) setReconnecting(false);
+        });
+
+        // Only fires for a consented leave or after reconnection genuinely
+        // failed, so by this point the seat really is gone.
         room.onLeave(() => {
           if (cancelled || intentionalLeaveRef.current) return;
-          setError("Disconnected from room.");
+          setReconnecting(false);
+          setError("Lost connection to the room.");
         });
 
         room.onError((code, message) => {
@@ -120,11 +185,10 @@ export function Room() {
 
     return () => {
       cancelled = true;
-      roomRef.current?.leave();
+      leaveQuietly(roomRef.current);
       roomRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, status]);
+  }, [roomId, authReady, retryNonce]);
 
   // ── Timer ──────────────────────────────────────────────────────────────────
 
@@ -167,6 +231,13 @@ export function Room() {
 
   function handleCross(row: number, col: number, markCross: boolean) {
     roomRef.current?.send("cross", { row, col, markCross });
+  }
+
+  function retryConnection() {
+    setError(null);
+    setReconnecting(false);
+    setSnapshot(null);
+    setRetryNonce((n) => n + 1);
   }
 
   async function copyInvite() {
@@ -220,13 +291,18 @@ export function Room() {
         <p style={{ color: "var(--color-ink-muted)", margin: "12px 0" }}>
           {error}
         </p>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={() => navigate("/multiplayer/unrated")}
-        >
-          Back to lobby
-        </Button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Button variant="primary" size="sm" onClick={retryConnection}>
+            Try again
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/multiplayer/unrated")}
+          >
+            Back to lobby
+          </Button>
+        </div>
       </CenteredMessage>
     );
   }
@@ -453,10 +529,15 @@ export function Room() {
 
   const isFinished = phase === "finished";
   const iWon = isFinished && winnerId === myId;
-  const opponentWon = isFinished && winnerId === opponentId;
-  const isDraw = isFinished && !winnerId;
+  const opponentWon =
+    isFinished && opponentId !== null && winnerId === opponentId;
+  const noWinner = isFinished && !winnerId;
 
   const cs = autoCellSize(width, height);
+  // Height of the column-clue block above a grid's body, so panels beside the
+  // board can line up with the cells rather than the clues.
+  const clueOffset =
+    Math.max(1, ...(colClues ?? [[]]).map((c) => c.length)) * cs;
 
   return (
     <div
@@ -543,7 +624,7 @@ export function Room() {
             grid={myGrid}
             width={width}
             height={height}
-            interactive={!isFinished && !me.done}
+            interactive={!isFinished && !me.done && !reconnecting}
             colors={isFinished ? colors : undefined}
             completed={me.won}
             onFill={handleFill}
@@ -554,8 +635,7 @@ export function Room() {
         {/* Sidebar with stats */}
         <div
           style={{
-            paddingTop:
-              Math.max(1, ...(colClues ?? [[]]).map((c) => c.length)) * cs,
+            paddingTop: clueOffset,
             display: "flex",
             alignItems: "flex-start",
           }}
@@ -637,8 +717,7 @@ export function Room() {
               textAlign: "center",
               color: "var(--color-ink-muted)",
               minWidth: 200,
-              marginTop:
-                Math.max(1, ...(colClues ?? [[]]).map((c) => c.length)) * cs,
+              marginTop: clueOffset,
             }}
           >
             <Icon
@@ -651,6 +730,15 @@ export function Room() {
           </div>
         )}
       </div>
+
+      {/* Transient connection loss — the seat is held server-side while the
+          SDK retries, so this is not (yet) the end of the match. */}
+      {reconnecting && (
+        <div className="mp-toast">
+          <Icon name="refresh" size={16} color="var(--color-butter-300)" />
+          <span>Connection lost — reconnecting…</span>
+        </div>
+      )}
 
       {/* Outcome banner */}
       {isFinished && (
@@ -696,18 +784,25 @@ export function Room() {
               }}
             >
               {iWon
-                ? "You win!"
+                ? forfeit
+                  ? "Opponent left — you win!"
+                  : "You win!"
                 : opponentWon
-                  ? forfeit
-                    ? "Opponent left — you win!"
-                    : `${opponent?.username ?? "Opponent"} wins`
-                  : isDraw
-                    ? "Both players out of lives"
+                  ? `${opponent?.username ?? "Opponent"} wins`
+                  : noWinner
+                    ? forfeit
+                      ? "Opponent left — no winner"
+                      : "Both players out of lives"
                     : "Game over"}
             </div>
-            {iWon && (
+            {iWon && !forfeit && (
               <div style={{ fontSize: 12, color: "var(--color-sage-500)" }}>
                 Solved in {fmtSeconds(displaySeconds)}
+              </div>
+            )}
+            {noWinner && forfeit && me.done && !me.won && (
+              <div style={{ fontSize: 12, color: "var(--color-ink-muted)" }}>
+                You were already out of lives.
               </div>
             )}
           </div>

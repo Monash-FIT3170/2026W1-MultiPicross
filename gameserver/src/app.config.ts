@@ -4,11 +4,16 @@ import {
   monitor,
   playground,
   matchMaker,
+  ServerError,
 } from "colyseus";
 
 import { MyRoom } from "./rooms/MyRoom.js";
-import { PicrossRoom } from "./rooms/PicrossRoom.js";
-import { sql } from "./db/client.js";
+import {
+  PicrossRoom,
+  INVITE_CODE_ALPHABET,
+  INVITE_CODE_LENGTH,
+  ERR_NO_PUZZLE_FOR_SIZE,
+} from "./rooms/PicrossRoom.js";
 
 // The UI only offers 5/10/15/20 (frontend SIZES), but a range check keeps the
 // two sides decoupled: a new size can ship in the frontend without a
@@ -19,8 +24,12 @@ const MIN_BOARD_SIZE = 1;
 const MAX_BOARD_SIZE = 50;
 const DEFAULT_BOARD_SIZE = 10;
 
-// Must stay in sync with generateCode() in PicrossRoom: 6 unambiguous chars.
-const INVITE_CODE_PATTERN = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
+// Built from the same alphabet generateCode() draws from, so the validator
+// here and the generator there cannot drift. The alphabet is A-Z/2-9 only, so
+// it needs no escaping inside a character class.
+const INVITE_CODE_PATTERN = new RegExp(
+  `^[${INVITE_CODE_ALPHABET}]{${INVITE_CODE_LENGTH}}$`,
+);
 
 /**
  * Parses a width/height query param. Returns the default when the param is
@@ -70,23 +79,6 @@ const server = defineServer({
       const isPublic = req.query.public === "true";
 
       try {
-        // PicrossRoom.onCreate throws a plain Error when the puzzle bank holds
-        // nothing this size, which the catch below would flatten into an
-        // opaque 500. Check up front so an empty bank reads as an actionable
-        // 404 and a 500 keeps meaning "something is genuinely broken".
-        const available = await sql`
-          SELECT 1
-          FROM nonograms
-          WHERE width = ${width} AND height = ${height}
-          LIMIT 1
-        `;
-        if (available.length === 0) {
-          res
-            .status(404)
-            .json({ error: `No puzzle available at ${width}x${height}` });
-          return;
-        }
-
         const room = await matchMaker.createRoom("picross_room", {
           width,
           height,
@@ -97,6 +89,18 @@ const server = defineServer({
           inviteCode: room.metadata?.inviteCode,
         });
       } catch (err) {
+        // PicrossRoom.onCreate throws a distinguishable ServerError when the
+        // puzzle bank holds nothing this size, and matchMaker preserves its
+        // code — so an empty bank reads as an actionable 404 while a 500 keeps
+        // meaning "something is genuinely broken". This replaces a pre-flight
+        // SELECT that answered the same question one query too early (the bank
+        // could empty between the check and the create).
+        if (err instanceof ServerError && err.code === ERR_NO_PUZZLE_FOR_SIZE) {
+          res
+            .status(404)
+            .json({ error: `No puzzle available at ${width}x${height}` });
+          return;
+        }
         console.error("create-room error", err);
         res.status(500).json({ error: "Failed to create room" });
       }

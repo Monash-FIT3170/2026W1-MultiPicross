@@ -1,4 +1,4 @@
-import { Room, Client, ServerError } from "colyseus";
+import { Room, Client, ServerError, matchMaker } from "colyseus";
 import { PicrossRoomState } from "./schema/PicrossRoomState.js";
 import { sql } from "../db/client.js";
 import { verifyRoomToken } from "../auth/roomToken.js";
@@ -13,12 +13,43 @@ interface RoomAuth {
   username: string | null;
 }
 
+/**
+ * Invite-code alphabet: unambiguous characters only (no O/0, no I/1).
+ * Exported so app.config.ts can build its validation pattern from this single
+ * source instead of hand-copying the character set — the two used to be
+ * separate literals that could silently drift apart.
+ */
+export const INVITE_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+export const INVITE_CODE_LENGTH = 6;
+
+/**
+ * ServerError code thrown by onCreate() when the puzzle bank holds nothing of
+ * the requested size. matchMaker's handleCreateRoom() rethrows onCreate
+ * failures as `new ServerError(err.code || MATCHMAKE_UNHANDLED, err.message)`,
+ * so this code survives the trip out to the /create-room express handler,
+ * which turns it into an actionable 404 instead of an opaque 500. Chosen well
+ * clear of Colyseus's own ErrorCode (520-526, 4217) and CloseCode ranges.
+ */
+export const ERR_NO_PUZZLE_FOR_SIZE = 4500;
+
+/** Bounded re-rolls when a freshly generated invite code is already in use. */
+const INVITE_CODE_ATTEMPTS = 10;
+
+/**
+ * How long a seat is held open after an *unconsented* disconnect (wifi blip,
+ * laptop sleep, proxy reset) before the match is forfeited. The client SDK
+ * retries with exponential backoff (2^n x 100ms, capped at 5s), so ~8 attempts
+ * span roughly this window — see Room.tsx, which caps maxRetries to match.
+ */
+const RECONNECTION_WINDOW_SECONDS = 20;
+
 function generateCode(): string {
-  // Unambiguous characters only
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   return Array.from(
-    { length: 6 },
-    () => chars[Math.floor(Math.random() * chars.length)],
+    { length: INVITE_CODE_LENGTH },
+    () =>
+      INVITE_CODE_ALPHABET[
+        Math.floor(Math.random() * INVITE_CODE_ALPHABET.length)
+      ],
   ).join("");
 }
 
@@ -62,6 +93,8 @@ interface PlayerData {
   livesLeft: number;
   done: boolean;
   won: boolean;
+  /** False while the player is inside their reconnection window. */
+  connected: boolean;
 }
 
 export class PicrossRoom extends Room {
@@ -95,7 +128,10 @@ export class PicrossRoom extends Room {
     `;
 
     if (rows.length === 0) {
-      throw new Error(`No puzzles found for size ${width}x${height}`);
+      throw new ServerError(
+        ERR_NO_PUZZLE_FOR_SIZE,
+        `No puzzles found for size ${width}x${height}`,
+      );
     }
 
     const puzzle = rows[0];
@@ -106,7 +142,7 @@ export class PicrossRoom extends Room {
     this.colClues = puzzle.col_clues as number[][];
     this.colors = puzzle.colors as string[];
 
-    const code = generateCode();
+    const code = await this.generateUniqueCode();
     this.state.inviteCode = code;
 
     await this.setMetadata({
@@ -128,6 +164,28 @@ export class PicrossRoom extends Room {
       (client, msg) => {
         this.handleCross(client.sessionId, msg.row, msg.col, msg.markCross);
       },
+    );
+  }
+
+  /**
+   * Invite codes are the lookup key for /room-by-code, so a duplicate silently
+   * routes joiners to whichever room the matchmaker happens to find first.
+   * Re-roll until the code is free among live rooms. Our own listing is not
+   * persisted until onCreate() returns, so this can never match ourselves.
+   * Two rooms created in the same tick could still theoretically collide —
+   * the retry makes that vanishingly unlikely rather than impossible.
+   */
+  private async generateUniqueCode(): Promise<string> {
+    for (let attempt = 0; attempt < INVITE_CODE_ATTEMPTS; attempt++) {
+      const code = generateCode();
+      const existing = await matchMaker.query({
+        name: this.roomName,
+        inviteCode: code,
+      });
+      if (existing.length === 0) return code;
+    }
+    throw new Error(
+      `Could not allocate a unique invite code after ${INVITE_CODE_ATTEMPTS} attempts`,
     );
   }
 
@@ -174,6 +232,7 @@ export class PicrossRoom extends Room {
       livesLeft: 3,
       done: false,
       won: false,
+      connected: true,
     };
     this.players.set(client.sessionId, player);
 
@@ -185,13 +244,55 @@ export class PicrossRoom extends Room {
     this.broadcast("state", this.buildSnapshot(), { except: client });
   }
 
+  /**
+   * Colyseus routes *unconsented* closes (wifi blip, laptop sleep, proxy
+   * reset) here rather than to onLeave(). Hold the seat open for a short
+   * window instead of ending the match: if the client gets back in time
+   * onReconnect() runs and nothing was lost, and if the window expires
+   * Colyseus calls onLeave() for us, which applies the forfeit. A deliberate
+   * quit still closes with CloseCode.CONSENTED and goes straight to onLeave().
+   */
+  async onDrop(client: Client) {
+    // Only a live match is worth holding a seat for. Outside one, returning
+    // here hands the client straight to onLeave(), as a quit would.
+    if (this.state.phase !== "playing") return;
+
+    const player = this.players.get(client.sessionId);
+    if (player) {
+      player.connected = false;
+      this.broadcast("state", this.buildSnapshot());
+    }
+
+    try {
+      await this.allowReconnection(client, RECONNECTION_WINDOW_SECONDS);
+    } catch {
+      // Window expired (or the room is disposing). Colyseus follows up with
+      // onLeave() for this client, so there is nothing to do here.
+    }
+  }
+
+  onReconnect(client: Client) {
+    const player = this.players.get(client.sessionId);
+    if (player) player.connected = true;
+    // The snapshot travels as a custom "state" message rather than in schema
+    // state, so nothing replays it on reconnect — resend it explicitly.
+    this.broadcast("state", this.buildSnapshot());
+  }
+
   onLeave(client: Client) {
     if (this.state.phase === "playing") {
-      this.players.forEach((_, sessionId) => {
-        if (sessionId !== client.sessionId) {
-          this.winnerId = sessionId;
+      // A forfeit win may only go to a player who is still alive. If the last
+      // player standing had already burned all three lives their elimination
+      // stands and nobody wins — crowning them was reporting a loss as a win.
+      // Never overwrite an already-decided winner either.
+      if (!this.winnerId) {
+        const survivors = [...this.players.entries()].filter(
+          ([sessionId, p]) => sessionId !== client.sessionId && !p.done,
+        );
+        if (survivors.length === 1) {
+          this.winnerId = survivors[0][0];
         }
-      });
+      }
       this.forfeit = true;
       this.setPhase("finished");
     }
@@ -308,6 +409,7 @@ export class PicrossRoom extends Room {
         livesLeft: number;
         done: boolean;
         won: boolean;
+        connected: boolean;
       }
     > = {};
 
@@ -320,6 +422,7 @@ export class PicrossRoom extends Room {
         livesLeft: p.livesLeft,
         done: p.done,
         won: p.won,
+        connected: p.connected,
       };
     });
 
