@@ -2,8 +2,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import MainMenu from "./pages/MainMenu";
 import { Singleplayer } from "./pages/Singleplayer";
-import { PublicMultiplayer } from "./pages/PublicMultiplayer";
-import { PrivateMultiplayer } from "./pages/PrivateMultiplayer";
+import { UnratedMultiplayer } from "./pages/UnratedMultiplayer";
 import { Statistics } from "./pages/Statistics";
 import { Tutorial } from "./pages/Tutorial";
 import { Settings } from "./pages/Settings";
@@ -11,7 +10,7 @@ import { AuthLayout } from "./pages/AuthLayout";
 import { ChooseHandle } from "./pages/ChooseHandle";
 import { AuthError } from "./pages/AuthError";
 import { GuestOnly } from "./auth/GuestOnly";
-import { PicrossRanked } from "./pages/PicrossRanked";
+import { RankedMultiplayer } from "./pages/RankedMultiplayer";
 import { GuestNickname } from "./pages/GuestNickname";
 import { PlayerNameRoute } from "./auth/PlayerNameRoute";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
@@ -39,12 +38,9 @@ export default function App() {
     <Routes>
       <Route path="/" element={<MainMenu />} />
       <Route path="/singleplayer" element={<Singleplayer />} />
-      <Route path="/multiplayer">
-        <Route element={<PlayerNameRoute />}>
-          <Route path="public" element={<PublicMultiplayer />} />
-          <Route path="private" element={<PrivateMultiplayer />} />
-        </Route>
-        <Route path="ranked" element={<PicrossRanked />} />
+      <Route element={<PlayerNameRoute />}>
+        <Route path="/multiplayer/unrated" element={<UnratedMultiplayer />} />
+        <Route path="/multiplayer/ranked" element={<RankedMultiplayer />} />
       </Route>
       <Route path="/tutorial" element={<Tutorial />} />
       <Route path="/settings" element={<Settings />} />
