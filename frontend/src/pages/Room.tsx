@@ -9,13 +9,7 @@ import NonogramGrid, {
   autoCellSize,
   fmtSeconds,
 } from "../components/NonogramGrid";
-import {
-  Logo,
-  Icon,
-  Button,
-  LivesPips,
-  StatTile,
-} from "../components/ui";
+import { Logo, Icon, Button, LivesPips, StatTile } from "../components/ui";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -178,7 +172,11 @@ export function Room() {
         <p style={{ color: "var(--color-ink-muted)", margin: "12px 0" }}>
           {error}
         </p>
-        <Button variant="primary" size="sm" onClick={() => navigate("/multiplayer")}>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => navigate("/multiplayer")}
+        >
           Back to lobby
         </Button>
       </CenteredMessage>
@@ -189,23 +187,57 @@ export function Room() {
     return (
       <CenteredMessage>
         <Icon name="refresh" size={20} color="var(--color-ink-faint)" />
-        <span style={{ fontSize: 14, color: "var(--color-ink-faint)", marginLeft: 8 }}>
+        <span
+          style={{
+            fontSize: 14,
+            color: "var(--color-ink-faint)",
+            marginLeft: 8,
+          }}
+        >
           Connecting…
         </span>
       </CenteredMessage>
     );
   }
 
-  const { phase, inviteCode, width, height, rowClues, colClues, players, winnerId, forfeit, colors } = snapshot;
+  const {
+    phase,
+    inviteCode,
+    width,
+    height,
+    rowClues,
+    colClues,
+    players,
+    winnerId,
+    forfeit,
+    colors,
+  } = snapshot;
 
   if (phase === "waiting") {
     const playerList = Object.values(players);
     return (
-      <div style={{ minHeight: "100vh", background: "var(--color-paper)", padding: "24px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 40 }}>
-          <Button variant="ghost" size="sm" onClick={() => navigate("/multiplayer")}>
-            <Icon name="arrow-left" size={14} color="var(--color-ink-faint)" />
-            {" "}Back
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "var(--color-paper)",
+          padding: "24px",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 40,
+          }}
+        >
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/multiplayer")}
+          >
+            <Icon name="arrow-left" size={14} color="var(--color-ink-faint)" />{" "}
+            Back
           </Button>
           <Logo size={22} />
           <div style={{ width: 80 }} />
@@ -214,30 +246,58 @@ export function Room() {
         <div style={{ maxWidth: 480, margin: "0 auto", textAlign: "center" }}>
           <div
             style={{
-              width: 56, height: 56, borderRadius: 16,
+              width: 56,
+              height: 56,
+              borderRadius: 16,
               background: "var(--color-blue-50)",
-              display: "flex", alignItems: "center", justifyContent: "center",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               margin: "0 auto 20px",
             }}
           >
             <Icon name="users" size={24} color="var(--color-blue-500)" />
           </div>
 
-          <h1 style={{ margin: "0 0 6px", fontSize: 26, fontWeight: 700, color: "var(--color-ink)" }}>
+          <h1
+            style={{
+              margin: "0 0 6px",
+              fontSize: 26,
+              fontWeight: 700,
+              color: "var(--color-ink)",
+            }}
+          >
             Waiting for opponent
           </h1>
-          <p style={{ margin: "0 0 32px", color: "var(--color-ink-muted)", fontSize: 14 }}>
+          <p
+            style={{
+              margin: "0 0 32px",
+              color: "var(--color-ink-muted)",
+              fontSize: 14,
+            }}
+          >
             Share the invite code or URL with a friend to start.
           </p>
 
           <div className="mp-surface" style={{ padding: 24, marginBottom: 20 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--color-ink-faint)", letterSpacing: "0.08em", marginBottom: 10 }}>
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: "var(--color-ink-faint)",
+                letterSpacing: "0.08em",
+                marginBottom: 10,
+              }}
+            >
               INVITE CODE
             </div>
             <div
               style={{
-                fontSize: 36, fontWeight: 800, letterSpacing: "0.3em",
-                color: "var(--color-ink)", fontFamily: "var(--font-ui)",
+                fontSize: 36,
+                fontWeight: 800,
+                letterSpacing: "0.3em",
+                color: "var(--color-ink)",
+                fontFamily: "var(--font-ui)",
                 fontVariantNumeric: "tabular-nums",
               }}
             >
@@ -245,7 +305,12 @@ export function Room() {
             </div>
           </div>
 
-          <Button variant="primary" size="md" onClick={() => void copyInvite()} style={{ width: "100%", marginBottom: 32 }}>
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => void copyInvite()}
+            style={{ width: "100%", marginBottom: 32 }}
+          >
             {copied ? "Copied!" : "Copy invite link"}
           </Button>
 
@@ -254,18 +319,38 @@ export function Room() {
               <div
                 key={i}
                 className="mp-surface"
-                style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}
+                style={{
+                  padding: "12px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                }}
               >
                 <div
                   style={{
-                    width: 8, height: 8, borderRadius: "50%",
-                    background: "var(--color-sage-400)", flexShrink: 0,
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: "var(--color-sage-400)",
+                    flexShrink: 0,
                   }}
                 />
-                <span style={{ fontSize: 14, fontWeight: 600, color: "var(--color-ink)" }}>
+                <span
+                  style={{
+                    fontSize: 14,
+                    fontWeight: 600,
+                    color: "var(--color-ink)",
+                  }}
+                >
                   {p.username}
                 </span>
-                <span style={{ fontSize: 12, color: "var(--color-ink-faint)", marginLeft: "auto" }}>
+                <span
+                  style={{
+                    fontSize: 12,
+                    color: "var(--color-ink-faint)",
+                    marginLeft: "auto",
+                  }}
+                >
                   Connected
                 </span>
               </div>
@@ -273,12 +358,21 @@ export function Room() {
             {playerList.length < 2 && (
               <div
                 className="mp-surface"
-                style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 12, opacity: 0.5 }}
+                style={{
+                  padding: "12px 16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  opacity: 0.5,
+                }}
               >
                 <div
                   style={{
-                    width: 8, height: 8, borderRadius: "50%",
-                    background: "var(--color-line-strong)", flexShrink: 0,
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    background: "var(--color-line-strong)",
+                    flexShrink: 0,
                   }}
                 />
                 <span style={{ fontSize: 14, color: "var(--color-ink-muted)" }}>
@@ -303,7 +397,9 @@ export function Room() {
   if (!me) {
     return (
       <CenteredMessage>
-        <span style={{ color: "var(--color-ink-muted)", fontSize: 14 }}>Loading game…</span>
+        <span style={{ color: "var(--color-ink-muted)", fontSize: 14 }}>
+          Loading game…
+        </span>
       </CenteredMessage>
     );
   }
@@ -319,15 +415,35 @@ export function Room() {
   const cs = autoCellSize(width, height);
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--color-paper)", padding: "24px 24px 80px", overflow: "hidden" }}>
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "var(--color-paper)",
+        padding: "24px 24px 80px",
+        overflow: "hidden",
+      }}
+    >
       {/* Top bar */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: 24,
+        }}
+      >
         <button
           onClick={() => navigate("/multiplayer")}
           style={{
-            background: "none", border: "none", cursor: "pointer", padding: 0,
-            color: "var(--color-ink-faint)", fontSize: 13,
-            display: "flex", alignItems: "center", gap: 6,
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            padding: 0,
+            color: "var(--color-ink-faint)",
+            fontSize: 13,
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
           }}
         >
           <Icon name="arrow-left" size={14} color="var(--color-ink-faint)" />
@@ -337,14 +453,37 @@ export function Room() {
         <div style={{ width: 80 }} />
       </div>
 
-      <h1 style={{ textAlign: "center", margin: "0 0 4px", fontSize: 24, fontWeight: 700, color: "var(--color-ink)" }}>
+      <h1
+        style={{
+          textAlign: "center",
+          margin: "0 0 4px",
+          fontSize: 24,
+          fontWeight: 700,
+          color: "var(--color-ink)",
+        }}
+      >
         Multiplayer
       </h1>
-      <p style={{ textAlign: "center", margin: "0 0 28px", color: "var(--color-ink-muted)", fontSize: 13 }}>
+      <p
+        style={{
+          textAlign: "center",
+          margin: "0 0 28px",
+          color: "var(--color-ink-muted)",
+          fontSize: 13,
+        }}
+      >
         Left-click to fill · Right-click to mark empty
       </p>
 
-      <div style={{ display: "flex", gap: 40, justifyContent: "center", alignItems: "flex-start", flexWrap: "wrap" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: 40,
+          justifyContent: "center",
+          alignItems: "flex-start",
+          flexWrap: "wrap",
+        }}
+      >
         {/* My board */}
         <div>
           <PlayerLabel
@@ -371,14 +510,29 @@ export function Room() {
         {/* Sidebar with stats */}
         <div
           style={{
-            paddingTop: Math.max(1, ...(colClues ?? [[]]).map((c) => c.length)) * cs,
+            paddingTop:
+              Math.max(1, ...(colClues ?? [[]]).map((c) => c.length)) * cs,
             display: "flex",
             alignItems: "flex-start",
           }}
         >
-          <div className="mp-surface" style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 20, minWidth: 160 }}>
+          <div
+            className="mp-surface"
+            style={{
+              padding: "20px 24px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 20,
+              minWidth: 160,
+            }}
+          >
             <StatTile icon="clock" label="Time">
-              <span style={{ fontFamily: "Cairo, sans-serif", fontVariantNumeric: "tabular-nums" }}>
+              <span
+                style={{
+                  fontFamily: "Cairo, sans-serif",
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
                 {fmtSeconds(displaySeconds)}
               </span>
             </StatTile>
@@ -423,12 +577,20 @@ export function Room() {
           <div
             className="mp-surface"
             style={{
-              padding: 40, textAlign: "center", color: "var(--color-ink-muted)",
+              padding: 40,
+              textAlign: "center",
+              color: "var(--color-ink-muted)",
               minWidth: 200,
-              marginTop: Math.max(1, ...(colClues ?? [[]]).map((c) => c.length)) * cs,
+              marginTop:
+                Math.max(1, ...(colClues ?? [[]]).map((c) => c.length)) * cs,
             }}
           >
-            <Icon name="users" size={24} color="var(--color-line-strong)" style={{ marginBottom: 8 }} />
+            <Icon
+              name="users"
+              size={24}
+              color="var(--color-line-strong)"
+              style={{ marginBottom: 8 }}
+            />
             <div style={{ fontSize: 13 }}>Waiting for opponent…</div>
           </div>
         )}
@@ -438,7 +600,9 @@ export function Room() {
       {isFinished && (
         <div
           style={{
-            position: "fixed", left: "50%", bottom: 32,
+            position: "fixed",
+            left: "50%",
+            bottom: 32,
             transform: "translateX(-50%)",
             padding: "16px 24px",
             background: iWon
@@ -448,18 +612,33 @@ export function Room() {
                 : "var(--color-butter-50)",
             border: `1px solid ${iWon ? "var(--color-sage-100)" : opponentWon ? "var(--color-coral-100)" : "var(--color-butter-100)"}`,
             borderRadius: 14,
-            display: "flex", alignItems: "center", gap: 16,
+            display: "flex",
+            alignItems: "center",
+            gap: 16,
             boxShadow: "0 18px 38px -12px rgba(0,0,0,0.15)",
-            zIndex: 200, whiteSpace: "nowrap",
+            zIndex: 200,
+            whiteSpace: "nowrap",
           }}
         >
           <Icon
             name={iWon ? "check" : opponentWon ? "x" : "info"}
             size={20}
-            color={iWon ? "var(--color-sage-500)" : opponentWon ? "var(--color-coral-500)" : "#8a7338"}
+            color={
+              iWon
+                ? "var(--color-sage-500)"
+                : opponentWon
+                  ? "var(--color-coral-500)"
+                  : "#8a7338"
+            }
           />
           <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: "var(--color-ink)" }}>
+            <div
+              style={{
+                fontWeight: 700,
+                fontSize: 15,
+                color: "var(--color-ink)",
+              }}
+            >
               {iWon
                 ? "You win!"
                 : opponentWon
@@ -477,7 +656,11 @@ export function Room() {
             )}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/multiplayer")}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/multiplayer")}
+            >
               Play again
             </Button>
             <Button variant="primary" size="sm" onClick={() => navigate("/")}>
@@ -496,8 +679,12 @@ function CenteredMessage({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
-        minHeight: "100vh", display: "flex", alignItems: "center",
-        justifyContent: "center", flexDirection: "column", gap: 8,
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+        gap: 8,
         background: "var(--color-paper)",
       }}
     >
@@ -522,21 +709,28 @@ function PlayerLabel({
   return (
     <div
       style={{
-        display: "flex", alignItems: "center", gap: 12,
-        marginBottom: 10, minHeight: 32,
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        marginBottom: 10,
+        minHeight: 32,
       }}
     >
-      <span style={{ fontSize: 14, fontWeight: 700, color: "var(--color-ink)" }}>
+      <span
+        style={{ fontSize: 14, fontWeight: 700, color: "var(--color-ink)" }}
+      >
         {name}
       </span>
       {isWinner && (
         <span
           style={{
-            fontSize: 11, fontWeight: 700,
+            fontSize: 11,
+            fontWeight: 700,
             color: "var(--color-sage-500)",
             background: "var(--color-sage-50)",
             border: "1px solid var(--color-sage-100)",
-            borderRadius: 999, padding: "2px 8px",
+            borderRadius: 999,
+            padding: "2px 8px",
           }}
         >
           Winner
@@ -545,11 +739,13 @@ function PlayerLabel({
       {done && !won && !isWinner && (
         <span
           style={{
-            fontSize: 11, fontWeight: 700,
+            fontSize: 11,
+            fontWeight: 700,
             color: "var(--color-coral-500)",
             background: "var(--color-coral-50)",
             border: "1px solid var(--color-coral-100)",
-            borderRadius: 999, padding: "2px 8px",
+            borderRadius: 999,
+            padding: "2px 8px",
           }}
         >
           Eliminated

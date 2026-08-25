@@ -49,7 +49,10 @@ export function UnratedMultiplayer() {
     }
 
     void fetchPublicRooms();
-    const interval = setInterval(() => void fetchPublicRooms(), PUBLIC_ROOMS_POLL_MS);
+    const interval = setInterval(
+      () => void fetchPublicRooms(),
+      PUBLIC_ROOMS_POLL_MS,
+    );
     return () => {
       cancelled = true;
       clearInterval(interval);
@@ -72,7 +75,9 @@ export function UnratedMultiplayer() {
       const { roomId } = (await res.json()) as { roomId: string };
       navigate(`/room/${roomId}`);
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : "Failed to create room");
+      setCreateError(
+        err instanceof Error ? err.message : "Failed to create room",
+      );
     } finally {
       setCreateLoading(false);
     }
@@ -246,7 +251,13 @@ export function UnratedMultiplayer() {
               Public — anyone can find and join
             </label>
             {createError && (
-              <p style={{ margin: 0, fontSize: 12, color: "var(--color-coral-500)" }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 12,
+                  color: "var(--color-coral-500)",
+                }}
+              >
                 {createError}
               </p>
             )}
@@ -312,7 +323,13 @@ export function UnratedMultiplayer() {
               }}
             />
             {joinError && (
-              <p style={{ margin: 0, fontSize: 12, color: "var(--color-coral-500)" }}>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: 12,
+                  color: "var(--color-coral-500)",
+                }}
+              >
                 {joinError}
               </p>
             )}
@@ -352,28 +369,79 @@ export function UnratedMultiplayer() {
           </h2>
         </div>
 
-        <div
-          className="mp-surface"
-          style={{
-            padding: 40,
-            textAlign: "center",
-            color: "var(--color-ink-muted)",
-          }}
-        >
-          <Icon
-            name="users"
-            size={32}
-            color="var(--color-line-strong)"
+        {publicRooms === null || publicRooms.length === 0 ? (
+          <div
+            className="mp-surface"
             style={{
-              marginBottom: 12,
-              display: "block",
-              margin: "0 auto 12px",
+              padding: 40,
+              textAlign: "center",
+              color: "var(--color-ink-muted)",
             }}
-          />
-          <div style={{ fontSize: 14, fontWeight: 600 }}>
-            No open games right now.
+          >
+            <Icon
+              name="users"
+              size={32}
+              color="var(--color-line-strong)"
+              style={{
+                marginBottom: 12,
+                display: "block",
+                margin: "0 auto 12px",
+              }}
+            />
+            <div style={{ fontSize: 14, fontWeight: 600 }}>
+              {publicRooms === null
+                ? "Loading public games…"
+                : "No open games right now."}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {publicRooms.map((room) => (
+              <div
+                key={room.roomId}
+                className="mp-surface"
+                style={{
+                  padding: "14px 20px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 16,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <IconBadge
+                    color="var(--color-sage-50)"
+                    iconColor="var(--color-sage-500)"
+                    icon="users"
+                  />
+                  <div>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: "var(--color-ink)",
+                      }}
+                    >
+                      {room.width} × {room.height}
+                    </div>
+                    <div
+                      style={{ fontSize: 12, color: "var(--color-ink-muted)" }}
+                    >
+                      {room.clients}/{room.maxClients} · waiting for opponent
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={() => navigate(`/room/${room.roomId}`)}
+                >
+                  Join
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

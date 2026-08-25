@@ -9,8 +9,6 @@ function requireEnv(name: string): string {
   return val;
 }
 
-const JWT_ACCESS_SECRET = requireEnv("JWT_ACCESS_SECRET");
-
 interface RoomAuth {
   username: string | null;
 }
@@ -80,7 +78,11 @@ export class PicrossRoom extends Room {
   private winnerId = "";
   private forfeit = false;
 
-  async onCreate(options: { width?: number; height?: number; isPublic?: boolean }) {
+  async onCreate(options: {
+    width?: number;
+    height?: number;
+    isPublic?: boolean;
+  }) {
     const width = options.width ?? 10;
     const height = options.height ?? 10;
 
@@ -107,7 +109,11 @@ export class PicrossRoom extends Room {
     const code = generateCode();
     this.state.inviteCode = code;
 
-    await this.setMetadata({ inviteCode: code, width: this.width, height: this.height });
+    await this.setMetadata({
+      inviteCode: code,
+      width: this.width,
+      height: this.height,
+    });
 
     if (!options.isPublic) {
       await this.setPrivate(true);
@@ -131,7 +137,10 @@ export class PicrossRoom extends Room {
   ): Promise<RoomAuth> {
     if (!options.token) return { username: null };
 
-    const payload = verifyRoomToken(options.token, JWT_ACCESS_SECRET);
+    const payload = verifyRoomToken(
+      options.token,
+      requireEnv("JWT_ACCESS_SECRET"),
+    );
     if (!payload) {
       throw new ServerError(401, "Invalid or expired room token");
     }
