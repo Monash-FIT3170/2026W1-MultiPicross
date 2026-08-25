@@ -12,6 +12,8 @@ resource "google_compute_firewall" "web" {
     protocol = "tcp"
     ports    = ["80", "443"]
   }
+
+  depends_on = [google_project_service.required]
 }
 
 resource "google_compute_firewall" "iap_ssh" {
@@ -28,4 +30,6 @@ resource "google_compute_firewall" "iap_ssh" {
     protocol = "tcp"
     ports    = ["22"]
   }
+
+  depends_on = [google_project_service.required]
 }

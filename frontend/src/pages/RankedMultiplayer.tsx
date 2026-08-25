@@ -6,7 +6,7 @@ import trohpyIcon from "../assets/trophy.svg";
 import shieldIcon from "../assets/shield.svg";
 //import { start } from "repl";
 
-export function PicrossRanked() {
+export function RankedMultiplayer() {
   const navigate = useNavigate();
   const [searching, setSearching] = useState(false);
   const [timedOut, setTimedOut] = useState(false);

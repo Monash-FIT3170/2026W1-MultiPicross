@@ -13,7 +13,7 @@ import trophyIcon from "../assets/trophy.webp";
 
 export default function MainMenu() {
   const navigate = useNavigate();
-  const { status, username, guestNickname, playerName, logout } = useAuth();
+  const { status, user, guestNickname, playerName, logout } = useAuth();
 
   const isAuth = status === "authenticated";
 
@@ -28,7 +28,9 @@ export default function MainMenu() {
     const wordmark = wordmarkRef.current;
     const tagline = taglineRef.current;
     const tiles = gridRef.current
-      ? (Array.from(gridRef.current.querySelectorAll(".tile")) as HTMLElement[])
+      ? (Array.from(
+          gridRef.current.querySelectorAll(".tile-enter"),
+        ) as HTMLElement[])
       : [];
     const footer = footerRef.current;
 
@@ -54,9 +56,6 @@ export default function MainMenu() {
         delay: stagger(55, { start: 140 }),
         duration: 300,
         ease: "outExpo",
-        // After entrance, remove inline opacity so disabled tiles revert to CSS opacity: 0.55
-        onComplete: () =>
-          tiles.forEach((el) => el.style.removeProperty("opacity")),
       });
     }
 
@@ -80,6 +79,7 @@ export default function MainMenu() {
         background: "var(--color-paper)",
         position: "relative",
       }}
+      onClick={() => setShowMultiplayerMenu(false)}
     >
       {/* Top bar */}
       <div
@@ -100,26 +100,17 @@ export default function MainMenu() {
         >
           {isAuth ? (
             <UserDropdown
-              username={username ?? ""}
+              handle={user?.handle ?? null}
               onSignOut={() => void logout()}
             />
           ) : (
-            <>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate("/login")}
-              >
-                Sign in
-              </Button>
-              <Button
-                variant="dark"
-                size="sm"
-                onClick={() => navigate("/register")}
-              >
-                Sign up
-              </Button>
-            </>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/login")}
+            >
+              Sign in
+            </Button>
           )}
         </div>
       </div>
@@ -261,7 +252,7 @@ export default function MainMenu() {
               size="md"
               onClick={
                 isAuth
-                  ? () => navigate("/picrossranked")
+                  ? () => navigate("/multiplayer/ranked")
                   : () => navigate("/login")
               }
               style={{
@@ -294,57 +285,20 @@ export default function MainMenu() {
             }}
           >
             {/* Singleplayer */}
-            <button
-              className="tile"
-              onClick={() => navigate("/singleplayer")}
-              style={{
-                flex: 1,
-                height: 120,
-              }}
-            >
-              <img
-                src={singleplayerIcon}
-                alt=""
-                style={{ width: 40, height: 40, opacity: 0.85 }}
-              />
-              <span
-                style={{
-                  fontSize: 20,
-                  fontWeight: 700,
-                  color: "var(--color-ink)",
-                }}
-              >
-                Singleplayer
-              </span>
-            </button>
-
-            {/* Multiplayer */}
-            <div
-              style={{
-                position: "relative",
-                flex: 1,
-              }}
-              onMouseEnter={() => setShowMultiplayerMenu(true)}
-              onMouseLeave={() => setShowMultiplayerMenu(false)}
-            >
+            <div className="tile-enter" style={{ flex: 1, display: "flex" }}>
               <button
                 className="tile"
-                onClick={() => setShowMultiplayerMenu((prev) => !prev)}
+                onClick={() => navigate("/singleplayer")}
                 style={{
-                  width: "100%",
+                  flex: 1,
                   height: 120,
                 }}
               >
                 <img
-                  src={multiIcon}
+                  src={singleplayerIcon}
                   alt=""
-                  style={{
-                    width: 40,
-                    height: 40,
-                    opacity: 0.85,
-                  }}
+                  style={{ width: 40, height: 40, opacity: 0.85 }}
                 />
-
                 <span
                   style={{
                     fontSize: 20,
@@ -352,48 +306,69 @@ export default function MainMenu() {
                     color: "var(--color-ink)",
                   }}
                 >
-                  Multiplayer
+                  Singleplayer
                 </span>
               </button>
+            </div>
 
-              {showMultiplayerMenu && (
+            {/* Multiplayer */}
+            <div
+              onClick={(event) => event.stopPropagation()}
+              className="tile-enter"
+              style={{
+                position: "relative",
+                flex: 1,
+              }}
+            >
+              {showMultiplayerMenu ? (
                 <div
                   style={{
-                    position: "absolute",
-                    left: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
                     width: "100%",
-                    background: "white",
-                    borderRadius: 16,
-                    border: "1px solid #E5E7EB",
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
-                    overflow: "hidden",
-                    zIndex: 100,
+                    height: 120,
                   }}
                 >
-                  <DropdownItem
-                    label="Private Game"
+                  <ModeButton
+                    label="Unrated"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
-                      navigate("/privatemultiplayer");
+                      navigate("/multiplayer/unrated");
                     }}
                   />
-
-                  <DropdownItem
-                    label="Public Game"
+                  <ModeButton
+                    label="Ranked"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
-                      navigate("/publicmultiplayer");
-                    }}
-                  />
-
-                  <DropdownItem
-                    label="Picross Ranked Game"
-                    onClick={() => {
-                      setShowMultiplayerMenu(false);
-                      navigate("/picrossranked");
+                      navigate("/multiplayer/ranked");
                     }}
                   />
                 </div>
+              ) : (
+                <button
+                  className="tile"
+                  onClick={() => setShowMultiplayerMenu(true)}
+                  style={{
+                    width: "100%",
+                    height: 120,
+                  }}
+                >
+                  <img
+                    src={multiIcon}
+                    alt=""
+                    style={{ width: 40, height: 40, opacity: 0.85 }}
+                  />
+                  <span
+                    style={{
+                      fontSize: 20,
+                      fontWeight: 700,
+                      color: "var(--color-ink)",
+                    }}
+                  >
+                    Multiplayer
+                  </span>
+                </button>
               )}
             </div>
           </div>
@@ -457,23 +432,25 @@ export default function MainMenu() {
             />
           </div>
         </div>
-      </div>
 
-      {/* Footer hint */}
-      <p
-        ref={footerRef}
-        style={{
-          marginTop: 36,
-          fontSize: 12,
-          color: "var(--color-ink-faint)",
-        }}
-      >
-        {isAuth
-          ? `Welcome back, ${playerName ?? ""}.`
-          : guestNickname
-            ? `Playing as ${guestNickname}. Sign in to save progress.`
-            : "Playing as a guest. Sign in to save progress."}
-      </p>
+        {/* Footer hint */}
+        <p
+          ref={footerRef}
+          style={{
+            marginTop: 36,
+            fontSize: 12,
+            color: "var(--color-ink-faint)",
+          }}
+        >
+          {isAuth && playerName
+            ? `Welcome back, ${playerName}.`
+            : isAuth
+              ? "Welcome back."
+              : guestNickname
+                ? `Playing as ${guestNickname}. Sign in to save progress.`
+                : "Playing as a guest. Sign in to save progress."}
+        </p>
+      </div>
     </div>
   );
 }
@@ -508,31 +485,33 @@ function SecondaryTile({
   badge?: React.ReactNode;
 }) {
   return (
-    <button
-      className="tile"
-      disabled={disabled}
-      onClick={onClick}
-      style={{
-        width: 640,
-        height: 56,
-        flexDirection: "row",
-        gap: 24,
-        padding: "0 18px",
-        justifyContent: "flex-start",
-      }}
-    >
-      {icon}
-      <span
-        style={{ fontSize: 18, fontWeight: 600, color: "var(--color-ink)" }}
+    <div className="tile-enter">
+      <button
+        className="tile"
+        disabled={disabled}
+        onClick={onClick}
+        style={{
+          width: 640,
+          height: 56,
+          flexDirection: "row",
+          gap: 24,
+          padding: "0 18px",
+          justifyContent: "flex-start",
+        }}
       >
-        {label}
-      </span>
-      {badge && <span style={{ marginLeft: "auto" }}>{badge}</span>}
-    </button>
+        {icon}
+        <span
+          style={{ fontSize: 18, fontWeight: 600, color: "var(--color-ink)" }}
+        >
+          {label}
+        </span>
+        {badge && <span style={{ marginLeft: "auto" }}>{badge}</span>}
+      </button>
+    </div>
   );
 }
 
-function DropdownItem({
+function ModeButton({
   label,
   onClick,
 }: {
@@ -541,25 +520,21 @@ function DropdownItem({
 }) {
   return (
     <button
+      className="mode-button"
       onClick={onClick}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = "#F5F9FF";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = "white";
-      }}
       style={{
+        display: "block",
         width: "100%",
-        padding: "14px 18px",
-        background: "white",
-        border: "none",
-        borderBottom: "1px solid #F1F5F9",
+        height: 56,
+        padding: "10px 8px",
+        background: "var(--color-white)",
+        border: "1px solid #D6E6FF",
+        borderRadius: 10,
         cursor: "pointer",
-        textAlign: "left",
-        fontSize: 16,
+        textAlign: "center",
+        fontSize: 18,
         fontWeight: 600,
         color: "var(--color-ink)",
-        transition: "background 0.15s ease",
       }}
     >
       {label}

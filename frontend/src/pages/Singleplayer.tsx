@@ -152,7 +152,7 @@ export function Singleplayer() {
   const [mistakeFlash, setMistakeFlash] = useState(false);
   const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
 
-  // Stable key for PlayingScreen — increments each time a fresh game starts
+  // Stable key for PlayingScreen, increments each time a fresh game starts
   const gameKeyRef = useRef(0);
 
   // ── Bootstrap ──────────────────────────────────────────────────────────────
@@ -193,6 +193,7 @@ export function Singleplayer() {
   useEffect(() => {
     if (phase.kind !== "playing" || phase.outcome !== null) return;
     const startWall = Date.now() - phase.game.baseElapsed * 1000;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing; seeds the clock so it doesn't read 0 for the first second
     setDisplaySeconds(Math.floor((Date.now() - startWall) / 1000));
     const id = setInterval(() => {
       setDisplaySeconds(Math.floor((Date.now() - startWall) / 1000));
@@ -392,7 +393,7 @@ export function Singleplayer() {
 
     if (game.isGuest) {
       if (markCross && game.solution![idx] === 1) {
-        // Crossing a filled cell — mistake
+        // Crossing a filled cell, mistake
         const newLives = game.livesLeft - 1;
         setMistakeCrossIdx(idx);
         setTimeout(() => setMistakeCrossIdx(null), 450);
@@ -613,6 +614,7 @@ export function Singleplayer() {
 
       {phase.kind === "playing" && (
         <PlayingScreen
+          // eslint-disable-next-line react-hooks/refs -- pre-existing; used as a remount key, converting it to state is a separate change
           key={gameKeyRef.current}
           game={phase.game}
           outcome={phase.outcome}
@@ -1037,7 +1039,7 @@ function PlayingScreen({
       {mistakeFlash && (
         <div className="mp-toast">
           <Icon name="x" size={14} color="var(--color-coral-500)" />
-          <span>Not that one — one life used.</span>
+          <span>Not that one, one life used.</span>
         </div>
       )}
 

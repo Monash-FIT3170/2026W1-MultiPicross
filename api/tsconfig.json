@@ -12,5 +12,5 @@
     "rootDir": "./",
     "outDir": "./dist"
   },
-  "exclude": ["node_modules", "drizzle.config.ts", "drizzle"]
+  "exclude": ["node_modules", "drizzle.config.ts", "drizzle", "test"]
 }

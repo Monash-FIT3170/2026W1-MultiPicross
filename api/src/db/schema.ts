@@ -1,4 +1,5 @@
 import {
+  index,
   integer,
   jsonb,
   pgEnum,
@@ -11,12 +12,50 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
+export const accountKind = pgEnum("account_kind", ["sso", "service"]);
+
 export const accounts = pgTable("accounts", {
   id: uuid("id").defaultRandom().primaryKey(),
-  username: text("username").unique().notNull(),
-  passwordHash: text("password_hash").notNull(),
+  kind: accountKind("kind").notNull().default("sso"),
+  handle: text("handle").unique(),
+  username: text("username").unique(),
+  passwordHash: text("password_hash"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// A separate table rather than nullable columns on accounts, because a second
+// provider is plausible and nullable oidc_subject columns invite
+// WHERE oidc_subject IS NULL special-casing forever.
+export const identities = pgTable(
+  "identities",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    subject: text("subject").notNull(),
+    issuer: text("issuer").notNull(),
+    lastLoginAt: timestamp("last_login_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("identities_provider_subject_idx").on(t.provider, t.subject),
+    index("identities_account_idx").on(t.accountId),
+  ],
+);
+
+export const loginAttempts = pgTable(
+  "login_attempts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    username: text("username").notNull(),
+    attemptedAt: timestamp("attempted_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("login_attempts_username_time_idx").on(t.username, t.attemptedAt),
+  ],
+);
 
 export const refreshTokens = pgTable("refresh_tokens", {
   id: uuid("id").primaryKey(),

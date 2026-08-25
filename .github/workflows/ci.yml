@@ -29,6 +29,15 @@ jobs:
       - name: Run ESLint
         run: npx eslint .
 
+      # The root config ignores frontend/, which has its own config and React plugins.
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Run ESLint (frontend)
+        run: npm run lint
+        working-directory: frontend
+
   build:
     name: Build (${{ matrix.service }})
     runs-on: ubuntu-latest
@@ -92,28 +101,62 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,scope=${{ matrix.service }},mode=max
 
-  # test:
-  #   name: Test (${{ matrix.service }})
-  #   needs: build
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     matrix:
-  #       service: [gameserver, frontend]
-  #   steps:
-  #     - uses: actions/checkout@v4
+  test:
+    name: Test (${{ matrix.service }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api, gameserver]
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: picross
+          POSTGRES_PASSWORD: picross
+          POSTGRES_DB: picross
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U picross -d picross"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 25
-  #         cache: npm
-  #         cache-dependency-path: ${{ matrix.service }}/package-lock.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 25
+          cache: npm
+          cache-dependency-path: ${{ matrix.service }}/package-lock.json
 
-  #     - name: Install dependencies
-  #       run: npm install
-  #       working-directory: ${{ matrix.service }}
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ${{ matrix.service }}
 
-  #     - name: Run tests
-  #       run: npm test
-  #       working-directory: ${{ matrix.service }}
-  #       env:
-  #         CI: true
+      # The build stage's tsc excludes test/, so nothing else typechecks these files.
+      - name: Typecheck (including tests)
+        if: matrix.service == 'api'
+        run: npm run typecheck
+        working-directory: api
+
+      - name: Apply database migrations
+        if: matrix.service == 'api'
+        run: npm run db:migrate
+        working-directory: api
+        env:
+          DB_HOST: localhost
+          DB_USER: picross
+          DB_PASSWORD: picross
+          DB_NAME: picross
+
+      - name: Run tests
+        run: npm test
+        working-directory: ${{ matrix.service }}
+        env:
+          CI: true
+          DB_HOST: localhost
+          DB_USER: picross
+          DB_PASSWORD: picross
+          DB_NAME: picross
