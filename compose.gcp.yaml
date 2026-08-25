@@ -126,7 +126,7 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:2567/hi"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:2567/health"]
       interval: 10s
       timeout: 5s
       retries: 6
@@ -140,6 +140,37 @@ services:
       - "traefik.http.routers.gameserver.middlewares=gameserver-strip"
       - "traefik.http.middlewares.gameserver-strip.stripprefix.prefixes=/gs"
       - "traefik.http.services.gameserver.loadbalancer.server.port=2567"
+      # Volumetric per-IP limit on the two room endpoints that cost something.
+      # /gs/room-by-code is the brute-force target: a 6-char invite code is the
+      # only thing guarding a private room. /gs/public-rooms is deliberately
+      # NOT covered — the lobby polls it every 5s per client (see
+      # PUBLIC_ROOMS_POLL_MS), so a shared-NAT campus network would trip any
+      # useful limit, and it exposes no secret worth guessing.
+      # Unlike api-login there is no Method(...) matcher here: each of these
+      # paths serves exactly one route, and pinning the router to GET/POST
+      # would let a HEAD request skip the limit while still reaching Express's
+      # implicit HEAD handler for app.get - i.e. a free brute-force oracle.
+      - "traefik.http.routers.gs-room-by-code.rule=Host(`${DOMAIN}`) && PathPrefix(`/gs/room-by-code/`)"
+      - "traefik.http.routers.gs-room-by-code.priority=200"
+      - "traefik.http.routers.gs-room-by-code.service=gameserver"
+      - "traefik.http.routers.gs-room-by-code.entrypoints=websecure"
+      - "traefik.http.routers.gs-room-by-code.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.gs-room-by-code.middlewares=gs-room-ratelimit,gameserver-strip"
+      - "traefik.http.routers.gs-create-room.rule=Host(`${DOMAIN}`) && Path(`/gs/create-room`)"
+      - "traefik.http.routers.gs-create-room.priority=200"
+      - "traefik.http.routers.gs-create-room.service=gameserver"
+      - "traefik.http.routers.gs-create-room.entrypoints=websecure"
+      - "traefik.http.routers.gs-create-room.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.gs-create-room.middlewares=gs-room-ratelimit,gameserver-strip"
+      # 30/min with a burst of 60: far above what a human clicking Create or
+      # typing an invite code produces (even a whole lab behind one NAT), and
+      # far below what makes a dent in a 32^6 code space.
+      - "traefik.http.middlewares.gs-room-ratelimit.ratelimit.average=30"
+      - "traefik.http.middlewares.gs-room-ratelimit.ratelimit.period=1m"
+      - "traefik.http.middlewares.gs-room-ratelimit.ratelimit.burst=60"
+      # depth=0: the VM receives traffic directly with no trustworthy X-Forwarded-For,
+      # so keying off a forwarded header would let an attacker spoof past the limit.
+      - "traefik.http.middlewares.gs-room-ratelimit.ratelimit.sourcecriterion.ipstrategy.depth=0"
       - "traefik.http.services.gameserver.loadbalancer.sticky.cookie=true"
       - "traefik.http.services.gameserver.loadbalancer.sticky.cookie.name=gs_backend"
       - "traefik.http.services.gameserver.loadbalancer.sticky.cookie.secure=true"

@@ -8,6 +8,38 @@ import {
 
 import { MyRoom } from "./rooms/MyRoom.js";
 import { PicrossRoom } from "./rooms/PicrossRoom.js";
+import { sql } from "./db/client.js";
+
+// The UI only offers 5/10/15/20 (frontend SIZES), but a range check keeps the
+// two sides decoupled: a new size can ship in the frontend without a
+// gameserver change. The upper bound still matters — every player in a room
+// allocates several width*height arrays, so an unbounded `?width=99999` is a
+// cheap memory-exhaustion vector.
+const MIN_BOARD_SIZE = 1;
+const MAX_BOARD_SIZE = 50;
+const DEFAULT_BOARD_SIZE = 10;
+
+// Must stay in sync with generateCode() in PicrossRoom: 6 unambiguous chars.
+const INVITE_CODE_PATTERN = /^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/;
+
+/**
+ * Parses a width/height query param. Returns the default when the param is
+ * absent, or null when it is present but not a whole number inside the
+ * allowed range — the caller turns that into a 400. `parseInt(...) || 10`
+ * used to swallow "abc" and 0 into 10, and let -5 through into the SQL.
+ */
+function parseBoardDimension(raw: unknown): number | null {
+  if (raw === undefined || raw === null || raw === "") {
+    return DEFAULT_BOARD_SIZE;
+  }
+  const text = String(raw).trim();
+  // Digits only: rejects "abc", "-5", "1.5", "1e3", "10px".
+  if (!/^\d+$/.test(text)) return null;
+  const value = Number(text);
+  if (!Number.isInteger(value)) return null;
+  if (value < MIN_BOARD_SIZE || value > MAX_BOARD_SIZE) return null;
+  return value;
+}
 
 const server = defineServer({
   rooms: {
@@ -16,13 +48,45 @@ const server = defineServer({
   },
 
   express: (app) => {
+    // Container healthcheck target (see compose.gcp.yaml). Registered before
+    // the dev-only playground() mount at "/" so nothing can shadow it, and
+    // available regardless of NODE_ENV. Deliberately does no DB work: a
+    // Postgres blip must not restart a gameserver that is still serving rooms.
+    app.get("/health", (_req, res) => {
+      res.json({ status: "ok" });
+    });
+
     // Create a new Picross room server-side; returns roomId + inviteCode.
     // The client then joins via joinById so we avoid double-connection.
     app.post("/create-room", async (req, res) => {
+      const width = parseBoardDimension(req.query.width);
+      const height = parseBoardDimension(req.query.height);
+      if (width === null || height === null) {
+        res.status(400).json({
+          error: `width and height must be whole numbers between ${MIN_BOARD_SIZE} and ${MAX_BOARD_SIZE}`,
+        });
+        return;
+      }
+      const isPublic = req.query.public === "true";
+
       try {
-        const width = parseInt(String(req.query.width ?? "10"), 10) || 10;
-        const height = parseInt(String(req.query.height ?? "10"), 10) || 10;
-        const isPublic = req.query.public === "true";
+        // PicrossRoom.onCreate throws a plain Error when the puzzle bank holds
+        // nothing this size, which the catch below would flatten into an
+        // opaque 500. Check up front so an empty bank reads as an actionable
+        // 404 and a 500 keeps meaning "something is genuinely broken".
+        const available = await sql`
+          SELECT 1
+          FROM nonograms
+          WHERE width = ${width} AND height = ${height}
+          LIMIT 1
+        `;
+        if (available.length === 0) {
+          res
+            .status(404)
+            .json({ error: `No puzzle available at ${width}x${height}` });
+          return;
+        }
+
         const room = await matchMaker.createRoom("picross_room", {
           width,
           height,
@@ -38,15 +102,34 @@ const server = defineServer({
       }
     });
 
-    // Look up a room by its invite code.
+    // Look up a joinable room by its invite code. Intentionally unauthenticated
+    // — guest play is a supported flow — so brute force is held off by the
+    // Traefik rate limit on this path in compose.yaml / compose.gcp.yaml.
     app.get("/room-by-code/:code", async (req, res) => {
       try {
-        const { code } = req.params;
-        const rooms = await matchMaker.query({ name: "picross_room" });
-        const found = rooms.find(
-          (r) => r.metadata?.inviteCode === code.toUpperCase(),
-        );
+        const code = String(req.params.code ?? "")
+          .trim()
+          .toUpperCase();
+        if (!INVITE_CODE_PATTERN.test(code)) {
+          res.status(404).json({ error: "Room not found" });
+          return;
+        }
+
+        // Let the matchmaking driver do the filtering instead of pulling every
+        // picross room back and scanning in JS. `locked: false` also drops
+        // finished rooms (setPhase("finished") calls lock()) and full ones
+        // (Colyseus auto-locks at maxClients) — those would otherwise hand the
+        // client a roomId that joinById then rejects with an opaque
+        // room-locked error.
+        const rooms = await matchMaker.query({
+          name: "picross_room",
+          locked: false,
+          inviteCode: code,
+        });
+        const found = rooms.find((r) => r.clients < r.maxClients);
         if (!found) {
+          // Same 404 whether the code is unknown or merely unjoinable, so the
+          // endpoint never confirms a code to someone guessing.
           res.status(404).json({ error: "Room not found" });
           return;
         }
