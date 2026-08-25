@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Logo, Icon, BackButton, Button } from "../components/ui";
 import { useAuth } from "../auth/AuthContext";
 
 const SIZES = ["5 × 5", "10 × 10", "15 × 15", "20 × 20"] as const;
+const PUBLIC_ROOMS_POLL_MS = 5000;
 
 function sizeToWH(size: string): { width: number; height: number } {
   const [w, h] = size.split(" × ").map(Number);
@@ -12,7 +13,15 @@ function sizeToWH(size: string): { width: number; height: number } {
 
 const GS_BASE = `${window.location.protocol}//${window.location.host}/gs`;
 
-export function PrivateMultiplayer() {
+interface PublicRoom {
+  roomId: string;
+  width: number;
+  height: number;
+  clients: number;
+  maxClients: number;
+}
+
+export function UnratedMultiplayer() {
   const navigate = useNavigate();
   const { playerName } = useAuth();
 
@@ -23,6 +32,29 @@ export function PrivateMultiplayer() {
   const [joinLoading, setJoinLoading] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
+  const [publicRooms, setPublicRooms] = useState<PublicRoom[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchPublicRooms() {
+      try {
+        const res = await fetch(`${GS_BASE}/public-rooms`);
+        if (!res.ok) return;
+        const rooms = (await res.json()) as PublicRoom[];
+        if (!cancelled) setPublicRooms(rooms);
+      } catch {
+        // Keep the last known list on transient network errors.
+      }
+    }
+
+    void fetchPublicRooms();
+    const interval = setInterval(() => void fetchPublicRooms(), PUBLIC_ROOMS_POLL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
 
   async function handleCreate() {
     setCreateLoading(true);
@@ -97,7 +129,7 @@ export function PrivateMultiplayer() {
             color: "var(--color-ink)",
           }}
         >
-          Private Multiplayer
+          Unrated Multiplayer
         </h1>
         <p
           style={{
@@ -297,6 +329,49 @@ export function PrivateMultiplayer() {
             >
               {joinLoading ? "Joining…" : "Join"}
             </Button>
+          </div>
+        </div>
+        {/* Public games */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "baseline",
+            justifyContent: "space-between",
+            marginBottom: 12,
+          }}
+        >
+          <h2
+            style={{
+              margin: 0,
+              fontSize: 20,
+              fontWeight: 600,
+              color: "var(--color-ink)",
+            }}
+          >
+            Public games
+          </h2>
+        </div>
+
+        <div
+          className="mp-surface"
+          style={{
+            padding: 40,
+            textAlign: "center",
+            color: "var(--color-ink-muted)",
+          }}
+        >
+          <Icon
+            name="users"
+            size={32}
+            color="var(--color-line-strong)"
+            style={{
+              marginBottom: 12,
+              display: "block",
+              margin: "0 auto 12px",
+            }}
+          />
+          <div style={{ fontSize: 14, fontWeight: 600 }}>
+            No open games right now.
           </div>
         </div>
       </div>
