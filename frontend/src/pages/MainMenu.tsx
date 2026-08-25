@@ -21,6 +21,21 @@ export default function MainMenu() {
   const gridRef = useRef<HTMLDivElement>(null);
   const footerRef = useRef<HTMLParagraphElement>(null);
   const [showMultiplayerMenu, setShowMultiplayerMenu] = useState(false);
+  const closeMultiplayerMenuTimeout = useRef<ReturnType<typeof setTimeout>>();
+
+  const cancelCloseMultiplayerMenu = () => {
+    if (closeMultiplayerMenuTimeout.current) {
+      clearTimeout(closeMultiplayerMenuTimeout.current);
+      closeMultiplayerMenuTimeout.current = undefined;
+    }
+  };
+
+  const scheduleCloseMultiplayerMenu = () => {
+    cancelCloseMultiplayerMenu();
+    closeMultiplayerMenuTimeout.current = setTimeout(() => {
+      setShowMultiplayerMenu(false);
+    }, 200);
+  };
 
   useLayoutEffect(() => {
     const wordmark = wordmarkRef.current;
@@ -314,9 +329,13 @@ export default function MainMenu() {
               style={{
                 position: "relative",
                 flex: 1,
+                zIndex: 1,
               }}
-              onMouseEnter={() => setShowMultiplayerMenu(true)}
-              onMouseLeave={() => setShowMultiplayerMenu(false)}
+              onMouseEnter={() => {
+                cancelCloseMultiplayerMenu();
+                setShowMultiplayerMenu(true);
+              }}
+              onMouseLeave={scheduleCloseMultiplayerMenu}
             >
               <button
                 className="tile"
@@ -351,6 +370,7 @@ export default function MainMenu() {
                 <div
                   style={{
                     position: "absolute",
+                    top: "100%",
                     left: 0,
                     width: "100%",
                     background: "white",
