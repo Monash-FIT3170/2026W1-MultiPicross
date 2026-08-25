@@ -121,7 +121,8 @@ body {
   transition:
     transform var(--dur-base) var(--ease-out),
     box-shadow var(--dur-base) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
+    border-color var(--dur-fast) var(--ease-out),
+    opacity var(--dur-base) var(--ease-out);
   box-shadow: var(--shadow-xs);
   font-family: var(--font-ui);
   text-align: left;

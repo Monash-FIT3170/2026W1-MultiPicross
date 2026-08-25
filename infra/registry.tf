@@ -23,4 +23,6 @@ resource "google_artifact_registry_repository" "images" {
       older_than = "604800s"
     }
   }
+
+  depends_on = [google_project_service.required]
 }
