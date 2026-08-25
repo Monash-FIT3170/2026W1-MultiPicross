@@ -73,3 +73,40 @@ variable "github_deploy_branch" {
   type        = string
   default     = "main"
 }
+
+variable "oidc_issuer" {
+  description = "Issuer URL of the OIDC provider."
+  type        = string
+}
+
+variable "oidc_provider_id" {
+  description = <<-EOT
+    Namespaces rows in the `identities` table. A default would be a footgun:
+    changing the value orphans every existing identity and cascades the
+    accounts away. Use a distinct value when pointed at a non-production
+    provider tenant so those identities can be purged before cutover.
+  EOT
+  type        = string
+}
+
+variable "oidc_client_id" {
+  description = "OIDC client ID registered with the provider."
+  type        = string
+}
+
+variable "oidc_anchor_claim" {
+  description = "The claim used as the immutable account anchor."
+  type        = string
+}
+
+variable "oidc_scopes" {
+  description = "Scopes requested at the authorization endpoint, space separated."
+  type        = string
+  default     = "openid"
+}
+
+variable "oidc_client_auth" {
+  description = "Token endpoint authentication method. The other accepted value, client_secret_basic, form-encodes the credentials per RFC 6749 section 2.3.1 and fails against providers that compare them raw."
+  type        = string
+  default     = "client_secret_post"
+}

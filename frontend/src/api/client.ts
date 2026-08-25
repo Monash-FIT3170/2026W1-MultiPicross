@@ -84,3 +84,23 @@ export async function parseApiError(res: Response): Promise<string> {
   }
   return `Request failed (${res.status})`;
 }
+
+export class ApiError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
+export async function throwApiError(res: Response): Promise<never> {
+  throw new ApiError(await parseApiError(res), res.status);
+}
+
+// Must be location.assign, never fetch: fetch would follow the 302 as an XHR
+// straight to the identity provider, a cross-origin call the backend-for-frontend
+// design exists specifically to avoid.
+export function signInRedirect(returnTo?: string): void {
+  const target = returnTo ?? location.pathname + location.search;
+  location.assign(`/api/auth/login?returnTo=${encodeURIComponent(target)}`);
+}
