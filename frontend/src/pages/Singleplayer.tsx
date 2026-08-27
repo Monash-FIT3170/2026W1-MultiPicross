@@ -871,7 +871,6 @@ function PlayingScreen({
   onPlayAgain: () => void;
   onMainMenu: () => void;
 }) {
-
   const cs = autoCellSize(game.width, game.height);
   const maxRowClueLen = Math.max(1, ...game.rowClues.map((r) => r.length));
   const rowClueWidth = maxRowClueLen * cs;
@@ -884,7 +883,7 @@ function PlayingScreen({
       style={{
         minHeight: "100vh",
         background: "var(--color-paper)",
-        padding: "24px 24px 80px"
+        padding: "24px 24px 80px",
       }}
     >
       {/* Top bar */}
