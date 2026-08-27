@@ -2,11 +2,6 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { apiFetch, parseApiError } from "../api/client";
-import NonogramGrid, {
-  type CellValue,
-  fmtSeconds,
-  autoCellSize,
-} from "../components/NonogramGrid";
 import {
   Logo,
   Icon,
