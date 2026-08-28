@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { Logo, Icon, Button, UserDropdown } from "../components/ui";
 import { animate, stagger } from "animejs";
-import { elo } from "../api/elo";
+import { useElo } from "../api/elo";
 import singleplayerIcon from "../assets/singleplayer.svg";
 import multiIcon from "../assets/multiplayer.svg";
 import statsIcon from "../assets/stats.svg";
@@ -22,7 +22,7 @@ export default function MainMenu() {
   const gridRef = useRef<HTMLDivElement>(null);
   const footerRef = useRef<HTMLParagraphElement>(null);
   const [showMultiplayerMenu, setShowMultiplayerMenu] = useState(false);
-  const { playerElo } = elo(isAuth);
+  const { playerElo } = useElo(isAuth);
 
   useLayoutEffect(() => {
     const wordmark = wordmarkRef.current;

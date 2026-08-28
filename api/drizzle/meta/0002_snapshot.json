@@ -56,16 +56,12 @@
         "accounts_handle_unique": {
           "name": "accounts_handle_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "handle"
-          ]
+          "columns": ["handle"]
         },
         "accounts_username_unique": {
           "name": "accounts_username_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "username"
-          ]
+          "columns": ["username"]
         }
       },
       "policies": {},
@@ -164,12 +160,8 @@
           "name": "identities_account_id_accounts_id_fk",
           "tableFrom": "identities",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -334,12 +326,8 @@
           "name": "player_elo_history_account_id_accounts_id_fk",
           "tableFrom": "player_elo_history",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -381,12 +369,8 @@
           "name": "rated_waiting_list_account_id_accounts_id_fk",
           "tableFrom": "rated_waiting_list",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -439,12 +423,8 @@
           "name": "refresh_tokens_account_id_accounts_id_fk",
           "tableFrom": "refresh_tokens",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -568,12 +548,8 @@
           "name": "sp_completions_account_id_accounts_id_fk",
           "tableFrom": "sp_completions",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -581,12 +557,8 @@
           "name": "sp_completions_puzzle_id_nonograms_id_fk",
           "tableFrom": "sp_completions",
           "tableTo": "nonograms",
-          "columnsFrom": [
-            "puzzle_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["puzzle_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -602,20 +574,12 @@
     "public.account_kind": {
       "name": "account_kind",
       "schema": "public",
-      "values": [
-        "sso",
-        "service"
-      ]
+      "values": ["sso", "service"]
     },
     "public.sp_completion_state": {
       "name": "sp_completion_state",
       "schema": "public",
-      "values": [
-        "active",
-        "completed",
-        "failed",
-        "abandoned"
-      ]
+      "values": ["active", "completed", "failed", "abandoned"]
     }
   },
   "schemas": {},

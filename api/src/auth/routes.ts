@@ -20,7 +20,7 @@ import {
   accounts,
   identities,
   loginAttempts,
-  refreshTokens, 
+  refreshTokens,
   playerEloHistory,
 } from "../db/schema.js";
 import { isUniqueViolation } from "../db/errors.js";
