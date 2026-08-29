@@ -196,7 +196,7 @@ export function Room() {
   }
 
   // ── Abandon Confirmation ────────────────────────────────────────────────────
-  
+
   // Confirmed abandon: mark the leave as intentional so onLeave doesn't flash a
   // "Disconnected" error, drop the Colyseus connection, then navigate away.
   function handleAbandonConfirm() {
