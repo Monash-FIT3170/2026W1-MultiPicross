@@ -61,6 +61,8 @@ export function Room() {
   const [copied, setCopied] = useState(false);
   const [displaySeconds, setDisplaySeconds] = useState(0);
   const playingStartRef = useRef<number | null>(null);
+  const [confirmingAbandon, setConfirmingAbandon] = useState(false);
+  const intentionalLeaveRef = useRef(false);
 
   // ── Connect to room ────────────────────────────────────────────────────────
 
@@ -97,7 +99,8 @@ export function Room() {
         });
 
         room.onLeave(() => {
-          if (!cancelled) setError("Disconnected from room.");
+          if (cancelled || intentionalLeaveRef.current) return;
+          setError("Disconnected from room.");
         });
 
         room.onError((code, message) => {
@@ -142,6 +145,20 @@ export function Room() {
     return () => clearInterval(id);
   }, [snapshot?.phase]);
 
+  // ── Abandon-confirm housekeeping ───────────────────────────────────────────
+
+  // Close the confirm dialog on Escape. (A game that ends on its own while the
+  // dialog is open is handled at the render site: the dialog only shows while
+  // the phase is still "playing".)
+  useEffect(() => {
+    if (!confirmingAbandon) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setConfirmingAbandon(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [confirmingAbandon]);
+
   // ── Actions ────────────────────────────────────────────────────────────────
 
   function handleFill(row: number, col: number) {
@@ -161,6 +178,37 @@ export function Room() {
     } catch {
       /* ignore */
     }
+  }
+
+  // Leave the lobby. While the game is in progress the server counts any
+  // departure as a forfeit (PicrossRoom.onLeave), so route the click through
+  // the confirm dialog first; otherwise just go.
+  function leaveRoom() {
+    if (snapshot?.phase === "playing") {
+      setConfirmingAbandon(true);
+    } else {
+      navigate("/multiplayer");
+    }
+  }
+
+  function cancelAbandon() {
+    setConfirmingAbandon(false);
+  }
+
+  // ── Abandon Confirmation ────────────────────────────────────────────────────
+  
+  // Confirmed abandon: mark the leave as intentional so onLeave doesn't flash a
+  // "Disconnected" error, drop the Colyseus connection, then navigate away.
+  function handleAbandonConfirm() {
+    if (snapshot?.phase !== "playing" && snapshot?.phase !== "waiting") return;
+    intentionalLeaveRef.current = true;
+    try {
+      roomRef.current?.leave();
+    } catch {
+      /* ignore — navigating away regardless */
+    }
+    roomRef.current = null;
+    navigate("/multiplayer");
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -231,11 +279,7 @@ export function Room() {
             marginBottom: 40,
           }}
         >
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/multiplayer")}
-          >
+          <Button variant="ghost" size="sm" onClick={leaveRoom}>
             <Icon name="arrow-left" size={14} color="var(--color-ink-faint)" />{" "}
             Back
           </Button>
@@ -433,7 +477,7 @@ export function Room() {
         }}
       >
         <button
-          onClick={() => navigate("/multiplayer")}
+          onClick={leaveRoom}
           style={{
             background: "none",
             border: "none",
@@ -539,6 +583,18 @@ export function Room() {
             <StatTile icon="grid" label="Size">
               {width} × {height}
             </StatTile>
+            {phase === "playing" && (
+              <>
+                <div style={{ height: 1, background: "var(--color-line)" }} />
+                <Button
+                  variant="danger-soft"
+                  size="sm"
+                  onClick={() => setConfirmingAbandon(true)}
+                >
+                  Abandon
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -666,6 +722,90 @@ export function Room() {
             <Button variant="primary" size="sm" onClick={() => navigate("/")}>
               Main menu
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Abandon confirmation */}
+      {confirmingAbandon && phase === "playing" && (
+        <div
+          onClick={cancelAbandon}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 300,
+            padding: 24,
+          }}
+        >
+          <div
+            className="mp-surface"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="abandon-title"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: 380,
+              width: "100%",
+              padding: 28,
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 14,
+                background: "var(--color-coral-50)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 16px",
+              }}
+            >
+              <Icon name="info" size={22} color="var(--color-coral-500)" />
+            </div>
+            <h2
+              id="abandon-title"
+              style={{
+                margin: "0 0 6px",
+                fontSize: 18,
+                fontWeight: 700,
+                color: "var(--color-ink)",
+              }}
+            >
+              Abandon this game?
+            </h2>
+            <p
+              style={{
+                margin: "0 0 22px",
+                fontSize: 13,
+                color: "var(--color-ink-muted)",
+              }}
+            >
+              Leaving now counts as a forfeit — your opponent wins.
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <Button
+                variant="ghost"
+                size="md"
+                onClick={cancelAbandon}
+                style={{ flex: 1 }}
+              >
+                Keep playing
+              </Button>
+              <Button
+                variant="danger-soft"
+                size="md"
+                onClick={handleAbandonConfirm}
+                style={{ flex: 1 }}
+              >
+                Abandon
+              </Button>
+            </div>
           </div>
         </div>
       )}

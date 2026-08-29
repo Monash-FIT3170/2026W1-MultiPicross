@@ -13,3 +13,6 @@ backend.hcl
 crash.log
 # Local deploy tool config, contains project ids
 tools/environments.json
+
+# Playwright CLI scratch output (console logs, page snapshots, screenshots)
+.playwright-cli/

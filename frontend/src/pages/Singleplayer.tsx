@@ -877,6 +877,18 @@ function PlayingScreen({
   const gridTotalHeight = (maxColClueLen + game.height) * cs;
   const clueTopOffset = maxColClueLen * cs;
 
+  // Abandoning discards the in-progress puzzle, so make the player confirm first.
+  const [confirmingAbandon, setConfirmingAbandon] = useState(false);
+
+  useEffect(() => {
+    if (!confirmingAbandon) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setConfirmingAbandon(false);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [confirmingAbandon]);
+
   return (
     <div
       style={{
@@ -1026,7 +1038,7 @@ function PlayingScreen({
             <Button
               variant="danger-soft"
               size="sm"
-              onClick={onAbandon}
+              onClick={() => setConfirmingAbandon(true)}
               disabled={outcome !== null}
             >
               Abandon
@@ -1034,6 +1046,90 @@ function PlayingScreen({
           </div>
         </div>
       </div>
+
+      {/* Abandon confirmation */}
+      {confirmingAbandon && (
+        <div
+          onClick={() => setConfirmingAbandon(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 300,
+            padding: 24,
+          }}
+        >
+          <div
+            className="mp-surface"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sp-abandon-title"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: 380,
+              width: "100%",
+              padding: 28,
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 14,
+                background: "var(--color-coral-50)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 16px",
+              }}
+            >
+              <Icon name="info" size={22} color="var(--color-coral-500)" />
+            </div>
+            <h2
+              id="sp-abandon-title"
+              style={{
+                margin: "0 0 6px",
+                fontSize: 18,
+                fontWeight: 700,
+                color: "var(--color-ink)",
+              }}
+            >
+              Abandon this game?
+            </h2>
+            <p
+              style={{
+                margin: "0 0 22px",
+                fontSize: 13,
+                color: "var(--color-ink-muted)",
+              }}
+            >
+              Your progress on this puzzle will be lost.
+            </p>
+            <div style={{ display: "flex", gap: 10 }}>
+              <Button
+                variant="ghost"
+                size="md"
+                onClick={() => setConfirmingAbandon(false)}
+                style={{ flex: 1 }}
+              >
+                Keep playing
+              </Button>
+              <Button
+                variant="danger-soft"
+                size="md"
+                onClick={onAbandon}
+                style={{ flex: 1 }}
+              >
+                Abandon
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mistake flash */}
       {mistakeFlash && (
