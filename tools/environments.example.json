@@ -1,0 +1,16 @@
+{
+  "qa": {
+    "project": "change-me-qa-project-id",
+    "zone": "australia-southeast1-a",
+    "region": "australia-southeast1",
+    "domain": "qa.multipicross.com",
+    "instance": "multipicross-app"
+  },
+  "prod": {
+    "project": "change-me-prod-project-id",
+    "zone": "australia-southeast1-a",
+    "region": "australia-southeast1",
+    "domain": "multipicross.com",
+    "instance": "multipicross-app"
+  }
+}

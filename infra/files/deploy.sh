@@ -35,20 +35,49 @@ gcloud compute disks snapshot "${PGDATA_DISK}" \
   --quiet ||
   echo "warning: pgdata snapshot failed, continuing deploy" >&2
 
+# Oldest first, drop all but the newest SNAPSHOT_KEEP. Runs after the new
+# snapshot exists so a deploy never leaves fewer than the cap behind.
+SNAPSHOT_KEEP=10
+prune_snapshots() {
+  gcloud compute snapshots list \
+    --project="$PROJECT_ID" \
+    --filter="name~^pgdata-" \
+    --sort-by=creationTimestamp \
+    --format="value(name)" |
+    head -n "-${SNAPSHOT_KEEP}" |
+    xargs -r -n1 gcloud compute snapshots delete \
+      --project="$PROJECT_ID" --quiet
+}
+prune_snapshots ||
+  echo "warning: snapshot prune failed, continuing deploy" >&2
+
 umask 077
 : >.env.new
 cat host.env >>.env.new
 printf 'IMAGE_TAG=%s\n' "$IMAGE_TAG" >>.env.new
 
-for name in POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB JWT_ACCESS_SECRET JWT_REFRESH_SECRET GS_MONITOR_HTPASSWD; do
-  # matches the secret_id transform in infra/secrets.tf
-  secret="multipicross-$(printf '%s' "$name" | tr 'A-Z_' 'a-z-')"
+# matches the secret_id transform in infra/secrets.tf
+secret_id() { printf 'multipicross-%s' "$(printf '%s' "$1" | tr 'A-Z_' 'a-z-')"; }
+
+# compose interpolates $ inside .env, so a literal one has to be doubled
+write_secret() { printf '%s=%s\n' "$1" "${2//\$/\$\$}" >>.env.new; }
+
+for name in POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB JWT_ACCESS_SECRET JWT_REFRESH_SECRET GS_MONITOR_HTPASSWD OIDC_CLIENT_SECRET OIDC_STATE_SECRET; do
+  secret=$(secret_id "$name")
   if ! value=$(gcloud secrets versions access latest --secret="$secret" --project="$PROJECT_ID" 2>/dev/null); then
     echo "Secret $secret has no version yet." >&2
     echo "  printf '%s' \"<value>\" | gcloud secrets versions add $secret --data-file=-" >&2
     exit 1
   fi
-  printf '%s=%s\n' "$name" "$value" >>.env.new
+  write_secret "$name" "$value"
+done
+
+# Optional, destroy both versions once the account exists rather than leaving a password in the environment forever.
+for name in ADMIN_USERNAME ADMIN_PASSWORD; do
+  secret=$(secret_id "$name")
+  if value=$(gcloud secrets versions access latest --secret="$secret" --project="$PROJECT_ID" 2>/dev/null); then
+    write_secret "$name" "$value"
+  fi
 done
 
 mv .env.new .env
