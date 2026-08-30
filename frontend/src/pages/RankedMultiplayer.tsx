@@ -1,33 +1,91 @@
 import { useNavigate } from "react-router-dom";
 import { BackButton, Button, Logo, Icon } from "../components/ui";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Client, type Room } from "colyseus.js";
+import { useElo } from "../api/elo";
 import statsIcon from "../assets/stats.svg";
 import trohpyIcon from "../assets/trophy.svg";
 import shieldIcon from "../assets/shield.svg";
-//import { start } from "repl";
+
+const getMatchmakingEndpoint = () => {
+  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+  return `${protocol}://${window.location.host}/gs`;
+};
 
 export function RankedMultiplayer() {
   const navigate = useNavigate();
   const [searching, setSearching] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
-  const timeoutRef = useRef<number | null>(null);
+  const queueRoomRef = useRef<Room | null>(null);
+  const { playerElo } = useElo(true);
 
-  {
-    /* Finding a match */
-  }
-  const startSearching = () => {
+  useEffect(() => {
+    return () => {
+      const room = queueRoomRef.current;
+      if (room) {
+        room.leave();
+        queueRoomRef.current = null;
+      }
+    };
+  }, []);
+
+  const startSearching = async () => {
+    const existingRoom = queueRoomRef.current;
+
+    if (existingRoom) {
+      existingRoom.send("leaveQueue");
+      existingRoom.leave();
+      queueRoomRef.current = null;
+    }
+
     setSearching(true);
     setTimedOut(false);
 
-    timeoutRef.current = window.setTimeout(() => {
+    try {
+      const client = new Client(getMatchmakingEndpoint());
+      const room = await client.joinOrCreate("rated_matchmaking");
+
+      queueRoomRef.current = room;
+
+      room.onMessage("queueStatus", (message: { status?: string }) => {
+        if (message.status === "queued") {
+          setSearching(true);
+          setTimedOut(false);
+        }
+      });
+
+      room.onMessage("matched", ({ roomId }: { roomId: string }) => {
+        setSearching(false);
+        setTimedOut(false);
+        console.log("Matched in ranked room:", roomId);
+      });
+
+      room.onMessage("queueTimeoutEmpty", () => {
+        setSearching(false);
+        setTimedOut(true);
+      });
+
+      room.onLeave(() => {
+        if (queueRoomRef.current === room) {
+          queueRoomRef.current = null;
+        }
+      });
+
+      room.send("joinQueue");
+    } catch (error) {
+      console.error("Failed to join ranked matchmaking:", error);
       setSearching(false);
       setTimedOut(true);
-    }, 5000);
+    }
   };
 
   const cancelSearching = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+    const room = queueRoomRef.current;
+
+    if (room) {
+      room.send("leaveQueue");
+      room.leave();
+      queueRoomRef.current = null;
     }
 
     setSearching(false);
@@ -156,7 +214,7 @@ export function RankedMultiplayer() {
                     fontWeight: 700,
                   }}
                 >
-                  1200
+                  {playerElo ?? 100}
                 </p>
               </div>
             </div>
