@@ -70,6 +70,7 @@ export default function MainMenu() {
 
   return (
     <div
+      className="mp-page mp-main-menu"
       style={{
         minHeight: "100vh",
         display: "flex",
@@ -81,6 +82,7 @@ export default function MainMenu() {
     >
       {/* Top bar */}
       <div
+        className="mp-topbar mp-main-topbar"
         style={{
           position: "absolute",
           top: 20,
@@ -115,6 +117,7 @@ export default function MainMenu() {
 
       {/* Main content */}
       <div
+        className="mp-main-content"
         style={{
           flex: 1,
           display: "flex",
@@ -126,6 +129,7 @@ export default function MainMenu() {
       >
         {/* Wordmark */}
         <div
+          className="mp-wordmark"
           ref={wordmarkRef}
           style={{
             fontFamily: "Cairo, sans-serif",
@@ -152,7 +156,7 @@ export default function MainMenu() {
 
         {/* ELO ranking banner */}
         <div
-          className="elo-banner"
+          className="elo-banner mp-ranked-banner"
           style={{
             padding: 28,
             display: "flex",
@@ -266,6 +270,7 @@ export default function MainMenu() {
 
         {/* Main content */}
         <div
+          className="mp-menu-grid"
           ref={gridRef}
           style={{
             width: 640,
@@ -277,6 +282,7 @@ export default function MainMenu() {
         >
           {/* Player options */}
           <div
+            className="mp-primary-actions"
             style={{
               display: "flex",
               gap: 20,
@@ -311,8 +317,8 @@ export default function MainMenu() {
 
             {/* Multiplayer */}
             <div
+              className="tile-enter mp-multiplayer-picker"
               onClick={(event) => event.stopPropagation()}
-              className="tile-enter"
               style={{
                 position: "relative",
                 flex: 1,
@@ -485,11 +491,12 @@ function SecondaryTile({
   return (
     <div className="tile-enter">
       <button
-        className="tile"
+        className="tile mp-secondary-tile"
         disabled={disabled}
         onClick={onClick}
         style={{
-          width: 640,
+          width: "100%",
+          maxWidth: 640,
           height: 56,
           flexDirection: "row",
           gap: 24,

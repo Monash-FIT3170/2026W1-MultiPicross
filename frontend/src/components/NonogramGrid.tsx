@@ -15,6 +15,7 @@ interface NonogramGridProps {
   completed?: boolean;
   mistakeCrossIdx?: number | null;
   mistakeCrossIndices?: number[];
+  actionMode?: "fill" | "cross";
   onFill?: (row: number, col: number) => void;
   onCross?: (row: number, col: number, markCross: boolean) => void;
 }
@@ -22,14 +23,14 @@ interface NonogramGridProps {
 export function autoCellSize(w: number, h: number): number {
   const dim = Math.max(w, h);
   const isMobile = window.innerWidth <= 600;
-  
+
   if (isMobile) {
     if (dim <= 5) return 36;
     if (dim <= 10) return 22;
     if (dim <= 15) return 16;
     return 12;
   }
-  
+
   if (dim <= 5) return 48;
   if (dim <= 10) return 38;
   if (dim <= 15) return 30;
@@ -56,6 +57,7 @@ export default function NonogramGrid({
   completed = false,
   mistakeCrossIdx,
   mistakeCrossIndices,
+  actionMode = "fill",
   onFill,
   onCross,
 }: NonogramGridProps) {
@@ -364,6 +366,7 @@ export default function NonogramGrid({
 
   // ── Drag handlers ──────────────────────────────────────────────────────────
   function handleCellMouseDown(e: React.MouseEvent, row: number, col: number) {
+    if (window.matchMedia("(pointer: coarse)").matches) return;
     if (e.button !== 0) return;
     if (!interactive) return;
     const val = grid[row * width + col];
@@ -414,6 +417,19 @@ export default function NonogramGrid({
     const val = grid[row * width + col];
     if (val === 1 || val === 3) return;
     onCross?.(row, col, val !== 2);
+  }
+
+  function handleCellClick(e: React.MouseEvent, row: number, col: number) {
+    if (e.detail === 0) return;
+    if (!interactive) return;
+    if (!window.matchMedia("(pointer: coarse)").matches) return;
+    const val = grid[row * width + col];
+    if (actionMode === "cross") {
+      if (val === 1 || val === 3) return;
+      onCross?.(row, col, val !== 2);
+      return;
+    }
+    if (val === 0) onFill?.(row, col);
   }
 
   // ── Clue cell base style ───────────────────────────────────────────────────
@@ -507,6 +523,7 @@ export default function NonogramGrid({
               cellRefs.current[idx] = el;
             }}
             style={cellStyle(row, col, val)}
+            onClick={(e) => handleCellClick(e, row, col)}
             onMouseDown={(e) => handleCellMouseDown(e, row, col)}
             onMouseEnter={() => handleCellMouseEnter(row, col)}
             onContextMenu={(e) => handleContextMenu(e, row, col)}
@@ -584,11 +601,13 @@ export default function NonogramGrid({
 
   return (
     <div
+      className="mp-nonogram-grid"
       style={{
         display: "inline-grid",
         gridTemplateColumns: `repeat(${totalCols}, ${cs}px)`,
         gridTemplateRows: `repeat(${totalRows}, ${cs}px)`,
         userSelect: "none",
+        touchAction: "manipulation",
       }}
     >
       {cells}

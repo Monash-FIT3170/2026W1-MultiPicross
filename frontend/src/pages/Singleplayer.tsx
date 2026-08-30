@@ -544,12 +544,16 @@ export function Singleplayer() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--color-paper)" }}>
+    <div
+      className="mp-page mp-singleplayer"
+      style={{ minHeight: "100vh", background: "var(--color-paper)" }}
+    >
       {phase.kind === "loading" && <CenteredSpinner />}
       {phase.kind === "loading-puzzle" && <CenteredSpinner />}
 
       {phase.kind === "error" && (
         <div
+          className="mp-active-resume"
           style={{
             minHeight: "100vh",
             display: "flex",
@@ -638,6 +642,7 @@ export function Singleplayer() {
 function CenteredSpinner() {
   return (
     <div
+      className="mp-page mp-size-select"
       style={{
         minHeight: "100vh",
         display: "flex",
@@ -703,6 +708,7 @@ function SizeSelectScreen({
 
       {hasActiveGame && (
         <div
+          className="mp-outcome-banner"
           style={{
             display: "flex",
             justifyContent: "center",
@@ -730,6 +736,7 @@ function SizeSelectScreen({
       )}
 
       <div
+        className="mp-size-grid"
         style={{
           display: "flex",
           flexWrap: "wrap",
@@ -740,7 +747,7 @@ function SizeSelectScreen({
         {sizes.map((s) => (
           <button
             key={`${s.width}x${s.height}`}
-            className="tile"
+            className="tile mp-size-tile"
             onClick={() => onSelectSize(s.width, s.height)}
             style={{ width: 160, height: 120 }}
           >
@@ -777,6 +784,7 @@ function ActiveChoiceScreen({
 }) {
   return (
     <div
+      className="mp-page mp-active-choice"
       style={{
         minHeight: "100vh",
         background: "var(--color-paper)",
@@ -797,7 +805,7 @@ function ActiveChoiceScreen({
         }}
       >
         <div
-          className="mp-surface"
+          className="mp-surface mp-dialog-card"
           style={{
             padding: 32,
             maxWidth: 420,
@@ -871,6 +879,7 @@ function PlayingScreen({
   onPlayAgain: () => void;
   onMainMenu: () => void;
 }) {
+  const [actionMode, setActionMode] = useState<"fill" | "cross">("fill");
   // Pre-compute clue area dimensions so the sidebar can center on the game cells
   const cs = autoCellSize(game.width, game.height);
   const maxColClueLen = Math.max(1, ...game.colClues.map((c) => c.length));
@@ -879,6 +888,7 @@ function PlayingScreen({
 
   return (
     <div
+      className="mp-page mp-playing-screen"
       style={{
         minHeight: "100vh",
         background: "var(--color-paper)",
@@ -888,6 +898,7 @@ function PlayingScreen({
     >
       {/* Top bar */}
       <div
+        className="mp-topbar mp-game-topbar"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -930,6 +941,7 @@ function PlayingScreen({
         Singleplayer
       </h1>
       <p
+        className="mp-game-hint"
         style={{
           textAlign: "center",
           margin: "0 0 28px",
@@ -937,10 +949,11 @@ function PlayingScreen({
           fontSize: 13,
         }}
       >
-        Left-click to fill · Right-click to mark empty
+        Tap to fill. Switch to cross mode to mark empty cells.
       </p>
 
       <div
+        className="mp-game-layout"
         style={{
           display: "flex",
           gap: 40,
@@ -961,13 +974,32 @@ function PlayingScreen({
           completed={outcome === "won"}
           mistakeCrossIdx={mistakeCrossIdx}
           mistakeCrossIndices={game.mistakeCrossIndices ?? []}
+          actionMode={actionMode}
           onFill={onFill}
           onCross={onCross}
         />
 
+        <div className="mp-mobile-controls" aria-label="Cell action mode">
+          <button
+            type="button"
+            className={actionMode === "fill" ? "is-active" : ""}
+            onClick={() => setActionMode("fill")}
+          >
+            Fill
+          </button>
+          <button
+            type="button"
+            className={actionMode === "cross" ? "is-active" : ""}
+            onClick={() => setActionMode("cross")}
+          >
+            Cross
+          </button>
+        </div>
+
         {/* Wrapper that spans the full grid height but pads the top by the clue area height,
             so the sidebar card is flex-centered within just the game cells portion */}
         <div
+          className="mp-game-sidebar-wrap"
           style={{
             height: gridTotalHeight,
             paddingTop: clueTopOffset,
@@ -978,7 +1010,7 @@ function PlayingScreen({
           }}
         >
           <div
-            className="mp-surface"
+            className="mp-surface mp-game-sidebar"
             style={{
               padding: "24px 28px",
               display: "flex",

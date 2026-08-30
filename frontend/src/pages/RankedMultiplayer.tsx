@@ -36,6 +36,7 @@ export function RankedMultiplayer() {
 
   return (
     <div
+      className="mp-page mp-ranked-page"
       style={{
         minHeight: "100vh",
         background: "var(--color-paper)",
@@ -44,6 +45,7 @@ export function RankedMultiplayer() {
     >
       {/* Top bar */}
       <div
+        className="mp-topbar"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -90,6 +92,7 @@ export function RankedMultiplayer() {
         </p>
 
         <div
+          className="mp-ranked-grid"
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 2fr",
@@ -99,7 +102,7 @@ export function RankedMultiplayer() {
         >
           {/* Your Stats - Left column  */}
           <div
-            className="mp-surface"
+            className="mp-surface mp-ranked-stats"
             style={{
               padding: 20,
               display: "flex",
@@ -246,7 +249,7 @@ export function RankedMultiplayer() {
 
           {/* Leaderboard - Right column */}
           <div
-            className="mp-surface"
+            className="mp-surface mp-ranked-leaderboard"
             style={{
               padding: 20,
               display: "flex",
@@ -328,7 +331,8 @@ export function RankedMultiplayer() {
             <div
               style={{
                 position: "relative",
-                width: '100%', maxWidth: 420,
+                width: "100%",
+                maxWidth: 420,
                 height: 200,
                 padding: 32,
                 background: "var(--color-paper)",
@@ -415,7 +419,8 @@ export function RankedMultiplayer() {
             <div
               style={{
                 position: "relative",
-                width: '100%', maxWidth: 420,
+                width: "100%",
+                maxWidth: 420,
                 height: 200,
                 padding: 32,
                 background: "var(--color-paper)",
