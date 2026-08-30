@@ -10,6 +10,21 @@ interface NonogramGridProps {
   width: number;
   height: number;
   interactive?: boolean;
+  /**
+   * Drops every cell border, so the board reads as one continuous block of
+   * colour. Used for the blurred opponent board: a blur alone leaves the
+   * gridlines crisp enough to count cells against, which gives the shape of
+   * the answer away.
+   */
+  hideGridlines?: boolean;
+  /**
+   * Blanks the clue numbers while keeping the clue gutters, so the board keeps
+   * its size and stays aligned with the player's own. Also for the opponent
+   * board: the clues are the same for both players, so rendering them twice
+   * adds nothing, and struck-through clues leak solved rows and columns
+   * straight through the blur.
+   */
+  hideClues?: boolean;
   cellSize?: number;
   colors?: string[];
   completed?: boolean;
@@ -60,6 +75,8 @@ export default function NonogramGrid({
   width,
   height,
   interactive = true,
+  hideGridlines = false,
+  hideClues = false,
   cellSize,
   colors,
   completed = false,
@@ -312,8 +329,13 @@ export default function NonogramGrid({
     const isEveryFiveRight = (col + 1) % 5 === 0 && !isLastCol;
     const isEveryFiveBottom = (row + 1) % 5 === 0 && !isLastRow;
 
-    const innerBorder = "1px solid #d6d2c8";
-    const groupBorder = "2px solid var(--color-line-strong)";
+    // undefined leaves the `border: "none"` below in force, which is how a
+    // gridline-free board is drawn: every borderLeft/Top/Right/Bottom case
+    // then resolves to undefined.
+    const innerBorder = hideGridlines ? undefined : "1px solid #d6d2c8";
+    const groupBorder = hideGridlines
+      ? undefined
+      : "2px solid var(--color-line-strong)";
 
     const base: React.CSSProperties = {
       width: cs,
@@ -478,7 +500,7 @@ export default function NonogramGrid({
               opacity: cluesIntroPlaying ? 0 : undefined,
             }}
           >
-            {num ?? ""}
+            {hideClues ? "" : (num ?? "")}
           </div>,
         );
       } else if (isClueCol) {
@@ -502,7 +524,7 @@ export default function NonogramGrid({
               opacity: cluesIntroPlaying ? 0 : undefined,
             }}
           >
-            {num ?? ""}
+            {hideClues ? "" : (num ?? "")}
           </div>,
         );
       } else {

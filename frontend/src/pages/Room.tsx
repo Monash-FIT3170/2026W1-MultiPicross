@@ -682,7 +682,10 @@ export function Room() {
             />
             <div
               style={{
-                filter: isFinished ? "none" : "blur(8px)",
+                // Heavier than it looks like it needs to be on purpose: the
+                // server sends the opponent's real cells, so the blur is the
+                // only thing standing between a viewer and their board.
+                filter: isFinished ? "none" : "blur(16px)",
                 transition: "filter 0.6s ease",
                 overflow: "hidden",
                 borderRadius: 6,
@@ -695,6 +698,9 @@ export function Room() {
                 width={width}
                 height={height}
                 interactive={false}
+                // Both come back with the reveal at the end of the match.
+                hideGridlines={!isFinished}
+                hideClues={!isFinished}
                 colors={isFinished ? colors : undefined}
                 completed={opponent.won}
                 cellSize={Math.max(12, cs - 8)}
