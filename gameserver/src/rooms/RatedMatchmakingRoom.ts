@@ -19,7 +19,7 @@ export type AuthenticatedPlayer = {
   username: string;
 };
 
-const QUEUE_WAIT_TIME_MS = 60_000;
+const QUEUE_WAIT_TIME_MS = 30_000;
 
 function getAccessToken(cookieHeader: string): string | undefined {
   const accessTokenCookie = cookieHeader

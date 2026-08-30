@@ -16,6 +16,7 @@ export function RankedMultiplayer() {
   const navigate = useNavigate();
   const [searching, setSearching] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
+  const timeoutRef = useRef<number | null>(null);
   const queueRoomRef = useRef<Room | null>(null);
   const { playerElo } = useElo(true);
 
@@ -38,8 +39,18 @@ export function RankedMultiplayer() {
       queueRoomRef.current = null;
     }
 
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
     setSearching(true);
     setTimedOut(false);
+
+    timeoutRef.current = window.setTimeout(() => {
+      setSearching(false);
+      setTimedOut(true);
+    }, 30_000);
 
     try {
       const client = new Client(getMatchmakingEndpoint());
@@ -55,12 +66,20 @@ export function RankedMultiplayer() {
       });
 
       room.onMessage("matched", ({ roomId }: { roomId: string }) => {
+        if (timeoutRef.current) {
+          window.clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
         setSearching(false);
         setTimedOut(false);
         console.log("Matched in ranked room:", roomId);
       });
 
       room.onMessage("queueTimeoutEmpty", () => {
+        if (timeoutRef.current) {
+          window.clearTimeout(timeoutRef.current);
+          timeoutRef.current = null;
+        }
         setSearching(false);
         setTimedOut(true);
       });
@@ -74,13 +93,18 @@ export function RankedMultiplayer() {
       room.send("joinQueue");
     } catch (error) {
       console.error("Failed to join ranked matchmaking:", error);
-      setSearching(false);
-      setTimedOut(true);
+      // Keep the spinner visible until the wait timeout expires, so the match
+      // search screen remains stable while the room connection is still forming.
     }
   };
 
   const cancelSearching = () => {
     const room = queueRoomRef.current;
+
+    if (timeoutRef.current) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
 
     if (room) {
       room.send("leaveQueue");
