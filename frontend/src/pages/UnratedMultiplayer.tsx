@@ -12,6 +12,38 @@ function sizeToWH(size: string): { width: number; height: number } {
   return { width: w, height: h };
 }
 
+// Reads an error message off a failed gameserver response.
+//
+// Not every failure body is JSON: Traefik answers the room rate limit with a
+// plain-text 429 that never reaches the app, so calling res.json() directly
+// would throw a SyntaxError and surface raw parser text ("Unexpected token
+// '<'...") to the player. This differs from parseApiError in api/client by
+// keeping the caller's fallback wording and naming the rate limit explicitly.
+async function readError(res: Response, fallback: string): Promise<string> {
+  if (res.status === 429) {
+    return "Too many attempts. Please wait a moment and try again.";
+  }
+  try {
+    const body = (await res.json()) as { error?: string };
+    if (typeof body.error === "string") return body.error;
+  } catch {
+    // Body was not JSON, use the caller's fallback.
+  }
+  return fallback;
+}
+
+// A 200 whose body is not the expected JSON would otherwise let a raw
+// SyntaxError message reach the player through the catch blocks below.
+async function readRoomId(res: Response, fallback: string): Promise<string> {
+  try {
+    const { roomId } = (await res.json()) as { roomId?: string };
+    if (typeof roomId === "string" && roomId.length > 0) return roomId;
+  } catch {
+    // Fall through to the caller's fallback.
+  }
+  throw new Error(fallback);
+}
+
 interface PublicRoom {
   roomId: string;
   width: number;
@@ -68,10 +100,9 @@ export function UnratedMultiplayer() {
         { method: "POST" },
       );
       if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
-        throw new Error(body.error ?? "Failed to create room");
+        throw new Error(await readError(res, "Failed to create room"));
       }
-      const { roomId } = (await res.json()) as { roomId: string };
+      const roomId = await readRoomId(res, "Failed to create room");
       navigate(`/room/${roomId}`);
     } catch (err) {
       setCreateError(
@@ -91,10 +122,9 @@ export function UnratedMultiplayer() {
         `${GAMESERVER_BASE_URL}/room-by-code/${inviteCode.trim()}`,
       );
       if (!res.ok) {
-        const body = (await res.json()) as { error?: string };
-        throw new Error(body.error ?? "Room not found");
+        throw new Error(await readError(res, "Room not found"));
       }
-      const { roomId } = (await res.json()) as { roomId: string };
+      const roomId = await readRoomId(res, "Room not found");
       navigate(`/room/${roomId}`);
     } catch (err) {
       setJoinError(err instanceof Error ? err.message : "Room not found");
