@@ -203,7 +203,7 @@ export class PicrossRoom extends Room {
 
     const payload = verifyRoomToken(
       options.token,
-      requireEnv("JWT_ACCESS_SECRET"),
+      requireEnv("JWT_ROOM_SECRET"),
     );
     if (!payload) {
       throw new ServerError(401, "Invalid or expired room token");

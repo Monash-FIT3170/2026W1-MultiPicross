@@ -34,12 +34,11 @@ export async function signAccessToken(payload: {
 // `username` carries the account handle (accounts.handle), which is what the
 // gameserver shows as the player's display name.
 //
-// TODO: room tokens are signed with JWT_ACCESS_SECRET, so the gameserver — which
-// needs that secret to verify them — could also mint API access tokens. Splitting
-// this out into a dedicated JWT_ROOM_SECRET is a known follow-up; it requires
-// coordinated secret provisioning (infra/secrets.tf creates secrets empty and
-// infra/files/deploy.sh refuses to deploy until every required secret has a
-// version), so it can't be done in isolation.
+// Signed with JWT_ROOM_SECRET, deliberately NOT JWT_ACCESS_SECRET. The
+// gameserver needs the verifying key, and it is the more exposed service
+// (unauthenticated public endpoints, long-lived WebSockets); sharing
+// JWT_ACCESS_SECRET with it would let anyone who compromised it mint
+// `type: "access"` tokens for any account and impersonate them against the API.
 export async function signRoomToken(payload: {
   sub: string;
   username: string;
@@ -50,7 +49,7 @@ export async function signRoomToken(payload: {
       type: "room",
       exp: Math.floor(Date.now() / 1000) + ROOM_TTL_SECONDS,
     },
-    env("JWT_ACCESS_SECRET"),
+    env("JWT_ROOM_SECRET"),
   );
 }
 

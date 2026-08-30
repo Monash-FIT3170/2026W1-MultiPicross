@@ -42,6 +42,8 @@ app.get("/docs", Scalar({ spec: { url: "/api/openapi" } }));
 
 env("JWT_ACCESS_SECRET");
 env("JWT_REFRESH_SECRET");
+// Separate from JWT_ACCESS_SECRET on purpose, see signRoomToken in auth/helpers.ts.
+env("JWT_ROOM_SECRET");
 assertOidcEnv();
 
 await runMigrations();
