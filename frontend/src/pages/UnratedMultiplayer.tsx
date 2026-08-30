@@ -349,8 +349,13 @@ export function UnratedMultiplayer() {
                 outline: "none",
                 textAlign: "center",
                 letterSpacing: "0.2em",
-                marginTop: 10,
-                paddingTop: 12,
+                // A pair of auto margins splits this card's spare height evenly
+                // above and below the input, which centres it between the title
+                // and the button — and, because they absorb all of it, still
+                // leaves the button sitting on the card's bottom edge, level
+                // with "Create" in the taller card next door.
+                marginTop: "auto",
+                marginBottom: "auto",
               }}
             />
             {joinError && (
@@ -372,7 +377,6 @@ export function UnratedMultiplayer() {
               style={{
                 fontSize: 16,
                 fontWeight: 700,
-                marginTop: 8,
               }}
             >
               {joinLoading ? "Joining…" : "Join"}
