@@ -10,7 +10,8 @@ export function useElo(enabled: boolean) {
 
   useEffect(() => {
     if (!enabled) {
-      setPlayerElo(null);
+      const elo = null;
+      setPlayerElo(elo);
       return;
     }
 
