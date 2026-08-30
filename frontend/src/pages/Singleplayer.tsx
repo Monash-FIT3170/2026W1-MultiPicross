@@ -4,6 +4,7 @@ import { useAuth } from "../auth/AuthContext";
 import { apiFetch, parseApiError } from "../api/client";
 import NonogramGrid, {
   type CellValue,
+  cellsToGrid,
   fmtSeconds,
   autoCellSize,
 } from "../components/NonogramGrid";
@@ -15,6 +16,7 @@ import {
   LivesPips,
   StatTile,
   Chip,
+  ConfirmDialog,
 } from "../components/ui";
 
 // ──── Types ─────────────────────────────────────────────────────────────────
@@ -77,8 +79,12 @@ interface ActionResponse {
 
 // ──── Helpers ────────────────────────────────────────────────────────────────
 
-// After a correct fill, cross out all remaining empty cells in any row or column
-// whose clue total is now fully satisfied. 0-clue rows/cols are satisfied immediately.
+// After a correct fill, cross out every remaining empty cell in any row or
+// column whose clue total is now satisfied. 0-clue lines satisfy immediately.
+//
+// Duplicated on purpose: PicrossRoom.ts runs the same algorithm over
+// boolean[] pairs. Separate Docker build contexts mean neither side can
+// import the other, so a change here needs the matching change there.
 function applyAutoComplete(
   grid: CellValue[],
   rowClues: number[][],
@@ -111,9 +117,7 @@ function applyAutoComplete(
 }
 
 function completionToGameState(c: ActiveCompletion): GameState {
-  const rawGrid: CellValue[] = c.confirmedFilled.map((filled, i) =>
-    filled ? 1 : c.revealedEmpty[i] ? 3 : c.crosses[i] ? 2 : 0,
-  );
+  const rawGrid = cellsToGrid(c.confirmedFilled, c.crosses, c.revealedEmpty);
   const grid = applyAutoComplete(
     rawGrid,
     c.rowClues,
@@ -877,6 +881,9 @@ function PlayingScreen({
   const gridTotalHeight = (maxColClueLen + game.height) * cs;
   const clueTopOffset = maxColClueLen * cs;
 
+  // Abandoning discards the in-progress puzzle, so make the player confirm first.
+  const [confirmingAbandon, setConfirmingAbandon] = useState(false);
+
   return (
     <div
       style={{
@@ -1026,7 +1033,7 @@ function PlayingScreen({
             <Button
               variant="danger-soft"
               size="sm"
-              onClick={onAbandon}
+              onClick={() => setConfirmingAbandon(true)}
               disabled={outcome !== null}
             >
               Abandon
@@ -1034,6 +1041,19 @@ function PlayingScreen({
           </div>
         </div>
       </div>
+
+      {/* Abandon confirmation. Rendered only while the puzzle is unresolved so
+          a game that wins or fails on its own takes the dialog down with it. */}
+      {confirmingAbandon && outcome === null && (
+        <ConfirmDialog
+          titleId="sp-abandon-title"
+          title="Abandon this game?"
+          body="Your progress on this puzzle will be lost."
+          confirmLabel="Abandon"
+          onConfirm={onAbandon}
+          onCancel={() => setConfirmingAbandon(false)}
+        />
+      )}
 
       {/* Mistake flash */}
       {mistakeFlash && (

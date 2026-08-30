@@ -61,6 +61,7 @@ services:
       DB_NAME: ${POSTGRES_DB}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_ROOM_SECRET: ${JWT_ROOM_SECRET}
       APP_BASE_URL: ${APP_BASE_URL}
       OIDC_ISSUER: ${OIDC_ISSUER}
       OIDC_PROVIDER_ID: ${OIDC_PROVIDER_ID}
@@ -108,6 +109,9 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ${POSTGRES_DB}
+      # Not JWT_ACCESS_SECRET: this service is the more exposed one,
+      # and that key would let it mint API tokens for any account.
+      JWT_ROOM_SECRET: ${JWT_ROOM_SECRET}
     depends_on:
       - db
     labels:
@@ -118,6 +122,23 @@ services:
       - "traefik.http.routers.gameserver.middlewares=gameserver-strip"
       - "traefik.http.middlewares.gameserver-strip.stripprefix.prefixes=/gs"
       - "traefik.http.services.gameserver.loadbalancer.server.port=2567"
+      # Per-IP limit on the two room endpoints that cost something.
+      # /gs/public-rooms is excluded: the lobby polls it every 5s per
+      # client, so any useful limit would break normal play.
+      - "traefik.http.routers.gs-room-by-code.rule=Host(`multipicross.localhost`) && PathPrefix(`/gs/room-by-code/`)"
+      - "traefik.http.routers.gs-room-by-code.priority=200"
+      - "traefik.http.routers.gs-room-by-code.service=gameserver"
+      - "traefik.http.routers.gs-room-by-code.entrypoints=web"
+      - "traefik.http.routers.gs-room-by-code.middlewares=gs-room-ratelimit,gameserver-strip"
+      - "traefik.http.routers.gs-create-room.rule=Host(`multipicross.localhost`) && Path(`/gs/create-room`)"
+      - "traefik.http.routers.gs-create-room.priority=200"
+      - "traefik.http.routers.gs-create-room.service=gameserver"
+      - "traefik.http.routers.gs-create-room.entrypoints=web"
+      - "traefik.http.routers.gs-create-room.middlewares=gs-room-ratelimit,gameserver-strip"
+      - "traefik.http.middlewares.gs-room-ratelimit.ratelimit.average=30"
+      - "traefik.http.middlewares.gs-room-ratelimit.ratelimit.period=1m"
+      - "traefik.http.middlewares.gs-room-ratelimit.ratelimit.burst=60"
+      - "traefik.http.middlewares.gs-room-ratelimit.ratelimit.sourcecriterion.ipstrategy.depth=0"
 
   frontend:
     build:

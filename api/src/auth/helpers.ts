@@ -5,6 +5,7 @@ import { env } from "../env.js";
 
 const ACCESS_TTL_SECONDS = 15 * 60;
 const REFRESH_TTL_SECONDS = 7 * 24 * 60 * 60;
+const ROOM_TTL_SECONDS = 60;
 
 export async function hashPassword(plain: string): Promise<string> {
   return hash(plain);
@@ -27,6 +28,24 @@ export async function signAccessToken(payload: {
       exp: Math.floor(Date.now() / 1000) + ACCESS_TTL_SECONDS,
     },
     env("JWT_ACCESS_SECRET"),
+  );
+}
+
+// `username` carries the account handle, which the gameserver shows as the
+// player's display name. Signed with JWT_ROOM_SECRET, not JWT_ACCESS_SECRET:
+// the gameserver needs the verifying key, and the access key would let it
+// mint tokens for any account.
+export async function signRoomToken(payload: {
+  sub: string;
+  username: string;
+}): Promise<string> {
+  return sign(
+    {
+      ...payload,
+      type: "room",
+      exp: Math.floor(Date.now() / 1000) + ROOM_TTL_SECONDS,
+    },
+    env("JWT_ROOM_SECRET"),
   );
 }
 

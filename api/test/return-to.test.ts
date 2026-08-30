@@ -53,8 +53,7 @@ test("every allowlisted path resolves to itself", () => {
   for (const path of [
     "/",
     "/singleplayer",
-    "/multiplayer/public",
-    "/multiplayer/private",
+    "/multiplayer/unrated",
     "/multiplayer/ranked",
     "/statistics",
     "/tutorial",
@@ -63,6 +62,32 @@ test("every allowlisted path resolves to itself", () => {
   ]) {
     assert.equal(safeReturnTo(path, APP_BASE_URL), path);
   }
+});
+
+test("dynamic room path is allowed", () => {
+  assert.equal(safeReturnTo("/room/ABC123", APP_BASE_URL), "/room/ABC123");
+  assert.equal(safeReturnTo("/room/a_b-c", APP_BASE_URL), "/room/a_b-c");
+});
+
+test("room path keeps its query string", () => {
+  assert.equal(
+    safeReturnTo("/room/ABC123?spectate=1", APP_BASE_URL),
+    "/room/ABC123?spectate=1",
+  );
+});
+
+test("room path cannot smuggle a protocol-relative path", () => {
+  assert.equal(safeReturnTo("/room/..//evil.com", APP_BASE_URL), "/");
+  assert.equal(safeReturnTo("/room/../..//evil.com", APP_BASE_URL), "/");
+  assert.equal(safeReturnTo("/room/a/\\evil.com", APP_BASE_URL), "/");
+});
+
+test("room path is a single segment only", () => {
+  assert.equal(safeReturnTo("/room/a/b", APP_BASE_URL), "/");
+  assert.equal(safeReturnTo("/room/", APP_BASE_URL), "/");
+  assert.equal(safeReturnTo("/room", APP_BASE_URL), "/");
+  assert.equal(safeReturnTo("/room/a%2fb", APP_BASE_URL), "/");
+  assert.equal(safeReturnTo("/roomy/abc", APP_BASE_URL), "/");
 });
 
 test("empty string defaults to root", () => {
