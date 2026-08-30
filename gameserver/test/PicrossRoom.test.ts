@@ -54,12 +54,9 @@ interface Snapshot {
   colors?: string[];
 }
 
-/**
- * Follows one client's snapshot stream. Waiting on *content* rather than on
- * "the next message" keeps the assertions immune to how many broadcasts a
- * given action happens to produce, or to one still being in flight when the
- * next send goes out.
- */
+// Follows one client's snapshot stream. Waiting on content rather than on
+// "the next message" keeps assertions immune to how many broadcasts an
+// action happens to produce.
 function track(client: ClientRoom) {
   let latest: Snapshot | null = null;
   const waiters: Array<(s: Snapshot) => void> = [];
@@ -146,9 +143,8 @@ describe("PicrossRoom", () => {
       this.skip();
     }
 
-    // onCreate picks its puzzle with ORDER BY RANDOM(), so 3x3 has to belong
-    // to the fixture alone for these tests to be deterministic. Say so once
-    // here rather than as a puzzling diff inside every test.
+    // onCreate picks with ORDER BY RANDOM(), so 3x3 must belong to the fixture
+    // alone for these tests to be deterministic.
     const foreign = await sql`
       SELECT id FROM nonograms
       WHERE width = 3 AND height = 3 AND id <> ${PUZZLE_ID}

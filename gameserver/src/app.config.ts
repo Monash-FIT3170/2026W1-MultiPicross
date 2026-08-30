@@ -15,28 +15,20 @@ import {
   ERR_NO_PUZZLE_FOR_SIZE,
 } from "./rooms/PicrossRoom.js";
 
-// The UI only offers 5/10/15/20 (frontend SIZES), but a range check keeps the
-// two sides decoupled: a new size can ship in the frontend without a
-// gameserver change. The upper bound still matters — every player in a room
-// allocates several width*height arrays, so an unbounded `?width=99999` is a
-// cheap memory-exhaustion vector.
+// A range check rather than a fixed list keeps the two sides decoupled. The
+// upper bound matters: every player allocates several width*height arrays,
+// so an unbounded ?width=99999 is a cheap memory-exhaustion vector.
 const MIN_BOARD_SIZE = 1;
 const MAX_BOARD_SIZE = 50;
 const DEFAULT_BOARD_SIZE = 10;
 
-// Built from the same alphabet generateCode() draws from, so the validator
-// here and the generator there cannot drift. The alphabet is A-Z/2-9 only, so
-// it needs no escaping inside a character class.
+// Built from generateCode()'s own alphabet so the two cannot drift.
 const INVITE_CODE_PATTERN = new RegExp(
   `^[${INVITE_CODE_ALPHABET}]{${INVITE_CODE_LENGTH}}$`,
 );
 
-/**
- * Parses a width/height query param. Returns the default when the param is
- * absent, or null when it is present but not a whole number inside the
- * allowed range — the caller turns that into a 400. `parseInt(...) || 10`
- * used to swallow "abc" and 0 into 10, and let -5 through into the SQL.
- */
+// Parses a width/height query param. Returns the default when absent, or
+// null when present but not a whole number in range — a 400 to the caller.
 function parseBoardDimension(raw: unknown): number | null {
   if (raw === undefined || raw === null || raw === "") {
     return DEFAULT_BOARD_SIZE;
@@ -57,10 +49,9 @@ const server = defineServer({
   },
 
   express: (app) => {
-    // Container healthcheck target (see compose.gcp.yaml). Registered before
-    // the dev-only playground() mount at "/" so nothing can shadow it, and
-    // available regardless of NODE_ENV. Deliberately does no DB work: a
-    // Postgres blip must not restart a gameserver that is still serving rooms.
+    // Container healthcheck target (see compose.gcp.yaml). Registered before the
+    // dev-only playground() mount so nothing shadows it. Deliberately does no DB
+    // work: a Postgres blip must not restart a server still holding rooms.
     app.get("/health", (_req, res) => {
       res.json({ status: "ok" });
     });
@@ -89,12 +80,8 @@ const server = defineServer({
           inviteCode: room.metadata?.inviteCode,
         });
       } catch (err) {
-        // PicrossRoom.onCreate throws a distinguishable ServerError when the
-        // puzzle bank holds nothing this size, and matchMaker preserves its
-        // code — so an empty bank reads as an actionable 404 while a 500 keeps
-        // meaning "something is genuinely broken". This replaces a pre-flight
-        // SELECT that answered the same question one query too early (the bank
-        // could empty between the check and the create).
+        // onCreate throws a distinguishable code when the bank holds nothing this
+        // size, so an empty bank reads as a 404 while 500 still means broken.
         if (err instanceof ServerError && err.code === ERR_NO_PUZZLE_FOR_SIZE) {
           res
             .status(404)
@@ -106,9 +93,8 @@ const server = defineServer({
       }
     });
 
-    // Look up a joinable room by its invite code. Intentionally unauthenticated
-    // — guest play is a supported flow — so brute force is held off by the
-    // Traefik rate limit on this path in compose.yaml / compose.gcp.yaml.
+    // Unauthenticated because guest play is supported; brute force is held off
+    // by the Traefik rate limit on this path.
     app.get("/room-by-code/:code", async (req, res) => {
       try {
         const code = String(req.params.code ?? "")
@@ -119,12 +105,9 @@ const server = defineServer({
           return;
         }
 
-        // Let the matchmaking driver do the filtering instead of pulling every
-        // picross room back and scanning in JS. `locked: false` also drops
-        // finished rooms (setPhase("finished") calls lock()) and full ones
-        // (Colyseus auto-locks at maxClients) — those would otherwise hand the
-        // client a roomId that joinById then rejects with an opaque
-        // room-locked error.
+        // Filter in the driver rather than scanning every room in JS. locked: false
+        // also drops finished and full rooms, which would otherwise hand back a
+        // roomId that joinById then rejects.
         const rooms = await matchMaker.query({
           name: "picross_room",
           locked: false,
@@ -132,8 +115,7 @@ const server = defineServer({
         });
         const found = rooms.find((r) => r.clients < r.maxClients);
         if (!found) {
-          // Same 404 whether the code is unknown or merely unjoinable, so the
-          // endpoint never confirms a code to someone guessing.
+          // Same 404 either way, so the endpoint never confirms a code to a guesser.
           res.status(404).json({ error: "Room not found" });
           return;
         }

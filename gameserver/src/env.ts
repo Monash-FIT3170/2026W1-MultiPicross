@@ -1,12 +1,6 @@
-/**
- * Environment access for the gameserver. Single home for the required-var
- * check so the db client and the room code cannot drift apart on its
- * semantics or its error wording.
- *
- * The api service has its own equivalent at api/src/env.ts. The two are
- * deliberately NOT shared: each service has its own Docker build context
- * (see compose.yaml), so neither can bundle code from the other.
- */
+// Environment access for the gameserver. Separate from api/src/env.ts on
+// purpose: each service has its own Docker build context, so neither can
+// bundle the other's code.
 
 /** Reads a required environment variable, or throws if it is unset or empty. */
 export function requireEnv(name: string): string {

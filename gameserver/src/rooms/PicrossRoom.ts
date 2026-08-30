@@ -8,34 +8,21 @@ interface RoomAuth {
   username: string | null;
 }
 
-/**
- * Invite-code alphabet: unambiguous characters only (no O/0, no I/1).
- * Exported so app.config.ts can build its validation pattern from this single
- * source instead of hand-copying the character set — the two used to be
- * separate literals that could silently drift apart.
- */
+// Invite-code alphabet: unambiguous characters only (no O/0, no I/1).
+// app.config.ts builds its validation pattern from this.
 export const INVITE_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 export const INVITE_CODE_LENGTH = 6;
 
-/**
- * ServerError code thrown by onCreate() when the puzzle bank holds nothing of
- * the requested size. matchMaker's handleCreateRoom() rethrows onCreate
- * failures as `new ServerError(err.code || MATCHMAKE_UNHANDLED, err.message)`,
- * so this code survives the trip out to the /create-room express handler,
- * which turns it into an actionable 404 instead of an opaque 500. Chosen well
- * clear of Colyseus's own ErrorCode (520-526, 4217) and CloseCode ranges.
- */
+// Thrown by onCreate() when the puzzle bank holds nothing of the requested
+// size. Survives matchMaker's rethrow, so /create-room can answer 404 rather
+// than 500. Clear of Colyseus's own ErrorCode and CloseCode ranges.
 export const ERR_NO_PUZZLE_FOR_SIZE = 4500;
 
 /** Bounded re-rolls when a freshly generated invite code is already in use. */
 const INVITE_CODE_ATTEMPTS = 10;
 
-/**
- * How long a seat is held open after an *unconsented* disconnect (wifi blip,
- * laptop sleep, proxy reset) before the match is forfeited. The client SDK
- * retries with exponential backoff (2^n x 100ms, capped at 5s), so ~8 attempts
- * span roughly this window — see Room.tsx, which caps maxRetries to match.
- */
+// How long a seat is held open after an unconsented disconnect before the
+// match is forfeited. Room.tsx caps its retries to match this window.
 const RECONNECTION_WINDOW_SECONDS = 20;
 
 function generateCode(): string {
@@ -48,17 +35,12 @@ function generateCode(): string {
   ).join("");
 }
 
-/**
- * After a correct fill, cross out every remaining empty cell in any row or
- * column whose clue total is now satisfied. 0-clue lines satisfy immediately.
- *
- * DUPLICATED, ON PURPOSE: frontend/src/pages/Singleplayer.tsx has the same
- * algorithm over a CellValue[] grid instead of boolean[] pairs. The two must
- * stay in sync — a change here needs the matching change there. They cannot
- * share code: the frontend and gameserver have separate Docker build contexts
- * (see compose.yaml) and this repo has no shared package, so neither can
- * import from the other.
- */
+// After a correct fill, cross out every remaining empty cell in any row or
+// column whose clue total is now satisfied. 0-clue lines satisfy immediately.
+//
+// Duplicated on purpose: Singleplayer.tsx runs the same algorithm over a
+// CellValue[] grid. Separate Docker build contexts mean neither side can
+// import the other, so a change here needs the matching change there.
 function applyAutoComplete(
   filled: boolean[],
   crosses: boolean[],
@@ -173,14 +155,10 @@ export class PicrossRoom extends Room {
     );
   }
 
-  /**
-   * Invite codes are the lookup key for /room-by-code, so a duplicate silently
-   * routes joiners to whichever room the matchmaker happens to find first.
-   * Re-roll until the code is free among live rooms. Our own listing is not
-   * persisted until onCreate() returns, so this can never match ourselves.
-   * Two rooms created in the same tick could still theoretically collide —
-   * the retry makes that vanishingly unlikely rather than impossible.
-   */
+  // Invite codes are the lookup key for /room-by-code, so a duplicate would
+  // route joiners to whichever room the matchmaker finds first. Our own
+  // listing is not persisted until onCreate() returns, so this cannot match
+  // ourselves.
   private async generateUniqueCode(): Promise<string> {
     for (let attempt = 0; attempt < INVITE_CODE_ATTEMPTS; attempt++) {
       const code = generateCode();

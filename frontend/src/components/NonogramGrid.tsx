@@ -10,20 +10,11 @@ interface NonogramGridProps {
   width: number;
   height: number;
   interactive?: boolean;
-  /**
-   * Drops every cell border, so the board reads as one continuous block of
-   * colour. Used for the blurred opponent board: a blur alone leaves the
-   * gridlines crisp enough to count cells against, which gives the shape of
-   * the answer away.
-   */
+  // Drops every cell border. For the blurred opponent board: a blur leaves
+  // gridlines crisp enough to count cells against.
   hideGridlines?: boolean;
-  /**
-   * Blanks the clue numbers while keeping the clue gutters, so the board keeps
-   * its size and stays aligned with the player's own. Also for the opponent
-   * board: the clues are the same for both players, so rendering them twice
-   * adds nothing, and struck-through clues leak solved rows and columns
-   * straight through the blur.
-   */
+  // Blanks the clue numbers but keeps the gutters, so the board keeps its size.
+  // Struck-through clues would leak solved lines straight through the blur.
   hideClues?: boolean;
   cellSize?: number;
   colors?: string[];
@@ -42,14 +33,9 @@ export function autoCellSize(w: number, h: number): number {
   return 24;
 }
 
-/**
- * Turns the three per-cell boolean arrays a board is stored as (both the
- * singleplayer completion record and the multiplayer room snapshot use this
- * shape) into the CellValue[] the grid renders.
- *
- * Precedence is load-bearing: a confirmed fill wins over a server-revealed
- * empty, which wins over a cross the player placed themselves.
- */
+// Turns the three per-cell boolean arrays a board is stored as into the
+// CellValue[] the grid renders. Precedence is load-bearing: a confirmed fill
+// beats a server-revealed empty, which beats a player's own cross.
 export function cellsToGrid(
   confirmedFilled: boolean[],
   crosses: boolean[],
@@ -329,9 +315,7 @@ export default function NonogramGrid({
     const isEveryFiveRight = (col + 1) % 5 === 0 && !isLastCol;
     const isEveryFiveBottom = (row + 1) % 5 === 0 && !isLastRow;
 
-    // undefined leaves the `border: "none"` below in force, which is how a
-    // gridline-free board is drawn: every borderLeft/Top/Right/Bottom case
-    // then resolves to undefined.
+    // undefined leaves the `border: "none"` below in force.
     const innerBorder = hideGridlines ? undefined : "1px solid #d6d2c8";
     const groupBorder = hideGridlines
       ? undefined

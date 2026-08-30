@@ -674,11 +674,7 @@ interface ConfirmDialogProps {
   onCancel: () => void;
 }
 
-/**
- * Tab-cycle order inside the dialog. Deliberately narrow: everything the
- * dialog renders today is a button, and anything richer a caller passes in
- * still has to be reachable.
- */
+// Tab-cycle order inside the dialog.
 const FOCUSABLE_SELECTOR = [
   "a[href]",
   "button:not([disabled])",
@@ -688,18 +684,12 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
 
-/**
- * Modal confirmation with a destructive right-hand action.
- *
- * Mount it only while it should be open (the caller's condition IS the open
- * state): unmounting is what hands focus back to whatever had it before.
- *
- * aria-modal="true" tells assistive tech the rest of the page is inert, so
- * this makes that true for the keyboard as well: focus moves onto the safe
- * cancel action on open, Tab and Shift+Tab cycle within the dialog instead of
- * wandering into the page behind the overlay, Escape and a backdrop click
- * cancel, and the previously focused element is restored on close.
- */
+// Modal confirmation with a destructive right-hand action.
+//
+// Mount it only while it should be open — unmounting is what hands focus
+// back. aria-modal claims the rest of the page is inert, so this makes that
+// true for the keyboard too: focus opens on the safe action, Tab cycles
+// within the dialog, and Escape or a backdrop click cancels.
 export function ConfirmDialog({
   titleId,
   title,
@@ -710,9 +700,8 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
-  // Always-current reference so the key handler below can stay mount-scoped:
-  // callers pass inline arrows, and re-running the effect on every render
-  // would steal focus back to the cancel button mid-interaction.
+  // Kept in a ref so the key handler stays mount-scoped: callers pass inline
+  // arrows, and re-running the effect would steal focus mid-interaction.
   const cancelRef = useRef(onCancel);
   useEffect(() => {
     cancelRef.current = onCancel;

@@ -31,14 +31,10 @@ export async function signAccessToken(payload: {
   );
 }
 
-// `username` carries the account handle (accounts.handle), which is what the
-// gameserver shows as the player's display name.
-//
-// Signed with JWT_ROOM_SECRET, deliberately NOT JWT_ACCESS_SECRET. The
-// gameserver needs the verifying key, and it is the more exposed service
-// (unauthenticated public endpoints, long-lived WebSockets); sharing
-// JWT_ACCESS_SECRET with it would let anyone who compromised it mint
-// `type: "access"` tokens for any account and impersonate them against the API.
+// `username` carries the account handle, which the gameserver shows as the
+// player's display name. Signed with JWT_ROOM_SECRET, not JWT_ACCESS_SECRET:
+// the gameserver needs the verifying key, and the access key would let it
+// mint tokens for any account.
 export async function signRoomToken(payload: {
   sub: string;
   username: string;

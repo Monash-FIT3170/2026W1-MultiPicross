@@ -82,8 +82,6 @@ services:
       DB_NAME: ${POSTGRES_DB}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      # Mints room tokens verified by the gameserver, which never sees
-      # JWT_ACCESS_SECRET.
       JWT_ROOM_SECRET: ${JWT_ROOM_SECRET}
       APP_BASE_URL: https://${DOMAIN}
       OIDC_ISSUER: ${OIDC_ISSUER}
@@ -124,9 +122,8 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ${POSTGRES_DB}
-      # Shared with api: room tokens are signed there and verified here.
-      # Deliberately not JWT_ACCESS_SECRET — this is the more exposed service,
-      # and the access-token key would let it mint API tokens for any account.
+      # Not JWT_ACCESS_SECRET: this service is the more exposed one,
+      # and that key would let it mint API tokens for any account.
       JWT_ROOM_SECRET: ${JWT_ROOM_SECRET}
     depends_on:
       db:
@@ -146,16 +143,9 @@ services:
       - "traefik.http.routers.gameserver.middlewares=gameserver-strip"
       - "traefik.http.middlewares.gameserver-strip.stripprefix.prefixes=/gs"
       - "traefik.http.services.gameserver.loadbalancer.server.port=2567"
-      # Volumetric per-IP limit on the two room endpoints that cost something.
-      # /gs/room-by-code is the brute-force target: a 6-char invite code is the
-      # only thing guarding a private room. /gs/public-rooms is deliberately
-      # NOT covered — the lobby polls it every 5s per client (see
-      # PUBLIC_ROOMS_POLL_MS), so a shared-NAT campus network would trip any
-      # useful limit, and it exposes no secret worth guessing.
-      # Unlike api-login there is no Method(...) matcher here: each of these
-      # paths serves exactly one route, and pinning the router to GET/POST
-      # would let a HEAD request skip the limit while still reaching Express's
-      # implicit HEAD handler for app.get - i.e. a free brute-force oracle.
+      # Per-IP limit on the two room endpoints that cost something.
+      # /gs/public-rooms is excluded: the lobby polls it every 5s per
+      # client, so any useful limit would break normal play.
       - "traefik.http.routers.gs-room-by-code.rule=Host(`${DOMAIN}`) && PathPrefix(`/gs/room-by-code/`)"
       - "traefik.http.routers.gs-room-by-code.priority=200"
       - "traefik.http.routers.gs-room-by-code.service=gameserver"
@@ -168,14 +158,11 @@ services:
       - "traefik.http.routers.gs-create-room.entrypoints=websecure"
       - "traefik.http.routers.gs-create-room.tls.certresolver=letsencrypt"
       - "traefik.http.routers.gs-create-room.middlewares=gs-room-ratelimit,gameserver-strip"
-      # 30/min with a burst of 60: far above what a human clicking Create or
-      # typing an invite code produces (even a whole lab behind one NAT), and
-      # far below what makes a dent in a 32^6 code space.
       - "traefik.http.middlewares.gs-room-ratelimit.ratelimit.average=30"
       - "traefik.http.middlewares.gs-room-ratelimit.ratelimit.period=1m"
       - "traefik.http.middlewares.gs-room-ratelimit.ratelimit.burst=60"
-      # depth=0: the VM receives traffic directly with no trustworthy X-Forwarded-For,
-      # so keying off a forwarded header would let an attacker spoof past the limit.
+      # depth=0: no trustworthy X-Forwarded-For, so a forwarded header
+      # must not be what the limit keys off.
       - "traefik.http.middlewares.gs-room-ratelimit.ratelimit.sourcecriterion.ipstrategy.depth=0"
       - "traefik.http.services.gameserver.loadbalancer.sticky.cookie=true"
       - "traefik.http.services.gameserver.loadbalancer.sticky.cookie.name=gs_backend"

@@ -52,11 +52,8 @@ function buildGrid(p: PlayerSnapshot): CellValue[] {
   return cellsToGrid(p.confirmedFilled, p.crosses, p.revealedEmpty);
 }
 
-/**
- * leave() writes to the socket, which throws while one is mid-handshake — an
- * SDK reconnect attempt in flight when the user navigates away. Nothing to do
- * about it either way: the connection is going.
- */
+// leave() throws while a socket is mid-handshake — an SDK reconnect in
+// flight when the user navigates away. The connection is going either way.
 function leaveQuietly(room: ColyseusRoom | null) {
   try {
     room?.leave();
@@ -86,28 +83,20 @@ export function Room() {
 
   // ── Auth, captured once ────────────────────────────────────────────────────
 
-  // Auth decides HOW we join (room token vs guest name), but only at connect
-  // time. apiFetch() calls onLogout() whenever a token refresh fails, which
-  // flips `status` in AuthContext — and while `status` was a dependency of the
-  // connect effect below, that tore the live socket down and rebuilt it. The
-  // server reads a teardown mid-match as a quit: forfeit, opponent crowned,
-  // room locked, and the rebuild then lands on a locked room. A 15-minute
-  // access token expiring was enough to lose a match.
-  //
-  // So the connect effect reads auth through this ref instead, and depends
-  // only on `authReady` below. This effect is declared first so the ref is
-  // already up to date when the connect effect runs in the same commit.
+  // Auth decides how we join, but only at connect time. apiFetch() calls
+  // onLogout() when a refresh fails, flipping `status`; with `status` as a
+  // dependency of the connect effect that tore down the live socket, which
+  // the server reads as a quit. So the connect effect reads auth through this
+  // ref and depends only on `authReady`.
   const authRef = useRef({ status, playerName });
 
   useEffect(() => {
     authRef.current = { status, playerName };
   }, [status, playerName]);
 
-  // A one-way latch, not a live view of auth: AuthProvider only ever sets
-  // "loading" in its initial state, so this flips false→true once when the
-  // bootstrap resolves and never flips back. That gives the connect effect a
-  // dependency that waits for the first resolution without re-running on the
-  // authenticated↔unauthenticated transitions that follow.
+  // A one-way latch: flips false→true once when the auth bootstrap resolves,
+  // giving the connect effect a dependency that does not re-fire on later
+  // authenticated↔unauthenticated transitions.
   const authReady = status !== "loading";
 
   // ── Connect to room ────────────────────────────────────────────────────────
@@ -138,11 +127,9 @@ export function Room() {
           return;
         }
 
-        // The server holds a dropped seat open for ~20s
-        // (RECONNECTION_WINDOW_SECONDS). The SDK's backoff is 2^n x 100ms
-        // capped at 5s, so 8 attempts span ~21s: stop retrying roughly when
-        // the seat expires rather than spinning for the default 15 attempts
-        // (~60s) long after the match has already been forfeited.
+        // The server holds a dropped seat ~20s (RECONNECTION_WINDOW_SECONDS); 8
+        // attempts of the SDK's backoff span about that, rather than spinning for
+        // the default 15 long after the match is forfeited.
         room.reconnection.maxRetries = 8;
 
         roomRef.current = room;
@@ -152,9 +139,8 @@ export function Room() {
           setSnapshot(msg);
         });
 
-        // A dropped connection is not a leave — the SDK re-establishes the
-        // session with its reconnection token while the server holds the
-        // seat, so show it as a transient state rather than a dead end.
+        // A drop is not a leave: the SDK re-establishes the session while the server
+        // holds the seat, so show it as transient.
         room.onDrop(() => {
           if (!cancelled) setReconnecting(true);
         });
@@ -516,11 +502,8 @@ export function Room() {
   const myGrid = buildGrid(me);
   const opponentGrid = opponent ? buildGrid(opponent) : null;
 
-  // Whether quitting would actually hand the opponent the win. PicrossRoom's
-  // onLeave only crowns a survivor who is not already eliminated: it takes the
-  // other players with done === false and sets winnerId only when exactly one
-  // is left. An opponent who has burned all their lives is not one, so the
-  // match would end with no winner at all.
+  // onLeave only crowns a survivor who is not already eliminated, so against
+  // an opponent who is out of lives the match ends with no winner at all.
   const opponentCanWin = opponent !== null && !opponent.done;
 
   const isFinished = phase === "finished";

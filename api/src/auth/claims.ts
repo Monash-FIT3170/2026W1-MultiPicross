@@ -23,12 +23,9 @@ const RETURN_TO_PATHS = new Set([
   "/welcome",
 ]);
 
-// `/room/:roomId` is dynamic, so it cannot live in the Set above. The pattern is
-// anchored end-to-end and its character class admits no `/`, `.` or `%`, so it
-// can never match an extra path segment (`/room/a/b`), a dot-segment
-// (`/room/..//evil.com` normalises to `//evil.com` and fails the anchor), or an
-// encoded separator (`/room/a%2fb`). That keeps the allowlist property below:
-// the pathname is matched exactly, never parsed and reassembled.
+// `/room/:roomId` is dynamic, so it cannot live in the Set above. Anchored
+// end to end, and the character class admits no `/`, `.` or `%`, so the
+// pathname is still matched exactly rather than parsed and reassembled.
 const ROOM_PATH = /^\/room\/[A-Za-z0-9_-]+$/;
 
 // Allowlisted rather than parsed: URL normalisation can leave a same-origin

@@ -79,15 +79,12 @@ interface ActionResponse {
 
 // ──── Helpers ────────────────────────────────────────────────────────────────
 
-// After a correct fill, cross out all remaining empty cells in any row or column
-// whose clue total is now fully satisfied. 0-clue rows/cols are satisfied immediately.
+// After a correct fill, cross out every remaining empty cell in any row or
+// column whose clue total is now satisfied. 0-clue lines satisfy immediately.
 //
-// DUPLICATED, ON PURPOSE: gameserver/src/rooms/PicrossRoom.ts has the same
-// algorithm over boolean[] pairs instead of a CellValue[] grid. The two must
-// stay in sync — a change here needs the matching change there. They cannot
-// share code: the frontend and gameserver have separate Docker build contexts
-// (see compose.yaml) and this repo has no shared package, so neither can
-// import from the other.
+// Duplicated on purpose: PicrossRoom.ts runs the same algorithm over
+// boolean[] pairs. Separate Docker build contexts mean neither side can
+// import the other, so a change here needs the matching change there.
 function applyAutoComplete(
   grid: CellValue[],
   rowClues: number[][],

@@ -12,13 +12,9 @@ function sizeToWH(size: string): { width: number; height: number } {
   return { width: w, height: h };
 }
 
-// Reads an error message off a failed gameserver response.
-//
-// Not every failure body is JSON: Traefik answers the room rate limit with a
-// plain-text 429 that never reaches the app, so calling res.json() directly
-// would throw a SyntaxError and surface raw parser text ("Unexpected token
-// '<'...") to the player. This differs from parseApiError in api/client by
-// keeping the caller's fallback wording and naming the rate limit explicitly.
+// Reads an error message off a failed gameserver response. Not every body is
+// JSON — Traefik answers the rate limit with plain text — so res.json() would
+// surface a raw SyntaxError to the player.
 async function readError(res: Response, fallback: string): Promise<string> {
   if (res.status === 429) {
     return "Too many attempts. Please wait a moment and try again.";
@@ -32,8 +28,7 @@ async function readError(res: Response, fallback: string): Promise<string> {
   return fallback;
 }
 
-// A 200 whose body is not the expected JSON would otherwise let a raw
-// SyntaxError message reach the player through the catch blocks below.
+// A 200 with an unexpected body would otherwise surface a raw SyntaxError.
 async function readRoomId(res: Response, fallback: string): Promise<string> {
   try {
     const { roomId } = (await res.json()) as { roomId?: string };
@@ -349,11 +344,8 @@ export function UnratedMultiplayer() {
                 outline: "none",
                 textAlign: "center",
                 letterSpacing: "0.2em",
-                // A pair of auto margins splits this card's spare height evenly
-                // above and below the input, which centres it between the title
-                // and the button — and, because they absorb all of it, still
-                // leaves the button sitting on the card's bottom edge, level
-                // with "Create" in the taller card next door.
+                // Auto margins above and below split the card's spare height, centring the
+                // input and leaving the button on the bottom edge, level with Create.
                 marginTop: "auto",
                 marginBottom: "auto",
               }}
