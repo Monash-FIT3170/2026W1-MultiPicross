@@ -10,7 +10,14 @@ import NonogramGrid, {
   cellsToGrid,
   fmtSeconds,
 } from "../components/NonogramGrid";
-import { Logo, Icon, Button, LivesPips, StatTile } from "../components/ui";
+import {
+  Logo,
+  Icon,
+  Button,
+  LivesPips,
+  StatTile,
+  ConfirmDialog,
+} from "../components/ui";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -204,20 +211,6 @@ export function Room() {
     );
     return () => clearInterval(id);
   }, [snapshot?.phase]);
-
-  // ── Abandon-confirm housekeeping ───────────────────────────────────────────
-
-  // Close the confirm dialog on Escape. (A game that ends on its own while the
-  // dialog is open is handled at the render site: the dialog only shows while
-  // the phase is still "playing".)
-  useEffect(() => {
-    if (!confirmingAbandon) return;
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setConfirmingAbandon(false);
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [confirmingAbandon]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
@@ -523,6 +516,13 @@ export function Room() {
   const myGrid = buildGrid(me);
   const opponentGrid = opponent ? buildGrid(opponent) : null;
 
+  // Whether quitting would actually hand the opponent the win. PicrossRoom's
+  // onLeave only crowns a survivor who is not already eliminated: it takes the
+  // other players with done === false and sets winnerId only when exactly one
+  // is left. An opponent who has burned all their lives is not one, so the
+  // match would end with no winner at all.
+  const opponentCanWin = opponent !== null && !opponent.done;
+
   const isFinished = phase === "finished";
   const iWon = isFinished && winnerId === myId;
   const opponentWon =
@@ -662,11 +662,7 @@ export function Room() {
             {phase === "playing" && (
               <>
                 <div style={{ height: 1, background: "var(--color-line)" }} />
-                <Button
-                  variant="danger-soft"
-                  size="sm"
-                  onClick={() => setConfirmingAbandon(true)}
-                >
+                <Button variant="danger-soft" size="sm" onClick={leaveRoom}>
                   Abandon
                 </Button>
               </>
@@ -817,88 +813,21 @@ export function Room() {
         </div>
       )}
 
-      {/* Abandon confirmation */}
+      {/* Abandon confirmation. Rendered only while the match is still live so
+          a game that ends on its own takes the dialog down with it. */}
       {confirmingAbandon && phase === "playing" && (
-        <div
-          onClick={cancelAbandon}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.4)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 300,
-            padding: 24,
-          }}
-        >
-          <div
-            className="mp-surface"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="abandon-title"
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              maxWidth: 380,
-              width: "100%",
-              padding: 28,
-              textAlign: "center",
-            }}
-          >
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 14,
-                background: "var(--color-coral-50)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 16px",
-              }}
-            >
-              <Icon name="info" size={22} color="var(--color-coral-500)" />
-            </div>
-            <h2
-              id="abandon-title"
-              style={{
-                margin: "0 0 6px",
-                fontSize: 18,
-                fontWeight: 700,
-                color: "var(--color-ink)",
-              }}
-            >
-              Abandon this game?
-            </h2>
-            <p
-              style={{
-                margin: "0 0 22px",
-                fontSize: 13,
-                color: "var(--color-ink-muted)",
-              }}
-            >
-              Leaving now counts as a forfeit — your opponent wins.
-            </p>
-            <div style={{ display: "flex", gap: 10 }}>
-              <Button
-                variant="ghost"
-                size="md"
-                onClick={cancelAbandon}
-                style={{ flex: 1 }}
-              >
-                Keep playing
-              </Button>
-              <Button
-                variant="danger-soft"
-                size="md"
-                onClick={handleAbandonConfirm}
-                style={{ flex: 1 }}
-              >
-                Abandon
-              </Button>
-            </div>
-          </div>
-        </div>
+        <ConfirmDialog
+          titleId="abandon-title"
+          title="Abandon this game?"
+          body={
+            opponentCanWin
+              ? "Leaving now counts as a forfeit, your opponent wins."
+              : "Your opponent is already out of lives, so leaving now ends the game with no winner."
+          }
+          confirmLabel="Abandon"
+          onConfirm={handleAbandonConfirm}
+          onCancel={cancelAbandon}
+        />
       )}
     </div>
   );
