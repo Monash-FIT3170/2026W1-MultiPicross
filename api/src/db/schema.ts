@@ -39,7 +39,7 @@ export const identities = pgTable(
     lastLoginAt: timestamp("last_login_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (t) => [
+  (t: { provider: any; subject: any; accountId: any }) => [
     uniqueIndex("identities_provider_subject_idx").on(t.provider, t.subject),
     index("identities_account_idx").on(t.accountId),
   ],
@@ -52,7 +52,7 @@ export const loginAttempts = pgTable(
     username: text("username").notNull(),
     attemptedAt: timestamp("attempted_at").defaultNow().notNull(),
   },
-  (t) => [
+  (t: { username: any; attemptedAt: any }) => [
     index("login_attempts_username_time_idx").on(t.username, t.attemptedAt),
   ],
 );
