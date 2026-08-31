@@ -39,7 +39,7 @@ export const identities = pgTable(
     lastLoginAt: timestamp("last_login_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
   },
-  (t: { provider: any; subject: any; accountId: any }) => [
+  (t) => [
     uniqueIndex("identities_provider_subject_idx").on(t.provider, t.subject),
     index("identities_account_idx").on(t.accountId),
   ],
@@ -52,7 +52,7 @@ export const loginAttempts = pgTable(
     username: text("username").notNull(),
     attemptedAt: timestamp("attempted_at").defaultNow().notNull(),
   },
-  (t: { username: any; attemptedAt: any }) => [
+  (t) => [
     index("login_attempts_username_time_idx").on(t.username, t.attemptedAt),
   ],
 );
@@ -108,7 +108,7 @@ export const spCompletions = pgTable(
     createdAt: timestamp("created_at").defaultNow().notNull(),
     completedAt: timestamp("completed_at"),
   },
-  (table: any) => [
+  (table) => [
     uniqueIndex("sp_completions_account_active_idx")
       .on(table.accountId)
       .where(sql`state = 'active'`),

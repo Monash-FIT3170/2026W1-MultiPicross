@@ -15,7 +15,7 @@ export function setAuthCookies(
     httpOnly: true,
     sameSite: "Lax",
     secure,
-    path: "/",
+    path: "/api",
     maxAge: 900,
   });
   setCookie(c, REFRESH_COOKIE, tokens.refreshToken, {
@@ -35,7 +35,6 @@ export function setAuthCookies(
 }
 
 export function clearAuthCookies(c: Context) {
-  deleteCookie(c, ACCESS_COOKIE, { path: "/" });
   deleteCookie(c, ACCESS_COOKIE, { path: "/api" });
   deleteCookie(c, REFRESH_COOKIE, { path: "/api/auth" });
   deleteCookie(c, CSRF_COOKIE, { path: "/" });
