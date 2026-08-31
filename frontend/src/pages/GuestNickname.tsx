@@ -31,6 +31,7 @@ export function GuestNickname() {
 
   return (
     <div
+      className="mp-page mp-guest-page"
       style={{
         minHeight: "100vh",
         background: "var(--color-paper)",
@@ -39,6 +40,7 @@ export function GuestNickname() {
     >
       {/* Top bar */}
       <div
+        className="mp-topbar"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -67,7 +69,7 @@ export function GuestNickname() {
         <form
           onSubmit={handleSubmit}
           noValidate
-          className="flex w-full max-w-sm flex-col gap-4 rounded-2xl bg-white px-8 py-10 shadow-lg"
+          className="mp-auth-form flex w-full max-w-sm flex-col gap-4 rounded-2xl bg-white px-8 py-10 shadow-lg"
         >
           <div
             style={{
