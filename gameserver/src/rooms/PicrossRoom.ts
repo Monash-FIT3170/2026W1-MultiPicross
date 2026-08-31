@@ -78,6 +78,7 @@ interface PlayerData {
   confirmedFilled: boolean[];
   crosses: boolean[];
   revealedEmpty: boolean[];
+  mistakeCross: boolean[];
   livesLeft: number;
   done: boolean;
   won: boolean;
@@ -213,6 +214,7 @@ export class PicrossRoom extends Room {
       confirmedFilled: Array(cellCount).fill(false),
       crosses: Array(cellCount).fill(false),
       revealedEmpty: Array(cellCount).fill(false),
+      mistakeCross: Array(cellCount).fill(false),
       livesLeft: 3,
       done: false,
       won: false,
@@ -352,6 +354,7 @@ export class PicrossRoom extends Room {
       // Mistaken cross on a filled cell — reveal it and lose a life
       player.confirmedFilled[idx] = true;
       player.crosses[idx] = false;
+      player.mistakeCross[idx] = true;
       player.livesLeft = Math.max(0, player.livesLeft - 1);
       player.crosses = applyAutoComplete(
         player.confirmedFilled,
@@ -390,6 +393,7 @@ export class PicrossRoom extends Room {
         confirmedFilled: boolean[];
         crosses: boolean[];
         revealedEmpty: boolean[];
+        mistakeCross: boolean[];
         livesLeft: number;
         done: boolean;
         won: boolean;
@@ -403,6 +407,7 @@ export class PicrossRoom extends Room {
         confirmedFilled: [...p.confirmedFilled],
         crosses: [...p.crosses],
         revealedEmpty: [...p.revealedEmpty],
+        mistakeCross: [...p.mistakeCross],
         livesLeft: p.livesLeft,
         done: p.done,
         won: p.won,

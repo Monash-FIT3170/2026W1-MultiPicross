@@ -26,6 +26,7 @@ interface PlayerSnapshot {
   confirmedFilled: boolean[];
   crosses: boolean[];
   revealedEmpty: boolean[];
+  mistakeCross: boolean[];
   livesLeft: number;
   done: boolean;
   won: boolean;
@@ -501,6 +502,19 @@ export function Room() {
 
   const myGrid = buildGrid(me);
   const opponentGrid = opponent ? buildGrid(opponent) : null;
+  const myMistakeCrossIndices = (me.mistakeCross ?? []).reduce<number[]>(
+    (acc, v, i) => {
+      if (v) acc.push(i);
+      return acc;
+    },
+    [],
+  );
+  const opponentMistakeCrossIndices = opponent
+    ? (opponent.mistakeCross ?? []).reduce<number[]>((acc, v, i) => {
+        if (v) acc.push(i);
+        return acc;
+      }, [])
+    : [];
 
   // onLeave only crowns a survivor who is not already eliminated, so against
   // an opponent who is out of lives the match ends with no winner at all.
@@ -606,6 +620,7 @@ export function Room() {
             interactive={!isFinished && !me.done && !reconnecting}
             colors={isFinished ? colors : undefined}
             completed={me.won}
+            mistakeCrossIndices={myMistakeCrossIndices}
             onFill={handleFill}
             onCross={handleCross}
           />
@@ -686,6 +701,7 @@ export function Room() {
                 hideClues={!isFinished}
                 colors={isFinished ? colors : undefined}
                 completed={opponent.won}
+                mistakeCrossIndices={opponentMistakeCrossIndices}
                 cellSize={Math.max(12, cs - 8)}
               />
             </div>
