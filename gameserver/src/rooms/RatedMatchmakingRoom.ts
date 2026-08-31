@@ -1,38 +1,23 @@
-import { JWT } from "@colyseus/auth";
+import { Client, CloseCode, matchMaker, Room, ServerError } from "colyseus";
+import { verifyRoomToken } from "../auth/roomToken.js";
+import { requireEnv } from "../env.js";
 import {
-  Client,
-  CloseCode,
-  matchMaker,
-  Room,
-  type AuthContext,
-} from "colyseus";
-
-type AccessTokenPayload = {
-  sub: string;
-  username: string;
-  type: string;
-  exp: number;
-};
+  addToRatedWaitingList,
+  handleRatedQueueTimeout,
+  joinRatedQueue,
+  removeFromRatedWaitingList,
+} from "../elo/ratedWaitingList.js";
 
 export type AuthenticatedPlayer = {
   accountId: string;
   username: string;
 };
 
+/** How long a player waits before the Elo limit is dropped. */
 const QUEUE_WAIT_TIME_MS = 30_000;
 
-function getAccessToken(cookieHeader: string): string | undefined {
-  const accessTokenCookie = cookieHeader
-    .split(";")
-    .map((cookie) => cookie.trim())
-    .find((cookie) => cookie.startsWith("access_token="));
-
-  if (!accessTokenCookie) {
-    return undefined;
-  }
-
-  return decodeURIComponent(accessTokenCookie.slice("access_token=".length));
-}
+/** Ranked games are always played on the standard board. */
+const RANKED_BOARD_SIZE = 10;
 
 export class RatedMatchmakingRoom extends Room {
   maxClients = 1000;
@@ -42,41 +27,27 @@ export class RatedMatchmakingRoom extends Room {
     ReturnType<typeof setTimeout>
   >();
 
-  static async onAuth(
-    _token: string,
-    _options: unknown,
-    context: AuthContext,
+  // Ranked is account-only, so unlike PicrossRoom there is no guest path.
+  async onAuth(
+    _client: Client,
+    options: { token?: string },
   ): Promise<AuthenticatedPlayer> {
-    const jwtSecret = process.env.JWT_ACCESS_SECRET;
-
-    if (!jwtSecret) {
-      throw new Error("JWT_ACCESS_SECRET must be set");
+    if (!options.token) {
+      throw new ServerError(401, "Sign in to play ranked");
     }
 
-    JWT.settings.secret = jwtSecret;
-
-    const cookieHeader = context.headers.get("cookie") ?? "";
-    const accessToken = getAccessToken(cookieHeader);
-
-    if (!accessToken) {
-      throw new Error("Authentication required");
+    const payload = verifyRoomToken(
+      options.token,
+      requireEnv("JWT_ROOM_SECRET"),
+    );
+    if (!payload) {
+      throw new ServerError(401, "Invalid or expired room token");
     }
 
-    const payload = await JWT.verify<AccessTokenPayload>(accessToken);
-
-    if (!payload.sub || !payload.username || payload.type !== "access") {
-      throw new Error("Invalid access token");
-    }
-
-    return {
-      accountId: payload.sub,
-      username: payload.username,
-    };
+    return { accountId: payload.sub, username: payload.username };
   }
 
   onCreate(): void {
-    console.log("Rated matchmaking room created");
-
     this.onMessage("joinQueue", (client) => {
       void this.handleJoinQueue(client);
     });
@@ -90,32 +61,11 @@ export class RatedMatchmakingRoom extends Room {
     });
   }
 
-  onJoin(client: Client): void {
-    const player = client.auth as AuthenticatedPlayer;
-
-    console.log(
-      `${player.username} (${player.accountId}) joined rated matchmaking`,
-    );
-  }
-
   async onLeave(client: Client, _code: CloseCode): Promise<void> {
     const player = client.auth as AuthenticatedPlayer;
 
     this.clearQueueTimer(player.accountId);
-
-    /*
-    The database module is imported only when a player actually leaves.
-    This prevents ordinary room tests from requiring database environment
-    variables when the matchmaking room is merely loaded.
-    */
-    const { removeFromRatedWaitingList } =
-      await import("../elo/ratedWaitingList.js");
-
     await removeFromRatedWaitingList(player.accountId);
-
-    console.log(
-      `${player.username} (${player.accountId}) left rated matchmaking`,
-    );
   }
 
   onDispose(): void {
@@ -124,27 +74,23 @@ export class RatedMatchmakingRoom extends Room {
     }
 
     this.queueTimers.clear();
-    console.log("Rated matchmaking room disposed");
   }
+
+  /*
+  Rows can outlive their client after a crash, and a client in another
+  instance of this room is one we cannot hand a match to. Matching only
+  against accounts connected here keeps both out of the running.
+  */
+  private isConnected = (accountId: string): boolean => {
+    return this.findClientByAccountId(accountId) !== undefined;
+  };
 
   private async handleJoinQueue(client: Client): Promise<void> {
     const player = client.auth as AuthenticatedPlayer;
-
-    /*
-    Lazy loading prevents the database client from being initialised
-    until matchmaking is actually requested.
-    */
-    const { addToRatedWaitingList, joinRatedQueue } =
-      await import("../elo/ratedWaitingList.js");
-
-    const result = await joinRatedQueue(player.accountId);
+    const result = await joinRatedQueue(player.accountId, this.isConnected);
 
     if (result.status === "queued") {
-      client.send("queueStatus", {
-        status: "queued",
-      });
-
-      this.startQueueTimer(client);
+      this.sendQueued(client);
       return;
     }
 
@@ -153,18 +99,13 @@ export class RatedMatchmakingRoom extends Room {
     );
 
     /*
-    A database entry could remain after a server restart or an unexpected
-    disconnect. If the opponent is no longer connected, queue this player
-    instead of creating a match with a missing client.
+    The opponent was connected when the queue was read and has since left.
+    Their row is already claimed, so re-queue both rather than dropping them.
     */
     if (!opponentClient) {
+      await addToRatedWaitingList(result.opponent.accountId);
       await addToRatedWaitingList(player.accountId);
-
-      client.send("queueStatus", {
-        status: "queued",
-      });
-
-      this.startQueueTimer(client);
+      this.sendQueued(client);
       return;
     }
 
@@ -174,35 +115,17 @@ export class RatedMatchmakingRoom extends Room {
   private async handleStayInQueue(client: Client): Promise<void> {
     const player = client.auth as AuthenticatedPlayer;
 
-    const { addToRatedWaitingList } =
-      await import("../elo/ratedWaitingList.js");
-
-    /*
-    Adding is idempotent, so the player will not be duplicated if they
-    are still present in the waiting list.
-    */
     await addToRatedWaitingList(player.accountId);
-
-    client.send("queueStatus", {
-      status: "queued",
-    });
-
-    this.startQueueTimer(client);
+    this.sendQueued(client);
   }
 
   private async handleLeaveQueue(client: Client): Promise<void> {
     const player = client.auth as AuthenticatedPlayer;
 
     this.clearQueueTimer(player.accountId);
-
-    const { removeFromRatedWaitingList } =
-      await import("../elo/ratedWaitingList.js");
-
     await removeFromRatedWaitingList(player.accountId);
 
-    client.send("queueStatus", {
-      status: "left",
-    });
+    client.send("queueStatus", { status: "left" });
   }
 
   private async handleQueueTimeout(client: Client): Promise<void> {
@@ -210,10 +133,10 @@ export class RatedMatchmakingRoom extends Room {
 
     this.queueTimers.delete(player.accountId);
 
-    const { addToRatedWaitingList, handleRatedQueueTimeout } =
-      await import("../elo/ratedWaitingList.js");
-
-    const result = await handleRatedQueueTimeout(player.accountId);
+    const result = await handleRatedQueueTimeout(
+      player.accountId,
+      this.isConnected,
+    );
 
     if (result.status === "not-queued") {
       return;
@@ -228,12 +151,8 @@ export class RatedMatchmakingRoom extends Room {
       result.opponent.accountId,
     );
 
-    /*
-    If the closest database entry belongs to a disconnected player,
-    keep the current player queued and ask them whether they want to
-    continue waiting.
-    */
     if (!opponentClient) {
+      await addToRatedWaitingList(result.opponent.accountId);
       await addToRatedWaitingList(player.accountId);
       this.sendQueueTimeoutEmpty(client);
       return;
@@ -250,10 +169,19 @@ export class RatedMatchmakingRoom extends Room {
     });
   }
 
+  private sendQueued(client: Client): void {
+    client.send("queueStatus", { status: "queued" });
+    this.startQueueTimer(client);
+  }
+
+  /*
+  The timeout leaves the player queued, so the client has to answer with
+  stayInQueue or leaveQueue rather than simply stopping its spinner.
+  */
   private sendQueueTimeoutEmpty(client: Client): void {
     client.send("queueTimeoutEmpty", {
       message:
-        "No one else is in the queue at the moment. Would you like to wait another minute?",
+        "No one else is in the queue at the moment. Would you like to keep waiting?",
     });
   }
 
@@ -267,14 +195,26 @@ export class RatedMatchmakingRoom extends Room {
     this.clearQueueTimer(firstPlayer.accountId);
     this.clearQueueTimer(secondPlayer.accountId);
 
-    const gameRoom = await matchMaker.createRoom("my_room", {
-      playerOneAccountId: firstPlayer.accountId,
-      playerTwoAccountId: secondPlayer.accountId,
-    });
+    let gameRoom;
+    try {
+      // Private so the pair's room never surfaces in the public lobby.
+      gameRoom = await matchMaker.createRoom("picross_room", {
+        width: RANKED_BOARD_SIZE,
+        height: RANKED_BOARD_SIZE,
+        isPublic: false,
+      });
+    } catch (err) {
+      console.error("ranked create-room error", err);
 
-    const matchMessage = {
-      roomId: gameRoom.roomId,
-    };
+      // Both rows are already claimed, so put them back and let the pair wait.
+      await addToRatedWaitingList(firstPlayer.accountId);
+      await addToRatedWaitingList(secondPlayer.accountId);
+      this.sendQueued(firstClient);
+      this.sendQueued(secondClient);
+      return;
+    }
+
+    const matchMessage = { roomId: gameRoom.roomId };
 
     firstClient.send("matched", matchMessage);
     secondClient.send("matched", matchMessage);

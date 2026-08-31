@@ -115,19 +115,32 @@ export const spCompletions = pgTable(
   ],
 );
 
-export const playerEloHistory = pgTable("player_elo_history", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  accountId: uuid("account_id")
-    .notNull()
-    .references(() => accounts.id, { onDelete: "cascade" }),
-  elo: integer("elo").notNull(),
-  recordedAt: timestamp("recorded_at").defaultNow().notNull(),
-});
+export const playerEloHistory = pgTable(
+  "player_elo_history",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    elo: integer("elo").notNull(),
+    recordedAt: timestamp("recorded_at").defaultNow().notNull(),
+  },
+  // Matchmaking reads the latest rating per account on every queue poll.
+  (t) => [
+    index("player_elo_history_account_recorded_idx").on(
+      t.accountId,
+      t.recordedAt.desc(),
+    ),
+  ],
+);
 
 export const ratedWaitingList = pgTable("rated_waiting_list", {
   id: uuid("id").defaultRandom().primaryKey(),
+  // Unique so queueing can be a single ON CONFLICT DO NOTHING insert rather
+  // than a racy select-then-insert.
   accountId: uuid("account_id")
     .notNull()
+    .unique()
     .references(() => accounts.id, { onDelete: "cascade" }),
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
 });

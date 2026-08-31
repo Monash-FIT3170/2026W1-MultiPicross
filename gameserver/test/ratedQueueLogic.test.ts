@@ -84,23 +84,50 @@ describe("findEligibleOpponent", () => {
   });
 });
 
+/*
+Records what the queue was asked to do. claimPlayer answers true unless the
+account is listed in `lost`, which stands in for another matchmaker having
+claimed that player first.
+*/
+function trackOperations(
+  waitingList: RatedQueueEntry[],
+  playerElo: number,
+  options: { lost?: string[]; canMatch?: (accountId: string) => boolean } = {},
+) {
+  const added: string[] = [];
+  const claimed: string[] = [];
+  const lost = new Set(options.lost ?? []);
+  let eloRequested = false;
+
+  const operations: RatedQueueOperations = {
+    getWaitingList: async () => waitingList,
+    getPlayerElo: async () => {
+      eloRequested = true;
+      return playerElo;
+    },
+    addPlayer: async (accountId) => {
+      added.push(accountId);
+    },
+    claimPlayer: async (accountId) => {
+      claimed.push(accountId);
+      return !lost.has(accountId);
+    },
+    canMatch: options.canMatch,
+  };
+
+  return {
+    operations,
+    added,
+    claimed,
+    eloRequested: () => eloRequested,
+  };
+}
+
 describe("processRatedQueueJoin", () => {
-  it("removes the opponent when an eligible match is found", async () => {
-    const addedPlayers: string[] = [];
-    const removedPlayers: string[] = [];
+  it("claims the opponent when an eligible match is found", async () => {
+    const t = trackOperations([{ accountId: "opponent", elo: 350 }], 500);
 
-    const operations: RatedQueueOperations = {
-      getWaitingList: async () => [{ accountId: "opponent", elo: 350 }],
-      getPlayerElo: async () => 500,
-      addPlayer: async (accountId) => {
-        addedPlayers.push(accountId);
-      },
-      removePlayer: async (accountId) => {
-        removedPlayers.push(accountId);
-      },
-    };
-
-    const result = await processRatedQueueJoin("new-player", operations);
+    const result = await processRatedQueueJoin("new-player", t.operations);
 
     assert.strictEqual(result.status, "matched");
 
@@ -108,78 +135,105 @@ describe("processRatedQueueJoin", () => {
       assert.strictEqual(result.opponent.accountId, "opponent");
     }
 
-    assert.deepStrictEqual(removedPlayers, ["opponent"]);
-    assert.deepStrictEqual(addedPlayers, []);
+    assert.deepStrictEqual(t.claimed, ["opponent"]);
+    assert.deepStrictEqual(t.added, []);
   });
 
   it("adds the player when no eligible opponent is found", async () => {
-    const addedPlayers: string[] = [];
-    const removedPlayers: string[] = [];
+    const t = trackOperations([{ accountId: "opponent", elo: 299 }], 500);
 
-    const operations: RatedQueueOperations = {
-      getWaitingList: async () => [{ accountId: "opponent", elo: 299 }],
-      getPlayerElo: async () => 500,
-      addPlayer: async (accountId) => {
-        addedPlayers.push(accountId);
-      },
-      removePlayer: async (accountId) => {
-        removedPlayers.push(accountId);
-      },
-    };
-
-    const result = await processRatedQueueJoin("new-player", operations);
+    const result = await processRatedQueueJoin("new-player", t.operations);
 
     assert.deepStrictEqual(result, { status: "queued" });
-    assert.deepStrictEqual(addedPlayers, ["new-player"]);
-    assert.deepStrictEqual(removedPlayers, []);
+    assert.deepStrictEqual(t.added, ["new-player"]);
+    assert.deepStrictEqual(t.claimed, []);
   });
 
   it("does not add or match a player who is already queued", async () => {
-    const addedPlayers: string[] = [];
-    const removedPlayers: string[] = [];
-    let playerEloRequested = false;
+    const t = trackOperations([{ accountId: "new-player", elo: 500 }], 500);
 
-    const operations: RatedQueueOperations = {
-      getWaitingList: async () => [{ accountId: "new-player", elo: 500 }],
-      getPlayerElo: async () => {
-        playerEloRequested = true;
-        return 500;
-      },
-      addPlayer: async (accountId) => {
-        addedPlayers.push(accountId);
-      },
-      removePlayer: async (accountId) => {
-        removedPlayers.push(accountId);
-      },
-    };
-
-    const result = await processRatedQueueJoin("new-player", operations);
+    const result = await processRatedQueueJoin("new-player", t.operations);
 
     assert.deepStrictEqual(result, { status: "queued" });
-    assert.strictEqual(playerEloRequested, false);
-    assert.deepStrictEqual(addedPlayers, []);
-    assert.deepStrictEqual(removedPlayers, []);
+    assert.strictEqual(t.eloRequested(), false);
+    assert.deepStrictEqual(t.added, []);
+    assert.deepStrictEqual(t.claimed, []);
+  });
+
+  it("falls back to the next opponent when a claim is lost", async () => {
+    const t = trackOperations(
+      [
+        { accountId: "free-opponent", elo: 420 },
+        { accountId: "taken-opponent", elo: 480 },
+      ],
+      500,
+      { lost: ["taken-opponent"] },
+    );
+
+    const result = await processRatedQueueJoin("new-player", t.operations);
+
+    assert.strictEqual(result.status, "matched");
+
+    if (result.status === "matched") {
+      assert.strictEqual(result.opponent.accountId, "free-opponent");
+    }
+
+    assert.deepStrictEqual(t.claimed, ["taken-opponent", "free-opponent"]);
+    assert.deepStrictEqual(t.added, []);
+  });
+
+  it("queues the player when every eligible claim is lost", async () => {
+    const t = trackOperations(
+      [{ accountId: "taken-opponent", elo: 480 }],
+      500,
+      {
+        lost: ["taken-opponent"],
+      },
+    );
+
+    const result = await processRatedQueueJoin("new-player", t.operations);
+
+    assert.deepStrictEqual(result, { status: "queued" });
+    assert.deepStrictEqual(t.added, ["new-player"]);
+  });
+
+  it("skips queued players with no live client", async () => {
+    const t = trackOperations(
+      [
+        { accountId: "connected", elo: 420 },
+        { accountId: "disconnected", elo: 490 },
+      ],
+      500,
+      { canMatch: (accountId) => accountId === "connected" },
+    );
+
+    const result = await processRatedQueueJoin("new-player", t.operations);
+
+    assert.strictEqual(result.status, "matched");
+
+    if (result.status === "matched") {
+      assert.strictEqual(result.opponent.accountId, "connected");
+    }
+
+    assert.deepStrictEqual(t.claimed, ["connected"]);
   });
 });
 
 describe("processRatedQueueTimeout", () => {
   it("matches the closest player without the 200-point limit", async () => {
-    const removedPlayers: string[] = [];
-
-    const operations: RatedQueueOperations = {
-      getWaitingList: async () => [
+    const t = trackOperations(
+      [
         { accountId: "waiting-player", elo: 100 },
         { accountId: "closest-opponent", elo: 500 },
         { accountId: "farther-opponent", elo: 800 },
       ],
-      getPlayerElo: async () => 100,
-      addPlayer: async () => {},
-      removePlayer: async (accountId) => {
-        removedPlayers.push(accountId);
-      },
-    };
+      100,
+    );
 
-    const result = await processRatedQueueTimeout("waiting-player", operations);
+    const result = await processRatedQueueTimeout(
+      "waiting-player",
+      t.operations,
+    );
 
     assert.strictEqual(result.status, "matched");
 
@@ -187,54 +241,71 @@ describe("processRatedQueueTimeout", () => {
       assert.strictEqual(result.opponent.accountId, "closest-opponent");
     }
 
-    assert.deepStrictEqual(removedPlayers, [
-      "waiting-player",
-      "closest-opponent",
-    ]);
+    // Opponent first: losing our own row after theirs is what tells us we
+    // were matched elsewhere.
+    assert.deepStrictEqual(t.claimed, ["closest-opponent", "waiting-player"]);
   });
 
   it("returns waiting-alone when no other player is queued", async () => {
-    const removedPlayers: string[] = [];
+    const t = trackOperations([{ accountId: "waiting-player", elo: 100 }], 100);
 
-    const operations: RatedQueueOperations = {
-      getWaitingList: async () => [{ accountId: "waiting-player", elo: 100 }],
-      getPlayerElo: async () => 100,
-      addPlayer: async () => {},
-      removePlayer: async (accountId) => {
-        removedPlayers.push(accountId);
-      },
-    };
+    const result = await processRatedQueueTimeout(
+      "waiting-player",
+      t.operations,
+    );
 
-    const result = await processRatedQueueTimeout("waiting-player", operations);
-
-    assert.deepStrictEqual(result, {
-      status: "waiting-alone",
-    });
-    assert.deepStrictEqual(removedPlayers, []);
+    assert.deepStrictEqual(result, { status: "waiting-alone" });
+    assert.deepStrictEqual(t.claimed, []);
   });
 
   it("returns not-queued when the player has already left", async () => {
-    let playerEloRequested = false;
-    const removedPlayers: string[] = [];
+    const t = trackOperations([{ accountId: "someone-else", elo: 300 }], 100);
 
-    const operations: RatedQueueOperations = {
-      getWaitingList: async () => [{ accountId: "someone-else", elo: 300 }],
-      getPlayerElo: async () => {
-        playerEloRequested = true;
-        return 100;
-      },
-      addPlayer: async () => {},
-      removePlayer: async (accountId) => {
-        removedPlayers.push(accountId);
-      },
-    };
+    const result = await processRatedQueueTimeout(
+      "waiting-player",
+      t.operations,
+    );
 
-    const result = await processRatedQueueTimeout("waiting-player", operations);
+    assert.deepStrictEqual(result, { status: "not-queued" });
+    assert.strictEqual(t.eloRequested(), false);
+    assert.deepStrictEqual(t.claimed, []);
+  });
 
-    assert.deepStrictEqual(result, {
-      status: "not-queued",
-    });
-    assert.strictEqual(playerEloRequested, false);
-    assert.deepStrictEqual(removedPlayers, []);
+  it("returns waiting-alone when every opponent claim is lost", async () => {
+    const t = trackOperations(
+      [
+        { accountId: "waiting-player", elo: 100 },
+        { accountId: "taken-opponent", elo: 500 },
+      ],
+      100,
+      { lost: ["taken-opponent"] },
+    );
+
+    const result = await processRatedQueueTimeout(
+      "waiting-player",
+      t.operations,
+    );
+
+    assert.deepStrictEqual(result, { status: "waiting-alone" });
+    assert.deepStrictEqual(t.added, []);
+  });
+
+  it("requeues the opponent when our own row was already claimed", async () => {
+    const t = trackOperations(
+      [
+        { accountId: "waiting-player", elo: 100 },
+        { accountId: "opponent", elo: 500 },
+      ],
+      100,
+      { lost: ["waiting-player"] },
+    );
+
+    const result = await processRatedQueueTimeout(
+      "waiting-player",
+      t.operations,
+    );
+
+    assert.deepStrictEqual(result, { status: "not-queued" });
+    assert.deepStrictEqual(t.added, ["opponent"]);
   });
 });
