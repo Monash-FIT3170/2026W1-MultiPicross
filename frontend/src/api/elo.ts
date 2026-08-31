@@ -6,14 +6,14 @@ elo gets the player's current Elo. It fetches this through the API and returns
 the result if the request is not cancelled. 
 */
 export function useElo(enabled: boolean) {
-  const [playerElo, setPlayerElo] = useState<number | null>(null);
+  const [fetchedElo, setFetchedElo] = useState<number | null>(null);
+
+  // Derived rather than stored: resetting it inside the effect would be a
+  // synchronous setState, which react-hooks/set-state-in-effect rejects.
+  const playerElo = enabled ? fetchedElo : null;
 
   useEffect(() => {
-    if (!enabled) {
-      const elo = null;
-      setPlayerElo(elo);
-      return;
-    }
+    if (!enabled) return;
 
     let cancelled = false;
 
@@ -24,11 +24,11 @@ export function useElo(enabled: boolean) {
         const body = (await res.json()) as { elo: number };
 
         if (!cancelled) {
-          setPlayerElo(body.elo);
+          setFetchedElo(body.elo);
         }
       })
       .catch(() => {
-        if (!cancelled) setPlayerElo(null);
+        if (!cancelled) setFetchedElo(null);
       });
 
     return () => {
