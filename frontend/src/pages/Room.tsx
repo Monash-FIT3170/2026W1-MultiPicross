@@ -52,6 +52,10 @@ function buildGrid(p: PlayerSnapshot): CellValue[] {
   return cellsToGrid(p.confirmedFilled, p.crosses, p.revealedEmpty);
 }
 
+function countFilledCells(cells: boolean[]): number {
+  return cells.reduce((total, filled) => total + (filled ? 1 : 0), 0);
+}
+
 // leave() throws while a socket is mid-handshake — an SDK reconnect in
 // flight when the user navigates away. The connection is going either way.
 function leaveQuietly(room: ColyseusRoom | null) {
@@ -316,6 +320,7 @@ export function Room() {
     const playerList = Object.values(players);
     return (
       <div
+        className="mp-page mp-room-waiting-page"
         style={{
           minHeight: "100vh",
           background: "var(--color-paper)",
@@ -323,6 +328,7 @@ export function Room() {
         }}
       >
         <div
+          className="mp-topbar"
           style={{
             display: "flex",
             justifyContent: "space-between",
@@ -501,6 +507,10 @@ export function Room() {
 
   const myGrid = buildGrid(me);
   const opponentGrid = opponent ? buildGrid(opponent) : null;
+  const targetFilledCells = rowClues.reduce(
+    (total, clue) => total + clue.reduce((sum, n) => sum + n, 0),
+    0,
+  );
 
   // onLeave only crowns a survivor who is not already eliminated, so against
   // an opponent who is out of lives the match ends with no winner at all.
@@ -520,6 +530,7 @@ export function Room() {
 
   return (
     <div
+      className="mp-page mp-playing-screen mp-room-page"
       style={{
         minHeight: "100vh",
         background: "var(--color-paper)",
@@ -529,11 +540,14 @@ export function Room() {
     >
       {/* Top bar */}
       <div
+        className="mp-topbar mp-game-topbar"
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: 24,
+          position: "relative",
+          zIndex: 200,
         }}
       >
         <button
@@ -569,6 +583,7 @@ export function Room() {
         Multiplayer
       </h1>
       <p
+        className="mp-game-hint"
         style={{
           textAlign: "center",
           margin: "0 0 28px",
@@ -580,6 +595,7 @@ export function Room() {
       </p>
 
       <div
+        className="mp-game-layout mp-room-layout"
         style={{
           display: "flex",
           gap: 40,
@@ -589,7 +605,7 @@ export function Room() {
         }}
       >
         {/* My board */}
-        <div>
+        <div className="mp-room-board">
           <PlayerLabel
             name={`${me.username} (you)`}
             livesLeft={me.livesLeft}
@@ -613,6 +629,7 @@ export function Room() {
 
         {/* Sidebar with stats */}
         <div
+          className="mp-game-sidebar-wrap"
           style={{
             paddingTop: clueOffset,
             display: "flex",
@@ -620,7 +637,7 @@ export function Room() {
           }}
         >
           <div
-            className="mp-surface"
+            className="mp-surface mp-game-sidebar mp-room-sidebar"
             style={{
               padding: "20px 24px",
               display: "flex",
@@ -642,6 +659,22 @@ export function Room() {
             <StatTile icon="grid" label="Size">
               {width} × {height}
             </StatTile>
+            <div className="mp-room-progress-stack">
+              <PlayerProgress
+                label="You"
+                filled={countFilledCells(me.confirmedFilled)}
+                total={targetFilledCells}
+                tone="blue"
+              />
+              {opponent && (
+                <PlayerProgress
+                  label={opponent.username}
+                  filled={countFilledCells(opponent.confirmedFilled)}
+                  total={targetFilledCells}
+                  tone="sage"
+                />
+              )}
+            </div>
             {phase === "playing" && (
               <>
                 <div style={{ height: 1, background: "var(--color-line)" }} />
@@ -655,7 +688,7 @@ export function Room() {
 
         {/* Opponent board */}
         {opponent && opponentGrid ? (
-          <div>
+          <div className="mp-room-board mp-room-opponent-board">
             <PlayerLabel
               name={opponent.username}
               livesLeft={opponent.livesLeft}
@@ -692,7 +725,7 @@ export function Room() {
           </div>
         ) : (
           <div
-            className="mp-surface"
+            className="mp-surface mp-room-waiting-card"
             style={{
               padding: 40,
               textAlign: "center",
@@ -902,6 +935,84 @@ function PlayerLabel({
       )}
       <div style={{ marginLeft: "auto" }}>
         <LivesPips lives={livesLeft} />
+      </div>
+    </div>
+  );
+}
+
+function PlayerProgress({
+  label,
+  filled,
+  total,
+  tone,
+}: {
+  label: string;
+  filled: number;
+  total: number;
+  tone: "blue" | "sage";
+}) {
+  const safeTotal = Math.max(1, total);
+  const percent = Math.min(100, Math.round((filled / safeTotal) * 100));
+  const fillColor =
+    tone === "sage" ? "var(--color-sage-400)" : "var(--color-blue-500)";
+
+  return (
+    <div className="mp-room-progress">
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 10,
+          alignItems: "baseline",
+        }}
+      >
+        <span
+          style={{
+            minWidth: 0,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+            fontSize: 12,
+            fontWeight: 700,
+            color: "var(--color-ink)",
+          }}
+        >
+          {label}
+        </span>
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: "var(--color-ink-muted)",
+            fontVariantNumeric: "tabular-nums",
+          }}
+        >
+          {percent}%
+        </span>
+      </div>
+      <div
+        role="progressbar"
+        aria-label={`${label} progress`}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+        style={{
+          height: 8,
+          overflow: "hidden",
+          borderRadius: 999,
+          background: "var(--color-surface-sunk)",
+          border: "1px solid var(--color-line)",
+        }}
+      >
+        <div
+          style={{
+            width: `${percent}%`,
+            height: "100%",
+            background: fillColor,
+            borderRadius: 999,
+            transition: "width 220ms ease",
+          }}
+        />
       </div>
     </div>
   );

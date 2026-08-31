@@ -171,6 +171,7 @@ export default function MainMenu() {
         >
           {/* Left Side */}
           <div
+            className="mp-ranked-copy"
             style={{
               display: "flex",
               flexDirection: "column",
@@ -181,6 +182,7 @@ export default function MainMenu() {
             }}
           >
             <div
+              className="mp-ranked-title"
               style={{
                 fontSize: 36,
                 fontWeight: 700,
@@ -191,6 +193,7 @@ export default function MainMenu() {
             </div>
 
             <p
+              className="mp-ranked-subtitle"
               style={{
                 margin: 0,
                 fontSize: 20,
@@ -201,6 +204,7 @@ export default function MainMenu() {
             </p>
 
             <div
+              className="mp-ranked-rating"
               style={{
                 marginTop: 20,
                 color: "var(--color-ink-muted)",
@@ -235,6 +239,7 @@ export default function MainMenu() {
 
           {/* Right Side */}
           <div
+            className="mp-ranked-art"
             style={{
               width: 180,
               display: "flex",
@@ -378,6 +383,7 @@ export default function MainMenu() {
 
           {/* Other features */}
           <div
+            className="mp-secondary-actions"
             style={{
               display: "flex",
               flexDirection: "column",

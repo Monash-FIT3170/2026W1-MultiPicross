@@ -253,8 +253,17 @@ body {
   animation: mp-pop 320ms var(--ease-out) forwards;
 }
 
-.mp-mobile-controls {
-  display: none;
+.mp-room-progress-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 160px;
+}
+
+.mp-room-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 @media (max-width: 768px) {
@@ -330,58 +339,97 @@ body {
   }
 
   .mp-main-content {
+    align-items: stretch !important;
     justify-content: flex-start !important;
-    padding: 22px 16px 8px !important;
+    width: 100% !important;
+    max-width: 430px !important;
+    margin: 0 auto !important;
+    padding: 22px 16px 12px !important;
+    box-sizing: border-box;
   }
 
   .mp-wordmark {
-    font-size: 36px !important;
+    font-size: 34px !important;
     line-height: 1.05 !important;
     text-align: center;
+    margin-bottom: 6px !important;
+  }
+
+  .mp-wordmark + p {
+    text-align: center !important;
+    margin-bottom: 18px !important;
   }
 
   .mp-ranked-banner {
     display: grid !important;
-    grid-template-columns: 1fr auto !important;
-    gap: 12px !important;
-    padding: 18px !important;
+    grid-template-columns: 1fr 76px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    gap: 10px 12px !important;
+    padding: 16px !important;
     border-radius: 14px !important;
+    box-sizing: border-box;
   }
 
-  .mp-ranked-banner > div:first-child {
+  .mp-ranked-copy {
     padding-right: 0 !important;
     gap: 4px !important;
+    min-width: 0;
   }
 
-  .mp-ranked-banner > div:first-child > div:first-child {
-    font-size: 24px !important;
+  .mp-ranked-title {
+    font-size: 22px !important;
     line-height: 1.1 !important;
   }
 
-  .mp-ranked-banner p {
+  .mp-ranked-subtitle {
     font-size: 14px !important;
+    line-height: 1.25 !important;
   }
 
-  .mp-ranked-banner > div:last-child {
-    width: 96px !important;
-    gap: 10px !important;
+  .mp-ranked-rating {
+    margin-top: 8px !important;
   }
 
-  .mp-ranked-banner img {
-    width: 72px !important;
-    height: 72px !important;
-  }
-
-  .mp-ranked-banner button {
-    width: 100% !important;
-    min-width: 92px !important;
+  .mp-ranked-rating > div:first-child {
     font-size: 13px !important;
-    padding-inline: 10px !important;
+  }
+
+  .mp-ranked-rating > div:last-child {
+    font-size: 34px !important;
+    margin-top: 2px !important;
+  }
+
+  .mp-ranked-art {
+    display: contents !important;
+  }
+
+  .mp-ranked-art img {
+    width: 58px !important;
+    height: 58px !important;
+    justify-self: center;
+    align-self: center;
+  }
+
+  .mp-ranked-art button {
+    grid-column: 1 / -1;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 42px;
+    white-space: nowrap !important;
+    font-size: 14px !important;
+    line-height: 1.1 !important;
+    padding: 9px 12px !important;
   }
 
   .mp-menu-grid {
+    width: 100% !important;
+    max-width: 100% !important;
     gap: 14px !important;
     margin-top: 16px !important;
+    box-sizing: border-box;
   }
 
   .mp-primary-actions {
@@ -397,8 +445,10 @@ body {
 
   .mp-primary-actions .tile,
   .mp-multiplayer-picker .tile {
-    height: 104px !important;
+    width: 100% !important;
+    height: 98px !important;
     padding: 14px 8px !important;
+    border-radius: 14px !important;
   }
 
   .mp-primary-actions .tile span,
@@ -412,6 +462,11 @@ body {
     gap: 14px !important;
     padding: 0 14px !important;
     border-radius: 12px !important;
+    max-width: none !important;
+  }
+
+  .mp-secondary-actions {
+    width: 100% !important;
   }
 
   .mp-size-select h1,
@@ -494,36 +549,6 @@ body {
     align-self: center;
   }
 
-  .mp-mobile-controls {
-    align-self: center;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    width: min(320px, 100%);
-    padding: 4px;
-    gap: 4px;
-    background: var(--color-surface-sunk);
-    border: 1px solid var(--color-line);
-    border-radius: 12px;
-    box-sizing: border-box;
-  }
-
-  .mp-mobile-controls button {
-    min-height: 42px;
-    border: 0;
-    border-radius: 9px;
-    background: transparent;
-    color: var(--color-ink-muted);
-    font-family: var(--font-ui);
-    font-weight: 700;
-    font-size: 14px;
-  }
-
-  .mp-mobile-controls button.is-active {
-    background: #fff;
-    color: var(--color-blue-600);
-    box-shadow: var(--shadow-xs);
-  }
-
   .mp-game-sidebar-wrap {
     height: auto !important;
     padding-top: 0 !important;
@@ -549,6 +574,64 @@ body {
     grid-column: 1 / -1;
     width: 100%;
     min-height: 42px;
+  }
+
+  .mp-room-page {
+    padding-inline: 0 !important;
+    padding-bottom: 96px !important;
+    overflow: visible !important;
+  }
+
+  .mp-room-page h1 {
+    padding: 0 16px;
+  }
+
+  .mp-room-layout {
+    flex-wrap: nowrap !important;
+  }
+
+  .mp-room-board {
+    align-self: center;
+    max-width: 100%;
+  }
+
+  .mp-room-board > div:first-child {
+    padding: 0 2px;
+  }
+
+  .mp-room-opponent-board {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 8px;
+  }
+
+  .mp-room-sidebar {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .mp-room-sidebar > div:nth-child(4) {
+    display: none !important;
+  }
+
+  .mp-room-sidebar > button {
+    display: inline-flex !important;
+  }
+
+  .mp-room-progress-stack {
+    grid-column: 1 / -1;
+    min-width: 0;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .mp-room-waiting-card {
+    width: 100%;
+    min-width: 0 !important;
+    margin-top: 0 !important;
+    padding: 24px !important;
+    box-sizing: border-box;
   }
 
   .mp-toast {
