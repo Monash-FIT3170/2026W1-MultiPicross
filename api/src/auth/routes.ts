@@ -3,7 +3,7 @@ import { describeRoute } from "hono-openapi";
 import { sValidator } from "@hono/standard-validator";
 import { getCookie } from "hono/cookie";
 import { requireAuth } from "./middleware.js";
-import { and, eq, desc, gte, lt, count } from "drizzle-orm";
+import { and, eq, gte, lt, count } from "drizzle-orm";
 import * as v from "valibot";
 import { toJsonSchema } from "@valibot/to-json-schema";
 import type { OpenAPIV3 } from "openapi-types";
@@ -21,7 +21,6 @@ import {
   identities,
   loginAttempts,
   refreshTokens,
-  playerEloHistory,
 } from "../db/schema.js";
 import { isUniqueViolation } from "../db/errors.js";
 import { env } from "../env.js";
