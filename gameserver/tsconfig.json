@@ -4,9 +4,10 @@
     "target": "ESNext",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
+    // strict already implies strictNullChecks; it was explicitly disabled here,
+    // which silently removed null safety from the whole service.
     "strict": true,
     "allowJs": true,
-    "strictNullChecks": false,
     "esModuleInterop": true,
     "experimentalDecorators": true,
     "skipLibCheck": true,

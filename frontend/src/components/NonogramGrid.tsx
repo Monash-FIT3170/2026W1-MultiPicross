@@ -10,6 +10,12 @@ interface NonogramGridProps {
   width: number;
   height: number;
   interactive?: boolean;
+  // Drops every cell border. For the blurred opponent board: a blur leaves
+  // gridlines crisp enough to count cells against.
+  hideGridlines?: boolean;
+  // Blanks the clue numbers but keeps the gutters, so the board keeps its size.
+  // Struck-through clues would leak solved lines straight through the blur.
+  hideClues?: boolean;
   cellSize?: number;
   colors?: string[];
   completed?: boolean;
@@ -37,6 +43,19 @@ export function autoCellSize(w: number, h: number): number {
   return 24;
 }
 
+// Turns the three per-cell boolean arrays a board is stored as into the
+// CellValue[] the grid renders. Precedence is load-bearing: a confirmed fill
+// beats a server-revealed empty, which beats a player's own cross.
+export function cellsToGrid(
+  confirmedFilled: boolean[],
+  crosses: boolean[],
+  revealedEmpty: boolean[],
+): CellValue[] {
+  return confirmedFilled.map((filled, i) =>
+    filled ? 1 : revealedEmpty[i] ? 3 : crosses[i] ? 2 : 0,
+  );
+}
+
 function fmtSeconds(s: number): string {
   const m = Math.floor(s / 60);
   const sec = s % 60;
@@ -52,6 +71,8 @@ export default function NonogramGrid({
   width,
   height,
   interactive = true,
+  hideGridlines = false,
+  hideClues = false,
   cellSize,
   colors,
   completed = false,
@@ -305,8 +326,11 @@ export default function NonogramGrid({
     const isEveryFiveRight = (col + 1) % 5 === 0 && !isLastCol;
     const isEveryFiveBottom = (row + 1) % 5 === 0 && !isLastRow;
 
-    const innerBorder = "1px solid #d6d2c8";
-    const groupBorder = "2px solid var(--color-line-strong)";
+    // undefined leaves the `border: "none"` below in force.
+    const innerBorder = hideGridlines ? undefined : "1px solid #d6d2c8";
+    const groupBorder = hideGridlines
+      ? undefined
+      : "2px solid var(--color-line-strong)";
 
     const base: React.CSSProperties = {
       width: cs,
@@ -485,7 +509,7 @@ export default function NonogramGrid({
               opacity: cluesIntroPlaying ? 0 : undefined,
             }}
           >
-            {num ?? ""}
+            {hideClues ? "" : (num ?? "")}
           </div>,
         );
       } else if (isClueCol) {
@@ -509,7 +533,7 @@ export default function NonogramGrid({
               opacity: cluesIntroPlaying ? 0 : undefined,
             }}
           >
-            {num ?? ""}
+            {hideClues ? "" : (num ?? "")}
           </div>,
         );
       } else {

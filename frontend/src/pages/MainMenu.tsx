@@ -320,7 +320,6 @@ export default function MainMenu() {
               className="tile-enter mp-multiplayer-picker"
               onClick={(event) => event.stopPropagation()}
               style={{
-                position: "relative",
                 flex: 1,
               }}
             >

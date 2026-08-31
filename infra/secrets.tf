@@ -11,6 +11,9 @@ locals {
     "POSTGRES_DB",
     "JWT_ACCESS_SECRET",
     "JWT_REFRESH_SECRET",
+    # Signs/verifies room tokens. Held by both api and gameserver; kept
+    # separate from JWT_ACCESS_SECRET so the gameserver cannot mint API tokens.
+    "JWT_ROOM_SECRET",
     # htpasswd credential for the /gs/monitor basicauth middleware.
     # Generate with: htpasswd -nB admin
     "GS_MONITOR_HTPASSWD",

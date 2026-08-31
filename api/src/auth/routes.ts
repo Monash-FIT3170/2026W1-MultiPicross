@@ -29,6 +29,7 @@ import {
   verifyPassword,
   signAccessToken,
   signRefreshToken,
+  signRoomToken,
   verifyRefreshToken,
   hashToken,
   refreshExpiresAt,
@@ -598,6 +599,58 @@ auth.get(
       handle: account.handle,
       kind: account.kind,
     });
+  },
+);
+
+auth.post(
+  "/room-token",
+  requireAuth,
+  csrf,
+  describeRoute({
+    tags: ["Auth"],
+    summary: "Mint a short-lived token for joining a multiplayer room",
+    description:
+      "Proves the caller's identity to the gameserver without exposing the session cookie to it.",
+    responses: {
+      200: {
+        description: "Room token issued",
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: { token: { type: "string" } },
+            },
+          },
+        },
+      },
+      400: { description: "Account has no handle", content: errorContent },
+      401: { description: "Not authenticated", content: errorContent },
+      403: { description: "Invalid CSRF token", content: errorContent },
+      404: { description: "Account not found", content: errorContent },
+    },
+  }),
+  async (c) => {
+    const { sub: accountId } = c.get("jwtPayload") as { sub: string };
+
+    // The access token carries only `sub` (see signAccessToken), so the
+    // display name has to be loaded here. It lives in accounts.handle,
+    // which is nullable until the user picks one.
+    const account = await db.query.accounts.findFirst({
+      where: eq(accounts.id, accountId),
+      columns: { id: true, handle: true },
+    });
+    if (!account) return c.json({ error: "Account not found" }, 404);
+    if (!account.handle) {
+      return c.json({ error: "Set a handle before joining a room" }, 400);
+    }
+
+    // Claim name mapping: the token's `username` claim carries the account
+    // handle. The gameserver reads it as the player's display name.
+    const token = await signRoomToken({
+      sub: account.id,
+      username: account.handle,
+    });
+    return c.json({ token });
   },
 );
 

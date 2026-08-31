@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import MainMenu from "./pages/MainMenu";
 import { Singleplayer } from "./pages/Singleplayer";
 import { UnratedMultiplayer } from "./pages/UnratedMultiplayer";
+import { Room } from "./pages/Room";
 import { Statistics } from "./pages/Statistics";
 import { Tutorial } from "./pages/Tutorial";
 import { Settings } from "./pages/Settings";
@@ -41,7 +42,16 @@ export default function App() {
       <Route element={<PlayerNameRoute />}>
         <Route path="/multiplayer/unrated" element={<UnratedMultiplayer />} />
         <Route path="/multiplayer/ranked" element={<RankedMultiplayer />} />
+        {/* Guests arriving on an invite link are bounced to /nickname, which
+            navigates back here once a name is set. */}
+        <Route path="/room/:roomId" element={<Room />} />
       </Route>
+      {/* Bare /multiplayer has no page of its own; without this it would hit the
+          catch-all below and silently land on the main menu. */}
+      <Route
+        path="/multiplayer"
+        element={<Navigate to="/multiplayer/unrated" replace />}
+      />
       <Route path="/tutorial" element={<Tutorial />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="/welcome" element={<ChooseHandle />} />
