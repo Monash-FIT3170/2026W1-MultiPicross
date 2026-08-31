@@ -17,7 +17,7 @@ export type AuthenticatedPlayer = {
 const QUEUE_WAIT_TIME_MS = 30_000;
 
 /** Ranked games are always played on the standard board. */
-const RANKED_BOARD_SIZE = 10;
+const RANKED_BOARD_SIZE = 15;
 
 export class RatedMatchmakingRoom extends Room {
   maxClients = 1000;
