@@ -62,7 +62,7 @@ secret_id() { printf 'multipicross-%s' "$(printf '%s' "$1" | tr 'A-Z_' 'a-z-')";
 # compose interpolates $ inside .env, so a literal one has to be doubled
 write_secret() { printf '%s=%s\n' "$1" "${2//\$/\$\$}" >>.env.new; }
 
-for name in POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB JWT_ACCESS_SECRET JWT_REFRESH_SECRET GS_MONITOR_HTPASSWD OIDC_CLIENT_SECRET OIDC_STATE_SECRET; do
+for name in POSTGRES_USER POSTGRES_PASSWORD POSTGRES_DB JWT_ACCESS_SECRET JWT_REFRESH_SECRET JWT_ROOM_SECRET GS_MONITOR_HTPASSWD OIDC_CLIENT_SECRET OIDC_STATE_SECRET; do
   secret=$(secret_id "$name")
   if ! value=$(gcloud secrets versions access latest --secret="$secret" --project="$PROJECT_ID" 2>/dev/null); then
     echo "Secret $secret has no version yet." >&2

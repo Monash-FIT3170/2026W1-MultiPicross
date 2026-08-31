@@ -15,14 +15,18 @@ export function extractAnchor(claims: Record<string, unknown>): string {
 const RETURN_TO_PATHS = new Set([
   "/",
   "/singleplayer",
-  "/multiplayer/public",
-  "/multiplayer/private",
+  "/multiplayer/unrated",
   "/multiplayer/ranked",
   "/statistics",
   "/tutorial",
   "/settings",
   "/welcome",
 ]);
+
+// `/room/:roomId` is dynamic, so it cannot live in the Set above. Anchored
+// end to end, and the character class admits no `/`, `.` or `%`, so the
+// pathname is still matched exactly rather than parsed and reassembled.
+const ROOM_PATH = /^\/room\/[A-Za-z0-9_-]+$/;
 
 // Allowlisted rather than parsed: URL normalisation can leave a same-origin
 // pathname that a browser rereads as protocol-relative (`/..//evil.com`).
@@ -33,7 +37,11 @@ export function safeReturnTo(
   try {
     const target = new URL(raw ?? "/", appBaseUrl);
     if (target.origin !== new URL(appBaseUrl).origin) return "/";
-    if (!RETURN_TO_PATHS.has(target.pathname)) return "/";
+    if (
+      !RETURN_TO_PATHS.has(target.pathname) &&
+      !ROOM_PATH.test(target.pathname)
+    )
+      return "/";
     return `${target.pathname}${target.search}`;
   } catch {
     return "/";

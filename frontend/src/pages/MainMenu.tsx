@@ -316,7 +316,6 @@ export default function MainMenu() {
               onClick={(event) => event.stopPropagation()}
               className="tile-enter"
               style={{
-                position: "relative",
                 flex: 1,
               }}
             >

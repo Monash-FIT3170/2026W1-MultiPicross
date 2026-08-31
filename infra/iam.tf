@@ -47,6 +47,10 @@ resource "google_project_iam_custom_role" "vm_snapshot" {
     "compute.snapshots.get",
     "compute.snapshots.list",
     "compute.zones.get",
+    # gcloud polls the operation after createSnapshot/delete and exits non-zero
+    # without these, so every deploy logs a snapshot warning that is not true.
+    "compute.zoneOperations.get",
+    "compute.globalOperations.get",
   ]
 
   depends_on = [google_project_service.required]

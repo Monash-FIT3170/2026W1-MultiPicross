@@ -8,7 +8,8 @@
 #
 # Required in .env: DOMAIN, ACME_EMAIL, ACME_CASERVER, AR_HOST, PROJECT_ID,
 #                    IMAGE_TAG, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB,
-#                    JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, GS_MONITOR_HTPASSWD,
+#                    JWT_ACCESS_SECRET, JWT_REFRESH_SECRET, JWT_ROOM_SECRET,
+#                    GS_MONITOR_HTPASSWD,
 #                    OIDC_ISSUER, OIDC_PROVIDER_ID, OIDC_CLIENT_ID,
 #                    OIDC_CLIENT_SECRET, OIDC_SCOPES, OIDC_CLIENT_AUTH,
 #                    OIDC_ANCHOR_CLAIM, OIDC_STATE_SECRET
@@ -81,6 +82,7 @@ services:
       DB_NAME: ${POSTGRES_DB}
       JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      JWT_ROOM_SECRET: ${JWT_ROOM_SECRET}
       APP_BASE_URL: https://${DOMAIN}
       OIDC_ISSUER: ${OIDC_ISSUER}
       OIDC_PROVIDER_ID: ${OIDC_PROVIDER_ID}
@@ -120,12 +122,14 @@ services:
       DB_USER: ${POSTGRES_USER}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
       DB_NAME: ${POSTGRES_DB}
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      # Not JWT_ACCESS_SECRET: this service is the more exposed one,
+      # and that key would let it mint API tokens for any account.
+      JWT_ROOM_SECRET: ${JWT_ROOM_SECRET}
     depends_on:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:2567/hi"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:2567/health"]
       interval: 10s
       timeout: 5s
       retries: 6
@@ -139,6 +143,27 @@ services:
       - "traefik.http.routers.gameserver.middlewares=gameserver-strip"
       - "traefik.http.middlewares.gameserver-strip.stripprefix.prefixes=/gs"
       - "traefik.http.services.gameserver.loadbalancer.server.port=2567"
+      # Per-IP limit on the two room endpoints that cost something.
+      # /gs/public-rooms is excluded: the lobby polls it every 5s per
+      # client, so any useful limit would break normal play.
+      - "traefik.http.routers.gs-room-by-code.rule=Host(`${DOMAIN}`) && PathPrefix(`/gs/room-by-code/`)"
+      - "traefik.http.routers.gs-room-by-code.priority=200"
+      - "traefik.http.routers.gs-room-by-code.service=gameserver"
+      - "traefik.http.routers.gs-room-by-code.entrypoints=websecure"
+      - "traefik.http.routers.gs-room-by-code.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.gs-room-by-code.middlewares=gs-room-ratelimit,gameserver-strip"
+      - "traefik.http.routers.gs-create-room.rule=Host(`${DOMAIN}`) && Path(`/gs/create-room`)"
+      - "traefik.http.routers.gs-create-room.priority=200"
+      - "traefik.http.routers.gs-create-room.service=gameserver"
+      - "traefik.http.routers.gs-create-room.entrypoints=websecure"
+      - "traefik.http.routers.gs-create-room.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.gs-create-room.middlewares=gs-room-ratelimit,gameserver-strip"
+      - "traefik.http.middlewares.gs-room-ratelimit.ratelimit.average=30"
+      - "traefik.http.middlewares.gs-room-ratelimit.ratelimit.period=1m"
+      - "traefik.http.middlewares.gs-room-ratelimit.ratelimit.burst=60"
+      # depth=0: no trustworthy X-Forwarded-For, so a forwarded header
+      # must not be what the limit keys off.
+      - "traefik.http.middlewares.gs-room-ratelimit.ratelimit.sourcecriterion.ipstrategy.depth=0"
       - "traefik.http.services.gameserver.loadbalancer.sticky.cookie=true"
       - "traefik.http.services.gameserver.loadbalancer.sticky.cookie.name=gs_backend"
       - "traefik.http.services.gameserver.loadbalancer.sticky.cookie.secure=true"

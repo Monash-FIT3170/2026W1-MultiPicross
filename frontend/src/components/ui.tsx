@@ -660,3 +660,184 @@ export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
     </div>
   );
 }
+
+// ──── ConfirmDialog ───────────────────────────────────────────────────────────
+
+interface ConfirmDialogProps {
+  /** Id for the heading, so each instance labels itself distinctly. */
+  titleId: string;
+  title: string;
+  body: ReactNode;
+  confirmLabel: string;
+  cancelLabel?: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+// Tab-cycle order inside the dialog.
+const FOCUSABLE_SELECTOR = [
+  "a[href]",
+  "button:not([disabled])",
+  "input:not([disabled])",
+  "select:not([disabled])",
+  "textarea:not([disabled])",
+  '[tabindex]:not([tabindex="-1"])',
+].join(",");
+
+// Modal confirmation with a destructive right-hand action.
+//
+// Mount it only while it should be open — unmounting is what hands focus
+// back. aria-modal claims the rest of the page is inert, so this makes that
+// true for the keyboard too: focus opens on the safe action, Tab cycles
+// within the dialog, and Escape or a backdrop click cancels.
+export function ConfirmDialog({
+  titleId,
+  title,
+  body,
+  confirmLabel,
+  cancelLabel = "Keep playing",
+  onConfirm,
+  onCancel,
+}: ConfirmDialogProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Kept in a ref so the key handler stays mount-scoped: callers pass inline
+  // arrows, and re-running the effect would steal focus mid-interaction.
+  const cancelRef = useRef(onCancel);
+  useEffect(() => {
+    cancelRef.current = onCancel;
+  });
+
+  useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const root = dialogRef.current;
+
+    function focusable(): HTMLElement[] {
+      return [
+        ...(root?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? []),
+      ];
+    }
+
+    // "Keep playing" is first in the markup, so this lands on the safe action.
+    (focusable()[0] ?? root)?.focus();
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        cancelRef.current();
+        return;
+      }
+      if (e.key !== "Tab" || !root) return;
+
+      const items = focusable();
+      if (items.length === 0) {
+        e.preventDefault();
+        return;
+      }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement;
+      const outside = !active || !root.contains(active);
+
+      // Wrap at both ends, and pull focus back in if it got out anyway.
+      if (e.shiftKey && (outside || active === first)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (outside || active === last)) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      // May be gone from the DOM by now (a confirm that navigates away); the
+      // browser just ignores focusing a detached node.
+      previouslyFocused?.focus();
+    };
+  }, []);
+
+  return (
+    <div
+      onClick={onCancel}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.4)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 300,
+        padding: 24,
+      }}
+    >
+      <div
+        ref={dialogRef}
+        className="mp-surface"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          maxWidth: 380,
+          width: "100%",
+          padding: 28,
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 14,
+            background: "var(--color-coral-50)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 16px",
+          }}
+        >
+          <Icon name="info" size={22} color="var(--color-coral-500)" />
+        </div>
+        <h2
+          id={titleId}
+          style={{
+            margin: "0 0 6px",
+            fontSize: 18,
+            fontWeight: 700,
+            color: "var(--color-ink)",
+          }}
+        >
+          {title}
+        </h2>
+        <p
+          style={{
+            margin: "0 0 22px",
+            fontSize: 13,
+            color: "var(--color-ink-muted)",
+          }}
+        >
+          {body}
+        </p>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Button
+            variant="ghost"
+            size="md"
+            onClick={onCancel}
+            style={{ flex: 1 }}
+          >
+            {cancelLabel}
+          </Button>
+          <Button
+            variant="danger-soft"
+            size="md"
+            onClick={onConfirm}
+            style={{ flex: 1 }}
+          >
+            {confirmLabel}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
