@@ -78,6 +78,7 @@ interface PlayerData {
   confirmedFilled: boolean[];
   crosses: boolean[];
   revealedEmpty: boolean[];
+  mistakeCross: boolean[];
   livesLeft: number;
   done: boolean;
   won: boolean;
@@ -150,7 +151,7 @@ export class PicrossRoom extends Room {
     this.onMessage<{ row: number; col: number; markCross: boolean }>(
       "cross",
       (client, msg) => {
-        this.handleCross(client.sessionId, msg.row, msg.col, msg.markCross);
+        this.handleCross(client, msg.row, msg.col, msg.markCross);
       },
     );
   }
@@ -213,6 +214,7 @@ export class PicrossRoom extends Room {
       confirmedFilled: Array(cellCount).fill(false),
       crosses: Array(cellCount).fill(false),
       revealedEmpty: Array(cellCount).fill(false),
+      mistakeCross: Array(cellCount).fill(false),
       livesLeft: 3,
       done: false,
       won: false,
@@ -335,12 +337,13 @@ export class PicrossRoom extends Room {
   }
 
   private handleCross(
-    sessionId: string,
+    client: Client,
     row: number,
     col: number,
     markCross: boolean,
   ) {
     if (this.state.phase !== "playing") return;
+    const sessionId = client.sessionId;
     const player = this.players.get(sessionId);
     if (!player || player.done) return;
     if (row < 0 || row >= this.height || col < 0 || col >= this.width) return;
@@ -352,6 +355,7 @@ export class PicrossRoom extends Room {
       // Mistaken cross on a filled cell — reveal it and lose a life
       player.confirmedFilled[idx] = true;
       player.crosses[idx] = false;
+      player.mistakeCross[idx] = true;
       player.livesLeft = Math.max(0, player.livesLeft - 1);
       player.crosses = applyAutoComplete(
         player.confirmedFilled,
@@ -375,6 +379,10 @@ export class PicrossRoom extends Room {
         const allDone = [...this.players.values()].every((p) => p.done);
         if (allDone) this.setPhase("finished");
       }
+
+      // Must precede the broadcast: the client needs the index before the grid
+      // changes, or the board plays the success pop instead of the shake.
+      client.send("mistake", { idx });
     } else {
       player.crosses[idx] = markCross;
     }
@@ -390,6 +398,7 @@ export class PicrossRoom extends Room {
         confirmedFilled: boolean[];
         crosses: boolean[];
         revealedEmpty: boolean[];
+        mistakeCross: boolean[];
         livesLeft: number;
         done: boolean;
         won: boolean;
@@ -403,6 +412,7 @@ export class PicrossRoom extends Room {
         confirmedFilled: [...p.confirmedFilled],
         crosses: [...p.crosses],
         revealedEmpty: [...p.revealedEmpty],
+        mistakeCross: [...p.mistakeCross],
         livesLeft: p.livesLeft,
         done: p.done,
         won: p.won,
