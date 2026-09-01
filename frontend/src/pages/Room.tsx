@@ -81,6 +81,8 @@ export function Room() {
   const playingStartRef = useRef<number | null>(null);
   const [confirmingAbandon, setConfirmingAbandon] = useState(false);
   const intentionalLeaveRef = useRef(false);
+  const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
+  const mistakeCrossTimerRef = useRef<number | undefined>(undefined);
 
   // ── Auth, captured once ────────────────────────────────────────────────────
 
@@ -140,6 +142,16 @@ export function Room() {
           setSnapshot(msg);
         });
 
+        // Sent only to the player who made the mistake.
+        room.onMessage<{ idx: number }>("mistake", (msg) => {
+          if (cancelled) return;
+          setMistakeCrossIdx(msg.idx);
+          window.clearTimeout(mistakeCrossTimerRef.current);
+          mistakeCrossTimerRef.current = window.setTimeout(() => {
+            setMistakeCrossIdx(null);
+          }, 450);
+        });
+
         // A drop is not a leave: the SDK re-establishes the session while the server
         // holds the seat, so show it as transient.
         room.onDrop(() => {
@@ -177,6 +189,9 @@ export function Room() {
       cancelled = true;
       leaveQuietly(roomRef.current);
       roomRef.current = null;
+      // A pending index would shake a cell on whatever board renders next.
+      window.clearTimeout(mistakeCrossTimerRef.current);
+      setMistakeCrossIdx(null);
     };
   }, [roomId, authReady, retryNonce]);
 
@@ -213,6 +228,7 @@ export function Room() {
     setError(null);
     setReconnecting(false);
     setSnapshot(null);
+    setMistakeCrossIdx(null);
     setRetryNonce((n) => n + 1);
   }
 
@@ -620,6 +636,7 @@ export function Room() {
             interactive={!isFinished && !me.done && !reconnecting}
             colors={isFinished ? colors : undefined}
             completed={me.won}
+            mistakeCrossIdx={mistakeCrossIdx}
             mistakeCrossIndices={myMistakeCrossIndices}
             onFill={handleFill}
             onCross={handleCross}
