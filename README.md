@@ -264,7 +264,7 @@ The API validates its OIDC configuration during startup and terminates if any re
 | `OIDC_SCOPES`         | Space-separated scopes. Defaults to `openid`.                                                                            |
 | `OIDC_CLIENT_AUTH`    | Token endpoint authentication method. Accepts `client_secret_basic` or `client_secret_post`.                             |
 | `OIDC_ANCHOR_CLAIM`   | The claim used as the permanent account anchor. The claim must be immutable and should not be an email address.          |
-| `OIDC_PROVIDER_ID`    | Namespaces stored identities by environment. Modifying this value destroys existing accounts, as described in Section 7. |
+| `OIDC_PROVIDER_ID`    | Namespaces stored identities by environment. Modifying this value destroys existing accounts. |
 | `OIDC_STATE_SECRET`   | Signs the short-lived login transaction. Generate with `openssl rand -hex 32`.                                           |
 | `OIDC_ALLOW_INSECURE` | Permits a plain HTTP issuer. Restricted to development. The API will exit if this value is set in production.            |
 
