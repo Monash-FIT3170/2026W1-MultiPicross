@@ -1,5 +1,5 @@
 # Enabling an API is itself a Service Usage call, so serviceusage and
-# cloudresourcemanager have to be on before this file can run. See handover-deploy.md.
+# cloudresourcemanager have to be on before this file can run. See README.md.
 resource "google_project_service" "required" {
   for_each = toset([
     "artifactregistry.googleapis.com",

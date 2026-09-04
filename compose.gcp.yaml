@@ -1,6 +1,5 @@
 # Production stack for the GCP Compute Engine host. Self-contained, does not
-# extend compose.yaml (which hardcodes multipicross.localhost, publishes
-# Postgres on 5432, and enables the insecure Traefik dashboard).
+# extend compose.yaml 
 #
 # Deployed by infra/files/deploy.sh, which writes this file and a sibling
 # .env to /opt/multipicross, then runs:
