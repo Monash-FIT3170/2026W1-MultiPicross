@@ -155,6 +155,7 @@ export function Singleplayer() {
   const [displaySeconds, setDisplaySeconds] = useState(0);
   const [mistakeFlash, setMistakeFlash] = useState(false);
   const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
+  const [confirmingAbandon, setConfirmingAbandon] = useState(false);
 
   // Stable key for PlayingScreen, increments each time a fresh game starts
   const gameKeyRef = useRef(0);
@@ -628,9 +629,19 @@ export function Singleplayer() {
           interactive={phase.outcome === null}
           onFill={handleFill}
           onCross={handleCross}
-          onAbandon={() => void handleAbandon()}
+          onAbandon={() => setConfirmingAbandon(true)}
           onPlayAgain={handlePlayAgain}
           onMainMenu={() => navigate("/")}
+        />
+      )}
+
+      {confirmingAbandon && (
+        <AbandonConfirmModal
+          onCancel={() => setConfirmingAbandon(false)}
+          onConfirm={() => {
+            setConfirmingAbandon(false);
+            void handleAbandon();
+          }}
         />
       )}
     </div>
@@ -653,6 +664,84 @@ function CenteredSpinner() {
     >
       <Icon name="refresh" size={18} color="var(--color-ink-faint)" />
       <span style={{ fontSize: 14 }}>Loading…</span>
+    </div>
+  );
+}
+
+function AbandonConfirmModal({
+  onCancel,
+  onConfirm,
+}: {
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onCancel();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onCancel]);
+
+  return (
+    <div
+      onClick={onCancel}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(28,28,30,0.35)",
+        backdropFilter: "blur(4px)",
+        WebkitBackdropFilter: "blur(4px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 300,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="mp-surface"
+        style={{
+          padding: 32,
+          maxWidth: 380,
+          width: "calc(100% - 32px)",
+          textAlign: "center",
+        }}
+      >
+        <Icon
+          name="info"
+          size={32}
+          color="var(--color-coral-400)"
+          style={{ margin: "0 auto 16px" }}
+        />
+        <h2
+          style={{
+            margin: "0 0 8px",
+            fontSize: 20,
+            fontWeight: 700,
+            color: "var(--color-ink)",
+          }}
+        >
+          Abandon game?
+        </h2>
+        <p
+          style={{
+            margin: "0 0 24px",
+            color: "var(--color-ink-muted)",
+            fontSize: 14,
+          }}
+        >
+          You'll lose your progress on this puzzle. This can't be undone.
+        </p>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+          <Button variant="ghost" size="sm" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button variant="danger-soft" size="sm" onClick={onConfirm}>
+            Abandon
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
