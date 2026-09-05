@@ -1,35 +1,109 @@
 import { useNavigate } from "react-router-dom";
 import { BackButton, Button, Logo, Icon } from "../components/ui";
-import { useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { Room } from "@colyseus/sdk";
+import { gameserverClient } from "../colyseus";
+import { apiFetch } from "../api/client";
+import { useElo } from "../api/elo";
 import statsIcon from "../assets/stats.svg";
 import trohpyIcon from "../assets/trophy.svg";
 import shieldIcon from "../assets/shield.svg";
-//import { start } from "repl";
 
 export function RankedMultiplayer() {
   const navigate = useNavigate();
   const [searching, setSearching] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
-  const timeoutRef = useRef<number | null>(null);
+  const queueRoomRef = useRef<Room | null>(null);
+  const { playerElo } = useElo(true);
 
-  {
-    /* Finding a match */
-  }
-  const startSearching = () => {
+  const leaveQueueRoom = useCallback(() => {
+    const room = queueRoomRef.current;
+    if (!room) return;
+
+    queueRoomRef.current = null;
+    room.send("leaveQueue");
+    void room.leave();
+  }, []);
+
+  useEffect(() => leaveQueueRoom, [leaveQueueRoom]);
+
+  const startSearching = async () => {
+    // Already queued, so the timers and handlers below are already running.
+    if (queueRoomRef.current) return;
+
     setSearching(true);
     setTimedOut(false);
 
-    timeoutRef.current = window.setTimeout(() => {
+    try {
+      const res = await apiFetch("/auth/room-token", { method: "POST" });
+      if (!res.ok) {
+        throw new Error(`room token request failed with ${res.status}`);
+      }
+      const { token } = (await res.json()) as { token: string };
+
+      const room = await gameserverClient.joinOrCreate("rated_matchmaking", {
+        token,
+      });
+      queueRoomRef.current = room;
+
+      room.onMessage("queueStatus", (message: { status?: string }) => {
+        if (message.status === "queued") {
+          setSearching(true);
+          setTimedOut(false);
+        }
+        if (message.status === "left") {
+          setSearching(false);
+          setTimedOut(false);
+        }
+      });
+
+      room.onMessage("matched", ({ roomId }: { roomId: string }) => {
+        // Cleared first so unmounting does not send leaveQueue for a player
+        // who has already been matched out of the waiting list.
+        queueRoomRef.current = null;
+        setSearching(false);
+        setTimedOut(false);
+        void room.leave();
+        navigate(`/room/${roomId}`);
+      });
+
+      // The server keeps us queued past the timeout, so this asks whether to
+      // keep waiting rather than reporting that the search has stopped.
+      room.onMessage("queueTimeoutEmpty", () => {
+        setSearching(false);
+        setTimedOut(true);
+      });
+
+      room.onLeave(() => {
+        if (queueRoomRef.current === room) queueRoomRef.current = null;
+      });
+
+      room.send("joinQueue");
+    } catch (error) {
+      console.error("Failed to join ranked matchmaking:", error);
+      queueRoomRef.current = null;
       setSearching(false);
       setTimedOut(true);
-    }, 5000);
+    }
+  };
+
+  const keepSearching = () => {
+    const room = queueRoomRef.current;
+
+    // Still connected and still queued, so ask for another wait rather than
+    // tearing the room down and rejoining.
+    if (!room) {
+      void startSearching();
+      return;
+    }
+
+    setSearching(true);
+    setTimedOut(false);
+    room.send("stayInQueue");
   };
 
   const cancelSearching = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
+    leaveQueueRoom();
     setSearching(false);
     setTimedOut(false);
   };
@@ -156,7 +230,7 @@ export function RankedMultiplayer() {
                     fontWeight: 700,
                   }}
                 >
-                  1200
+                  {playerElo ?? 100}
                 </p>
               </div>
             </div>
@@ -477,7 +551,7 @@ export function RankedMultiplayer() {
               >
                 <Button
                   variant="ghost"
-                  onClick={startSearching}
+                  onClick={keepSearching}
                   style={{
                     fontSize: 16,
                     fontWeight: 620,

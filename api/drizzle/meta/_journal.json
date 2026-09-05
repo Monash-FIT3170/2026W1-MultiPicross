@@ -15,6 +15,20 @@
       "when": 1786366828784,
       "tag": "0001_bored_chimera",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787628009687,
+      "tag": "0002_smooth_mordo",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788138909030,
+      "tag": "0003_noisy_zarda",
+      "breakpoints": true
     }
   ]
 }

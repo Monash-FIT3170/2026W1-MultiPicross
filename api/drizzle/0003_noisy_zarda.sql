@@ -1,0 +1,2 @@
+CREATE INDEX "player_elo_history_account_recorded_idx" ON "player_elo_history" USING btree ("account_id","recorded_at" DESC NULLS LAST);--> statement-breakpoint
+ALTER TABLE "rated_waiting_list" ADD CONSTRAINT "rated_waiting_list_account_id_unique" UNIQUE("account_id");

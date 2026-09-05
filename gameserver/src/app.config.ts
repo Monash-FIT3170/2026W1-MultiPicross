@@ -8,6 +8,7 @@ import {
 } from "colyseus";
 
 import { MyRoom } from "./rooms/MyRoom.js";
+import { RatedMatchmakingRoom } from "./rooms/RatedMatchmakingRoom.js";
 import {
   PicrossRoom,
   INVITE_CODE_ALPHABET,
@@ -46,6 +47,7 @@ const server = defineServer({
   rooms: {
     my_room: defineRoom(MyRoom),
     picross_room: defineRoom(PicrossRoom),
+    rated_matchmaking: defineRoom(RatedMatchmakingRoom),
   },
 
   express: (app) => {
