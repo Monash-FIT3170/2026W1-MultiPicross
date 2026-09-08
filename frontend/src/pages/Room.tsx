@@ -26,6 +26,7 @@ interface PlayerSnapshot {
   confirmedFilled: boolean[];
   crosses: boolean[];
   revealedEmpty: boolean[];
+  mistakeCross: boolean[];
   livesLeft: number;
   done: boolean;
   won: boolean;
@@ -50,10 +51,6 @@ interface RoomSnapshot {
 
 function buildGrid(p: PlayerSnapshot): CellValue[] {
   return cellsToGrid(p.confirmedFilled, p.crosses, p.revealedEmpty);
-}
-
-function countFilledCells(cells: boolean[]): number {
-  return cells.reduce((total, filled) => total + (filled ? 1 : 0), 0);
 }
 
 // leave() throws while a socket is mid-handshake — an SDK reconnect in
@@ -84,6 +81,8 @@ export function Room() {
   const playingStartRef = useRef<number | null>(null);
   const [confirmingAbandon, setConfirmingAbandon] = useState(false);
   const intentionalLeaveRef = useRef(false);
+  const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
+  const mistakeCrossTimerRef = useRef<number | undefined>(undefined);
 
   // ── Auth, captured once ────────────────────────────────────────────────────
 
@@ -143,6 +142,16 @@ export function Room() {
           setSnapshot(msg);
         });
 
+        // Sent only to the player who made the mistake.
+        room.onMessage<{ idx: number }>("mistake", (msg) => {
+          if (cancelled) return;
+          setMistakeCrossIdx(msg.idx);
+          window.clearTimeout(mistakeCrossTimerRef.current);
+          mistakeCrossTimerRef.current = window.setTimeout(() => {
+            setMistakeCrossIdx(null);
+          }, 450);
+        });
+
         // A drop is not a leave: the SDK re-establishes the session while the server
         // holds the seat, so show it as transient.
         room.onDrop(() => {
@@ -180,6 +189,9 @@ export function Room() {
       cancelled = true;
       leaveQuietly(roomRef.current);
       roomRef.current = null;
+      // A pending index would shake a cell on whatever board renders next.
+      window.clearTimeout(mistakeCrossTimerRef.current);
+      setMistakeCrossIdx(null);
     };
   }, [roomId, authReady, retryNonce]);
 
@@ -216,6 +228,7 @@ export function Room() {
     setError(null);
     setReconnecting(false);
     setSnapshot(null);
+    setMistakeCrossIdx(null);
     setRetryNonce((n) => n + 1);
   }
 
@@ -320,7 +333,6 @@ export function Room() {
     const playerList = Object.values(players);
     return (
       <div
-        className="mp-page mp-room-waiting-page"
         style={{
           minHeight: "100vh",
           background: "var(--color-paper)",
@@ -328,7 +340,6 @@ export function Room() {
         }}
       >
         <div
-          className="mp-topbar"
           style={{
             display: "flex",
             justifyContent: "space-between",
@@ -507,10 +518,19 @@ export function Room() {
 
   const myGrid = buildGrid(me);
   const opponentGrid = opponent ? buildGrid(opponent) : null;
-  const targetFilledCells = rowClues.reduce(
-    (total, clue) => total + clue.reduce((sum, n) => sum + n, 0),
-    0,
+  const myMistakeCrossIndices = (me.mistakeCross ?? []).reduce<number[]>(
+    (acc, v, i) => {
+      if (v) acc.push(i);
+      return acc;
+    },
+    [],
   );
+  const opponentMistakeCrossIndices = opponent
+    ? (opponent.mistakeCross ?? []).reduce<number[]>((acc, v, i) => {
+        if (v) acc.push(i);
+        return acc;
+      }, [])
+    : [];
 
   // onLeave only crowns a survivor who is not already eliminated, so against
   // an opponent who is out of lives the match ends with no winner at all.
@@ -530,7 +550,6 @@ export function Room() {
 
   return (
     <div
-      className="mp-page mp-playing-screen mp-room-page"
       style={{
         minHeight: "100vh",
         background: "var(--color-paper)",
@@ -540,14 +559,11 @@ export function Room() {
     >
       {/* Top bar */}
       <div
-        className="mp-topbar mp-game-topbar"
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
           marginBottom: 24,
-          position: "relative",
-          zIndex: 200,
         }}
       >
         <button
@@ -583,7 +599,6 @@ export function Room() {
         Multiplayer
       </h1>
       <p
-        className="mp-game-hint"
         style={{
           textAlign: "center",
           margin: "0 0 28px",
@@ -595,7 +610,6 @@ export function Room() {
       </p>
 
       <div
-        className="mp-game-layout mp-room-layout"
         style={{
           display: "flex",
           gap: 40,
@@ -605,7 +619,7 @@ export function Room() {
         }}
       >
         {/* My board */}
-        <div className="mp-room-board">
+        <div>
           <PlayerLabel
             name={`${me.username} (you)`}
             livesLeft={me.livesLeft}
@@ -622,6 +636,8 @@ export function Room() {
             interactive={!isFinished && !me.done && !reconnecting}
             colors={isFinished ? colors : undefined}
             completed={me.won}
+            mistakeCrossIdx={mistakeCrossIdx}
+            mistakeCrossIndices={myMistakeCrossIndices}
             onFill={handleFill}
             onCross={handleCross}
           />
@@ -629,7 +645,6 @@ export function Room() {
 
         {/* Sidebar with stats */}
         <div
-          className="mp-game-sidebar-wrap"
           style={{
             paddingTop: clueOffset,
             display: "flex",
@@ -637,7 +652,7 @@ export function Room() {
           }}
         >
           <div
-            className="mp-surface mp-game-sidebar mp-room-sidebar"
+            className="mp-surface"
             style={{
               padding: "20px 24px",
               display: "flex",
@@ -659,22 +674,6 @@ export function Room() {
             <StatTile icon="grid" label="Size">
               {width} × {height}
             </StatTile>
-            <div className="mp-room-progress-stack">
-              <PlayerProgress
-                label="You"
-                filled={countFilledCells(me.confirmedFilled)}
-                total={targetFilledCells}
-                tone="blue"
-              />
-              {opponent && (
-                <PlayerProgress
-                  label={opponent.username}
-                  filled={countFilledCells(opponent.confirmedFilled)}
-                  total={targetFilledCells}
-                  tone="sage"
-                />
-              )}
-            </div>
             {phase === "playing" && (
               <>
                 <div style={{ height: 1, background: "var(--color-line)" }} />
@@ -688,7 +687,7 @@ export function Room() {
 
         {/* Opponent board */}
         {opponent && opponentGrid ? (
-          <div className="mp-room-board mp-room-opponent-board">
+          <div>
             <PlayerLabel
               name={opponent.username}
               livesLeft={opponent.livesLeft}
@@ -719,13 +718,14 @@ export function Room() {
                 hideClues={!isFinished}
                 colors={isFinished ? colors : undefined}
                 completed={opponent.won}
+                mistakeCrossIndices={opponentMistakeCrossIndices}
                 cellSize={Math.max(12, cs - 8)}
               />
             </div>
           </div>
         ) : (
           <div
-            className="mp-surface mp-room-waiting-card"
+            className="mp-surface"
             style={{
               padding: 40,
               textAlign: "center",
@@ -935,84 +935,6 @@ function PlayerLabel({
       )}
       <div style={{ marginLeft: "auto" }}>
         <LivesPips lives={livesLeft} />
-      </div>
-    </div>
-  );
-}
-
-function PlayerProgress({
-  label,
-  filled,
-  total,
-  tone,
-}: {
-  label: string;
-  filled: number;
-  total: number;
-  tone: "blue" | "sage";
-}) {
-  const safeTotal = Math.max(1, total);
-  const percent = Math.min(100, Math.round((filled / safeTotal) * 100));
-  const fillColor =
-    tone === "sage" ? "var(--color-sage-400)" : "var(--color-blue-500)";
-
-  return (
-    <div className="mp-room-progress">
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 10,
-          alignItems: "baseline",
-        }}
-      >
-        <span
-          style={{
-            minWidth: 0,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-            fontSize: 12,
-            fontWeight: 700,
-            color: "var(--color-ink)",
-          }}
-        >
-          {label}
-        </span>
-        <span
-          style={{
-            fontSize: 12,
-            fontWeight: 700,
-            color: "var(--color-ink-muted)",
-            fontVariantNumeric: "tabular-nums",
-          }}
-        >
-          {percent}%
-        </span>
-      </div>
-      <div
-        role="progressbar"
-        aria-label={`${label} progress`}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={percent}
-        style={{
-          height: 8,
-          overflow: "hidden",
-          borderRadius: 999,
-          background: "var(--color-surface-sunk)",
-          border: "1px solid var(--color-line)",
-        }}
-      >
-        <div
-          style={{
-            width: `${percent}%`,
-            height: "100%",
-            background: fillColor,
-            borderRadius: 999,
-            transition: "width 220ms ease",
-          }}
-        />
       </div>
     </div>
   );

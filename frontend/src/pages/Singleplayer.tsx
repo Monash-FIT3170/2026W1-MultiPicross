@@ -548,16 +548,12 @@ export function Singleplayer() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div
-      className="mp-page mp-singleplayer"
-      style={{ minHeight: "100vh", background: "var(--color-paper)" }}
-    >
+    <div style={{ minHeight: "100vh", background: "var(--color-paper)" }}>
       {phase.kind === "loading" && <CenteredSpinner />}
       {phase.kind === "loading-puzzle" && <CenteredSpinner />}
 
       {phase.kind === "error" && (
         <div
-          className="mp-active-resume"
           style={{
             minHeight: "100vh",
             display: "flex",
@@ -646,7 +642,6 @@ export function Singleplayer() {
 function CenteredSpinner() {
   return (
     <div
-      className="mp-page mp-size-select"
       style={{
         minHeight: "100vh",
         display: "flex",
@@ -712,7 +707,6 @@ function SizeSelectScreen({
 
       {hasActiveGame && (
         <div
-          className="mp-outcome-banner"
           style={{
             display: "flex",
             justifyContent: "center",
@@ -740,7 +734,6 @@ function SizeSelectScreen({
       )}
 
       <div
-        className="mp-size-grid"
         style={{
           display: "flex",
           flexWrap: "wrap",
@@ -751,7 +744,7 @@ function SizeSelectScreen({
         {sizes.map((s) => (
           <button
             key={`${s.width}x${s.height}`}
-            className="tile mp-size-tile"
+            className="tile"
             onClick={() => onSelectSize(s.width, s.height)}
             style={{ width: 160, height: 120 }}
           >
@@ -788,7 +781,6 @@ function ActiveChoiceScreen({
 }) {
   return (
     <div
-      className="mp-page mp-active-choice"
       style={{
         minHeight: "100vh",
         background: "var(--color-paper)",
@@ -809,7 +801,7 @@ function ActiveChoiceScreen({
         }}
       >
         <div
-          className="mp-surface mp-dialog-card"
+          className="mp-surface"
           style={{
             padding: 32,
             maxWidth: 420,
@@ -883,29 +875,26 @@ function PlayingScreen({
   onPlayAgain: () => void;
   onMainMenu: () => void;
 }) {
-  const [actionMode, setActionMode] = useState<"fill" | "cross">("fill");
-  // Pre-compute clue area dimensions so the sidebar can center on the game cells
   const cs = autoCellSize(game.width, game.height);
-  const maxColClueLen = Math.max(1, ...game.colClues.map((c) => c.length));
-  const gridTotalHeight = (maxColClueLen + game.height) * cs;
-  const clueTopOffset = maxColClueLen * cs;
+  const maxRowClueLen = Math.max(1, ...game.rowClues.map((r) => r.length));
+  const rowClueWidth = maxRowClueLen * cs;
+  const sidebarWidth = 256;
+  const sidebarGap = 32;
+  const groupOffset = (sidebarWidth + sidebarGap - rowClueWidth) / 2;
 
   // Abandoning discards the in-progress puzzle, so make the player confirm first.
   const [confirmingAbandon, setConfirmingAbandon] = useState(false);
 
   return (
     <div
-      className="mp-page mp-playing-screen"
       style={{
         minHeight: "100vh",
         background: "var(--color-paper)",
         padding: "24px 24px 80px",
-        overflow: "hidden",
       }}
     >
       {/* Top bar */}
       <div
-        className="mp-topbar mp-game-topbar"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -948,7 +937,6 @@ function PlayingScreen({
         Singleplayer
       </h1>
       <p
-        className="mp-game-hint"
         style={{
           textAlign: "center",
           margin: "0 0 28px",
@@ -956,68 +944,43 @@ function PlayingScreen({
           fontSize: 13,
         }}
       >
-        Tap to fill. Switch to cross mode to mark empty cells.
+        Left-click to fill · Right-click to mark empty
       </p>
 
       <div
-        className="mp-game-layout"
         style={{
           display: "flex",
-          gap: 40,
           justifyContent: "center",
-          alignItems: "flex-start",
-          overflow: "hidden",
+          alignItems: "center",
         }}
       >
-        {/* Grid */}
-        <NonogramGrid
-          rowClues={game.rowClues}
-          colClues={game.colClues}
-          grid={game.grid}
-          width={game.width}
-          height={game.height}
-          interactive={interactive}
-          colors={game.colors}
-          completed={outcome === "won"}
-          mistakeCrossIdx={mistakeCrossIdx}
-          mistakeCrossIndices={game.mistakeCrossIndices ?? []}
-          actionMode={actionMode}
-          onFill={onFill}
-          onCross={onCross}
-        />
-
-        <div className="mp-mobile-controls" aria-label="Cell action mode">
-          <button
-            type="button"
-            className={actionMode === "fill" ? "is-active" : ""}
-            onClick={() => setActionMode("fill")}
-          >
-            Fill
-          </button>
-          <button
-            type="button"
-            className={actionMode === "cross" ? "is-active" : ""}
-            onClick={() => setActionMode("cross")}
-          >
-            Cross
-          </button>
-        </div>
-
-        {/* Wrapper that spans the full grid height but pads the top by the clue area height,
-            so the sidebar card is flex-centered within just the game cells portion */}
         <div
-          className="mp-game-sidebar-wrap"
           style={{
-            height: gridTotalHeight,
-            paddingTop: clueTopOffset,
-            boxSizing: "border-box",
             display: "flex",
             alignItems: "center",
-            flexShrink: 0,
+            gap: sidebarGap,
+            transform: `translateX(${groupOffset}px)`,
           }}
         >
+          {/* Grid */}
+          <NonogramGrid
+            rowClues={game.rowClues}
+            colClues={game.colClues}
+            grid={game.grid}
+            width={game.width}
+            height={game.height}
+            interactive={interactive}
+            colors={game.colors}
+            completed={outcome === "won"}
+            mistakeCrossIdx={mistakeCrossIdx}
+            mistakeCrossIndices={game.mistakeCrossIndices ?? []}
+            onFill={onFill}
+            onCross={onCross}
+          />
+
+          {/* Sidebar */}
           <div
-            className="mp-surface mp-game-sidebar"
+            className="mp-surface"
             style={{
               padding: "24px 28px",
               display: "flex",
@@ -1029,6 +992,7 @@ function PlayingScreen({
             <StatTile icon="grid" label="Size">
               {game.width} × {game.height}
             </StatTile>
+
             <StatTile icon="clock" label="Time">
               <span
                 style={{
@@ -1039,6 +1003,7 @@ function PlayingScreen({
                 {fmtSeconds(displaySeconds)}
               </span>
             </StatTile>
+
             <div
               style={{
                 display: "flex",
@@ -1047,21 +1012,39 @@ function PlayingScreen({
                 gap: 8,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
                 <Icon name="heart" size={13} color="var(--color-ink-faint)" />
                 <span className="mp-eyebrow">Lives</span>
               </div>
+
               <LivesPips lives={game.livesLeft} />
             </div>
-            <div style={{ height: 1, background: "var(--color-line)" }} />
+
+            <div
+              style={{
+                height: 1,
+                background: "var(--color-line)",
+              }}
+            />
+
             {game.isGuest && (
               <Chip
                 tone="neutral"
-                style={{ justifyContent: "center", fontSize: 11 }}
+                style={{
+                  justifyContent: "center",
+                  fontSize: 11,
+                }}
               >
                 Guest mode
               </Chip>
             )}
+
             <Button
               variant="danger-soft"
               size="sm"
