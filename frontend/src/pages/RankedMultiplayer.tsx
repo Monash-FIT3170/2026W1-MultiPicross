@@ -13,6 +13,10 @@ export function RankedMultiplayer() {
   const navigate = useNavigate();
   const [searching, setSearching] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
+  const [requiresLogin, setRequiresLogin] = useState(false);
+  const [queueMessage, setQueueMessage] = useState(
+    "We've been unable to find an opponent.",
+  );
   const queueRoomRef = useRef<Room | null>(null);
   const { playerElo } = useElo(true);
 
@@ -33,6 +37,8 @@ export function RankedMultiplayer() {
 
     setSearching(true);
     setTimedOut(false);
+    setRequiresLogin(false);
+    setQueueMessage("We've been unable to find an opponent.");
 
     try {
       const res = await apiFetch("/auth/room-token", { method: "POST" });
@@ -71,6 +77,8 @@ export function RankedMultiplayer() {
       // keep waiting rather than reporting that the search has stopped.
       room.onMessage("queueTimeoutEmpty", () => {
         setSearching(false);
+        setRequiresLogin(false);
+        setQueueMessage("We've been unable to find an opponent.");
         setTimedOut(true);
       });
 
@@ -83,6 +91,16 @@ export function RankedMultiplayer() {
       console.error("Failed to join ranked matchmaking:", error);
       queueRoomRef.current = null;
       setSearching(false);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isUnauthorized =
+        errorMessage.includes("401") ||
+        errorMessage.toLowerCase().includes("unauthorized");
+      setRequiresLogin(isUnauthorized);
+      setQueueMessage(
+        isUnauthorized
+          ? "Please login to play Ranked"
+          : "We've been unable to find an opponent.",
+      );
       setTimedOut(true);
     }
   };
@@ -99,6 +117,8 @@ export function RankedMultiplayer() {
 
     setSearching(true);
     setTimedOut(false);
+    setRequiresLogin(false);
+    setQueueMessage("We've been unable to find an opponent.");
     room.send("stayInQueue");
   };
 
@@ -538,7 +558,7 @@ export function RankedMultiplayer() {
                   color: "var(--color-ink-muted)",
                 }}
               >
-                We've been unable to find an opponent.
+                {queueMessage}
               </p>
 
               <div
@@ -551,13 +571,15 @@ export function RankedMultiplayer() {
               >
                 <Button
                   variant="ghost"
-                  onClick={keepSearching}
+                  onClick={
+                    requiresLogin ? () => navigate("/login") : keepSearching
+                  }
                   style={{
                     fontSize: 16,
                     fontWeight: 620,
                   }}
                 >
-                  Keep Searching
+                  {requiresLogin ? "Login/Sign Up" : "Keep Searching"}
                 </Button>
 
                 {/*    <Button onClick={simulateMatchFound}>
