@@ -70,7 +70,7 @@ export function RankedMultiplayer() {
         setSearching(false);
         setTimedOut(false);
         void room.leave();
-        navigate(`/room/${roomId}`);
+        navigate(`/room/${roomId}?mode=ranked`);
       });
 
       // The server keeps us queued past the timeout, so this asks whether to

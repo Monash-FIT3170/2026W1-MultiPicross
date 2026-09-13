@@ -201,6 +201,7 @@ export class RatedMatchmakingRoom extends Room {
       gameRoom = await matchMaker.createRoom("picross_room", {
         width: RANKED_BOARD_SIZE,
         height: RANKED_BOARD_SIZE,
+        isRanked: true,
         isPublic: false,
       });
     } catch (err) {
