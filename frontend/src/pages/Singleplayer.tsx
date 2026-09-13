@@ -875,11 +875,12 @@ function PlayingScreen({
   onPlayAgain: () => void;
   onMainMenu: () => void;
 }) {
-  // Pre-compute clue area dimensions so the sidebar can center on the game cells
   const cs = autoCellSize(game.width, game.height);
-  const maxColClueLen = Math.max(1, ...game.colClues.map((c) => c.length));
-  const gridTotalHeight = (maxColClueLen + game.height) * cs;
-  const clueTopOffset = maxColClueLen * cs;
+  const maxRowClueLen = Math.max(1, ...game.rowClues.map((r) => r.length));
+  const rowClueWidth = maxRowClueLen * cs;
+  const sidebarWidth = 256;
+  const sidebarGap = 32;
+  const groupOffset = (sidebarWidth + sidebarGap - rowClueWidth) / 2;
 
   // Abandoning discards the in-progress puzzle, so make the player confirm first.
   const [confirmingAbandon, setConfirmingAbandon] = useState(false);
@@ -890,7 +891,6 @@ function PlayingScreen({
         minHeight: "100vh",
         background: "var(--color-paper)",
         padding: "24px 24px 80px",
-        overflow: "hidden",
       }}
     >
       {/* Top bar */}
@@ -950,40 +950,35 @@ function PlayingScreen({
       <div
         style={{
           display: "flex",
-          gap: 40,
           justifyContent: "center",
-          alignItems: "flex-start",
-          overflow: "hidden",
+          alignItems: "center",
         }}
       >
-        {/* Grid */}
-        <NonogramGrid
-          rowClues={game.rowClues}
-          colClues={game.colClues}
-          grid={game.grid}
-          width={game.width}
-          height={game.height}
-          interactive={interactive}
-          colors={game.colors}
-          completed={outcome === "won"}
-          mistakeCrossIdx={mistakeCrossIdx}
-          mistakeCrossIndices={game.mistakeCrossIndices ?? []}
-          onFill={onFill}
-          onCross={onCross}
-        />
-
-        {/* Wrapper that spans the full grid height but pads the top by the clue area height,
-            so the sidebar card is flex-centered within just the game cells portion */}
         <div
           style={{
-            height: gridTotalHeight,
-            paddingTop: clueTopOffset,
-            boxSizing: "border-box",
             display: "flex",
             alignItems: "center",
-            flexShrink: 0,
+            gap: sidebarGap,
+            transform: `translateX(${groupOffset}px)`,
           }}
         >
+          {/* Grid */}
+          <NonogramGrid
+            rowClues={game.rowClues}
+            colClues={game.colClues}
+            grid={game.grid}
+            width={game.width}
+            height={game.height}
+            interactive={interactive}
+            colors={game.colors}
+            completed={outcome === "won"}
+            mistakeCrossIdx={mistakeCrossIdx}
+            mistakeCrossIndices={game.mistakeCrossIndices ?? []}
+            onFill={onFill}
+            onCross={onCross}
+          />
+
+          {/* Sidebar */}
           <div
             className="mp-surface"
             style={{
@@ -997,6 +992,7 @@ function PlayingScreen({
             <StatTile icon="grid" label="Size">
               {game.width} × {game.height}
             </StatTile>
+
             <StatTile icon="clock" label="Time">
               <span
                 style={{
@@ -1007,6 +1003,7 @@ function PlayingScreen({
                 {fmtSeconds(displaySeconds)}
               </span>
             </StatTile>
+
             <div
               style={{
                 display: "flex",
@@ -1015,21 +1012,39 @@ function PlayingScreen({
                 gap: 8,
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
                 <Icon name="heart" size={13} color="var(--color-ink-faint)" />
                 <span className="mp-eyebrow">Lives</span>
               </div>
+
               <LivesPips lives={game.livesLeft} />
             </div>
-            <div style={{ height: 1, background: "var(--color-line)" }} />
+
+            <div
+              style={{
+                height: 1,
+                background: "var(--color-line)",
+              }}
+            />
+
             {game.isGuest && (
               <Chip
                 tone="neutral"
-                style={{ justifyContent: "center", fontSize: 11 }}
+                style={{
+                  justifyContent: "center",
+                  fontSize: 11,
+                }}
               >
                 Guest mode
               </Chip>
             )}
+
             <Button
               variant="danger-soft"
               size="sm"

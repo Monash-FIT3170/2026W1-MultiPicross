@@ -1,34 +1,61 @@
-# 2026W1-MultiPicross
+# MultiPicross
 
-Amelia (yurimaxxer) - ameliaswainston@gmail.com
+MultiPicross is a real-time multiplayer Picross (nonogram) puzzle game developed
+for FIT3170 at Monash University.
 
-Sasith (kubisch) - cosmos@outlook.com.au
+This document records the information required to assume development and operation of the project.
 
-Oskar (Oskskskar) - oskarc3n@gmail.com
+## Contents
 
-Carissa (ckhong04) - carissa.a.khong@gmail.com
+1. [Architecture](#1-architecture)
+2. [Requirements](#2-requirements)
+3. [Development environment](#3-development-environment)
+4. [Authentication](#4-authentication)
+5. [Provisioning the production environment](#5-provisioning-the-production-environment)
+6. [Deployment and operation](#6-deployment-and-operation)
+7. [Team](#7-team)
 
-Tom (TomLovesAi) - thomas.dumoff@gmail.com
+## 1. Architecture
 
-Ethan (ethantse26) - ethan.tse26@gmail.com
+All services are located on a single origin. In development this origin is `multipicross.localhost` (you may need to add this to your `/etc/hosts` file to access it), and in production it is `multipicross.com`.
+Traefik performs routing by path prefix.
 
-Azzam (azzammun) - azzammuntaqo2007@gmail.com
+Because the frontend and the backend services share an origin, the frontend requests are relative (e.g., `/api/...`), so no CORS configuration is required.
 
-Parth (parth762) - pbhatnagar746@gmail.com
+| Service                       | Path                | Internal port |
+| ----------------------------- | ------------------- | ------------- |
+| Frontend (React, Vite, Nginx) | `/` (SPA catch-all) | 80            |
+| API (Hono)                    | `/api`              | 3000          |
+| Game server (Colyseus)        | `/gs` (stripped)    | 2567          |
 
-Christian (chriscross664) - christian.vourgoutzis@hotmail.com
+PostgreSQL is shared between the API and the game server.
+Dex operates in the development environment only, where it substitutes for the production identity provider.
 
-Nam (TheGoldfish11) - namqtran11@gmail.com
+The system is deployed as a single Docker Compose stack. Production deployment occurs to a single GCP Compute Engine instance.
 
-Anita (applecee) - acha0216@student.monash.edu
+### 1.1 Repository structure
 
-De-arne (dbaker1206) - dbak0009@student.monash.edu
+The repository holds three service directories, alongside the configuration
+required to run and deploy them. Each service is containerised with Docker.
 
-Dakshina (dakshina5206) - dakshina.alahakoon@gmail.com
+| Directory     | Contents                                                                                                                                                                                                                          |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `api/`        | The Hono API service. `src/auth` implements the OIDC flow and session handling, `src/db` holds the Drizzle schema and client, `drizzle/` holds the generated migrations, and `imgs/` supplies the puzzle bank imported at startup |
+| `gameserver/` | The Colyseus game server, which handles real-time room state                                                                                                                                                                      |
+| `frontend/`   | The React/Vite client, served by Nginx in production                                                                                                                                                                              |
+| `dev/`        | Configuration for services that exist only in development. At present this is the Dex identity provider at `dev/dex/config.yaml`                                                                                                  |
+| `infra/`      | The OpenTofu configuration for the production environment and related resources.                                                                                                                                                  |
+| `tools/`      | Operational tooling. `mpx.py` is described in Section 6.2                                                                                                                                                                         |
+| `.github/`    | The continuous integration and deployment workflows                                                                                                                                                                               |
 
-Rohan (reeohan) - rsur0015@student.monash.edu
-
-Michael (m_dig_63965) - mdig0003@student.monash.edu
+| File                    | Purpose                                                                                                                             |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `compose.yaml`          | The base stack definition, shared by every local configuration                                                                      |
+| `compose.override.yaml` | Development overrides, applied automatically by `docker compose up`. Supplies the development build targets and the published ports |
+| `compose.prod.yaml`     | Selects the production build targets, for a production build performed locally                                                      |
+| `compose.gcp.yaml`      | The production stack for GCP deployment to a Compute Engine instance. Defined independently of `compose.yaml`                       |
+| `.env.example`          | The template for `.env`, which is excluded from source control                                                                      |
+| `justfile`              | Task runner recipes, described in Section 3.3                                                                                       |
 
 ## 2. Requirements
 
