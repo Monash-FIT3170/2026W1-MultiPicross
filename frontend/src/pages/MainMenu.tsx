@@ -340,9 +340,7 @@ export default function MainMenu() {
                     label="Ranked"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
-                      navigate(isAuth
-                        ? "/multiplayer/ranked"
-                        : "/login");
+                      navigate(isAuth ? "/multiplayer/ranked" : "/login");
                     }}
                   />
                 </div>

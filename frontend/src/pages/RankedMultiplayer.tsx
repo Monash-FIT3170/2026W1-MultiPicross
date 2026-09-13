@@ -91,7 +91,8 @@ export function RankedMultiplayer() {
       console.error("Failed to join ranked matchmaking:", error);
       queueRoomRef.current = null;
       setSearching(false);
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       const isUnauthorized =
         errorMessage.includes("401") ||
         errorMessage.toLowerCase().includes("unauthorized");

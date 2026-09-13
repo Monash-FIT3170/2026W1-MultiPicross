@@ -794,7 +794,9 @@ export function Room() {
               variant="ghost"
               size="sm"
               onClick={() =>
-                navigate(isRanked ? "/multiplayer/ranked" : "/multiplayer/unrated")
+                navigate(
+                  isRanked ? "/multiplayer/ranked" : "/multiplayer/unrated",
+                )
               }
             >
               Play again
