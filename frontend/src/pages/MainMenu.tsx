@@ -72,6 +72,7 @@ export default function MainMenu() {
 
   return (
     <div
+      className="mp-page mp-main-menu"
       style={{
         minHeight: "100vh",
         display: "flex",
@@ -83,6 +84,7 @@ export default function MainMenu() {
     >
       {/* Top bar */}
       <div
+        className="mp-topbar mp-main-topbar"
         style={{
           position: "absolute",
           top: 20,
@@ -117,6 +119,7 @@ export default function MainMenu() {
 
       {/* Main content */}
       <div
+        className="mp-main-content"
         style={{
           flex: 1,
           display: "flex",
@@ -128,6 +131,7 @@ export default function MainMenu() {
       >
         {/* Wordmark */}
         <div
+          className="mp-wordmark"
           ref={wordmarkRef}
           style={{
             fontFamily: "Cairo, sans-serif",
@@ -154,7 +158,7 @@ export default function MainMenu() {
 
         {/* ELO ranking banner */}
         <div
-          className="elo-banner"
+          className="elo-banner mp-ranked-banner"
           style={{
             padding: 28,
             display: "flex",
@@ -169,6 +173,7 @@ export default function MainMenu() {
         >
           {/* Left Side */}
           <div
+            className="mp-ranked-copy"
             style={{
               display: "flex",
               flexDirection: "column",
@@ -179,6 +184,7 @@ export default function MainMenu() {
             }}
           >
             <div
+              className="mp-ranked-title"
               style={{
                 fontSize: 36,
                 fontWeight: 700,
@@ -189,6 +195,7 @@ export default function MainMenu() {
             </div>
 
             <p
+              className="mp-ranked-subtitle"
               style={{
                 margin: 0,
                 fontSize: 20,
@@ -199,6 +206,7 @@ export default function MainMenu() {
             </p>
 
             <div
+              className="mp-ranked-rating"
               style={{
                 marginTop: 20,
                 color: "var(--color-ink-muted)",
@@ -233,6 +241,7 @@ export default function MainMenu() {
 
           {/* Right Side */}
           <div
+            className="mp-ranked-art"
             style={{
               width: 180,
               display: "flex",
@@ -268,6 +277,7 @@ export default function MainMenu() {
 
         {/* Main content */}
         <div
+          className="mp-menu-grid"
           ref={gridRef}
           style={{
             width: 640,
@@ -279,6 +289,7 @@ export default function MainMenu() {
         >
           {/* Player options */}
           <div
+            className="mp-primary-actions"
             style={{
               display: "flex",
               gap: 20,
@@ -313,8 +324,8 @@ export default function MainMenu() {
 
             {/* Multiplayer */}
             <div
+              className="tile-enter mp-multiplayer-picker"
               onClick={(event) => event.stopPropagation()}
-              className="tile-enter"
               style={{
                 flex: 1,
               }}
@@ -374,6 +385,7 @@ export default function MainMenu() {
 
           {/* Other features */}
           <div
+            className="mp-secondary-actions"
             style={{
               display: "flex",
               flexDirection: "column",
@@ -486,11 +498,12 @@ function SecondaryTile({
   return (
     <div className="tile-enter">
       <button
-        className="tile"
+        className="tile mp-secondary-tile"
         disabled={disabled}
         onClick={onClick}
         style={{
-          width: 640,
+          width: "100%",
+          maxWidth: 640,
           height: 56,
           flexDirection: "row",
           gap: 24,

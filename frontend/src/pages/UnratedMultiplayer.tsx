@@ -130,6 +130,7 @@ export function UnratedMultiplayer() {
 
   return (
     <div
+      className="mp-page mp-multiplayer-page"
       style={{
         minHeight: "100vh",
         background: "var(--color-paper)",
@@ -138,6 +139,7 @@ export function UnratedMultiplayer() {
     >
       {/* Top bar */}
       <div
+        className="mp-topbar"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -174,6 +176,7 @@ export function UnratedMultiplayer() {
         </p>
 
         <div
+          className="mp-multiplayer-options"
           style={{
             display: "flex",
             alignItems: "center",
@@ -201,7 +204,7 @@ export function UnratedMultiplayer() {
         >
           {/* Create lobby */}
           <div
-            className="mp-surface"
+            className="mp-surface mp-option-card"
             style={{
               padding: 20,
               display: "flex",
@@ -303,7 +306,7 @@ export function UnratedMultiplayer() {
 
           {/* Join with code */}
           <div
-            className="mp-surface"
+            className="mp-surface mp-option-card"
             style={{
               padding: 20,
               display: "flex",

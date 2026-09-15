@@ -884,9 +884,11 @@ function PlayingScreen({
 
   // Abandoning discards the in-progress puzzle, so make the player confirm first.
   const [confirmingAbandon, setConfirmingAbandon] = useState(false);
+  const [actionMode, setActionMode] = useState<"fill" | "cross">("fill");
 
   return (
     <div
+      className="mp-playing-screen"
       style={{
         minHeight: "100vh",
         background: "var(--color-paper)",
@@ -895,6 +897,7 @@ function PlayingScreen({
     >
       {/* Top bar */}
       <div
+        className="mp-game-topbar"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -937,6 +940,7 @@ function PlayingScreen({
         Singleplayer
       </h1>
       <p
+        className="mp-game-hint"
         style={{
           textAlign: "center",
           margin: "0 0 28px",
@@ -955,6 +959,7 @@ function PlayingScreen({
         }}
       >
         <div
+          className="mp-game-layout"
           style={{
             display: "flex",
             alignItems: "center",
@@ -974,85 +979,115 @@ function PlayingScreen({
             completed={outcome === "won"}
             mistakeCrossIdx={mistakeCrossIdx}
             mistakeCrossIndices={game.mistakeCrossIndices ?? []}
+            actionMode={actionMode}
             onFill={onFill}
             onCross={onCross}
           />
 
           {/* Sidebar */}
-          <div
-            className="mp-surface"
-            style={{
-              padding: "24px 28px",
-              display: "flex",
-              flexDirection: "column",
-              gap: 24,
-              minWidth: 200,
-            }}
-          >
-            <StatTile icon="grid" label="Size">
-              {game.width} × {game.height}
-            </StatTile>
-
-            <StatTile icon="clock" label="Time">
-              <span
-                style={{
-                  fontFamily: "Cairo, sans-serif",
-                  fontVariantNumeric: "tabular-nums",
-                }}
-              >
-                {fmtSeconds(displaySeconds)}
-              </span>
-            </StatTile>
-
+          <div className="mp-game-sidebar-wrap" style={{ paddingTop: 0 }}>
             <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 8,
-              }}
+              className="mp-mobile-action-mode"
+              role="group"
+              aria-label="Cell action"
             >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 6,
-                }}
+              <button
+                type="button"
+                className={actionMode === "fill" ? "is-active" : undefined}
+                onClick={() => setActionMode("fill")}
+                aria-pressed={actionMode === "fill"}
+                aria-label="Fill cells"
+                title="Fill cells"
               >
-                <Icon name="heart" size={13} color="var(--color-ink-faint)" />
-                <span className="mp-eyebrow">Lives</span>
-              </div>
-
-              <LivesPips lives={game.livesLeft} />
+                <Icon name="check" size={22} />
+              </button>
+              <button
+                type="button"
+                className={actionMode === "cross" ? "is-active" : undefined}
+                onClick={() => setActionMode("cross")}
+                aria-pressed={actionMode === "cross"}
+                aria-label="Cross cells"
+                title="Cross cells"
+              >
+                <Icon name="x" size={22} />
+              </button>
             </div>
 
             <div
+              className="mp-surface mp-game-sidebar"
               style={{
-                height: 1,
-                background: "var(--color-line)",
+                padding: "24px 28px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 24,
+                minWidth: 200,
               }}
-            />
+            >
+              <StatTile icon="grid" label="Size">
+                {game.width} × {game.height}
+              </StatTile>
 
-            {game.isGuest && (
-              <Chip
-                tone="neutral"
+              <StatTile icon="clock" label="Time">
+                <span
+                  style={{
+                    fontFamily: "Cairo, sans-serif",
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {fmtSeconds(displaySeconds)}
+                </span>
+              </StatTile>
+
+              <div
                 style={{
-                  justifyContent: "center",
-                  fontSize: 11,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 8,
                 }}
               >
-                Guest mode
-              </Chip>
-            )}
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                  }}
+                >
+                  <Icon name="heart" size={13} color="var(--color-ink-faint)" />
+                  <span className="mp-eyebrow">Lives</span>
+                </div>
 
-            <Button
-              variant="danger-soft"
-              size="sm"
-              onClick={() => setConfirmingAbandon(true)}
-              disabled={outcome !== null}
-            >
-              Abandon
-            </Button>
+                <LivesPips lives={game.livesLeft} />
+              </div>
+
+              <div
+                style={{
+                  height: 1,
+                  background: "var(--color-line)",
+                }}
+              />
+
+              {game.isGuest && (
+                <Chip
+                  tone="neutral"
+                  style={{
+                    justifyContent: "center",
+                    fontSize: 11,
+                  }}
+                >
+                  Guest mode
+                </Chip>
+              )}
+
+              <Button
+                variant="danger-soft"
+                size="sm"
+                onClick={() => setConfirmingAbandon(true)}
+                disabled={outcome !== null}
+              >
+                Abandon
+              </Button>
+            </div>
           </div>
         </div>
       </div>

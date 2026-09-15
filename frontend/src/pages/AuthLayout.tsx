@@ -266,16 +266,16 @@ export function AuthLayout() {
   }, []);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)]">
+    <div className="mp-page mp-auth-page flex min-h-screen items-center justify-center bg-[var(--color-background)]">
       <div
         ref={cardRef}
-        className="w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-lg"
+        className="mp-auth-card w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-lg"
       >
         <form
           ref={wrapperRef}
           onSubmit={handleSubmit}
           noValidate
-          className="flex flex-col gap-4 px-8 py-10"
+          className="mp-auth-form flex flex-col gap-4 px-8 py-10"
         >
           <h2 className="text-center text-lg font-semibold text-gray-800">
             Sign in
