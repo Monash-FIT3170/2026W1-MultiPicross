@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import type { Room as ColyseusRoom } from "@colyseus/sdk";
 import { gameserverClient } from "../colyseus";
 import { apiFetch } from "../api/client";
@@ -68,7 +68,9 @@ function leaveQuietly(room: ColyseusRoom | null) {
 export function Room() {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { status, playerName } = useAuth();
+  const isRanked = searchParams.get("mode") === "ranked";
 
   const roomRef = useRef<ColyseusRoom | null>(null);
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
@@ -824,7 +826,11 @@ export function Room() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => navigate("/multiplayer/unrated")}
+              onClick={() =>
+                navigate(
+                  isRanked ? "/multiplayer/ranked" : "/multiplayer/unrated",
+                )
+              }
             >
               Play again
             </Button>

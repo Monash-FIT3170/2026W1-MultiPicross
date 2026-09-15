@@ -1,5 +1,5 @@
 # Production stack for the GCP Compute Engine host. Self-contained, does not
-# extend compose.yaml 
+# extend compose.yaml
 #
 # Deployed by infra/files/deploy.sh, which writes this file and a sibling
 # .env to /opt/multipicross, then runs:

@@ -3,9 +3,11 @@ import { PicrossRoomState } from "./schema/PicrossRoomState.js";
 import { sql } from "../db/client.js";
 import { verifyRoomToken } from "../auth/roomToken.js";
 import { requireEnv } from "../env.js";
+import { recordRankedResult } from "../elo/ratedResults.js";
 
 interface RoomAuth {
   username: string | null;
+  accountId: string | null;
 }
 
 // Invite-code alphabet: unambiguous characters only (no O/0, no I/1).
@@ -74,6 +76,7 @@ function applyAutoComplete(
 }
 
 interface PlayerData {
+  accountId: string | null;
   username: string;
   confirmedFilled: boolean[];
   crosses: boolean[];
@@ -99,12 +102,16 @@ export class PicrossRoom extends Room {
   private height = 0;
   private winnerId = "";
   private forfeit = false;
+  private isRanked = false;
+  private rankedResultRecorded = false;
 
   async onCreate(options: {
     width?: number;
     height?: number;
+    isRanked?: boolean;
     isPublic?: boolean;
   }) {
+    this.isRanked = options.isRanked === true;
     const width = options.width ?? 10;
     const height = options.height ?? 10;
 
@@ -178,7 +185,7 @@ export class PicrossRoom extends Room {
     _client: Client,
     options: { token?: string },
   ): Promise<RoomAuth> {
-    if (!options.token) return { username: null };
+    if (!options.token) return { username: null, accountId: null };
 
     const payload = verifyRoomToken(
       options.token,
@@ -187,7 +194,7 @@ export class PicrossRoom extends Room {
     if (!payload) {
       throw new ServerError(401, "Invalid or expired room token");
     }
-    return { username: payload.username };
+    return { username: payload.username, accountId: payload.sub };
   }
 
   // Trusted (server-verified) identity wins; free-text client input is only
@@ -210,6 +217,7 @@ export class PicrossRoom extends Room {
   onJoin(client: Client, options: { username?: string }) {
     const cellCount = this.width * this.height;
     const player: PlayerData = {
+      accountId: (client.auth as RoomAuth).accountId,
       username: this.resolveUsername(client, options.username),
       confirmedFilled: Array(cellCount).fill(false),
       crosses: Array(cellCount).fill(false),
@@ -290,7 +298,34 @@ export class PicrossRoom extends Room {
   // in one place instead of every phase-transition call site.
   private setPhase(phase: "waiting" | "playing" | "finished") {
     this.state.phase = phase;
-    if (phase === "finished") this.lock();
+    if (phase === "finished") {
+      this.lock();
+      void this.recordRankedResult();
+    }
+  }
+
+  private async recordRankedResult(): Promise<void> {
+    if (!this.isRanked || this.rankedResultRecorded || !this.winnerId) return;
+
+    const winner = this.players.get(this.winnerId);
+    const loser = [...this.players.entries()].find(
+      ([sessionId]) => sessionId !== this.winnerId,
+    )?.[1];
+
+    if (!winner?.accountId || !loser?.accountId) return;
+
+    this.rankedResultRecorded = true;
+    try {
+      await recordRankedResult({
+        winnerAccountId: winner.accountId,
+        loserAccountId: loser.accountId,
+        winnerMistakes: 3 - winner.livesLeft,
+        loserMistakes: 3 - loser.livesLeft,
+      });
+    } catch (error) {
+      this.rankedResultRecorded = false;
+      console.error("ranked result error", error);
+    }
   }
 
   private handleFill(sessionId: string, row: number, col: number) {

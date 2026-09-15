@@ -255,18 +255,18 @@ The API validates its OIDC configuration during startup and terminates if any re
 
 ### 4.1 Configuration
 
-| Variable              | Function                                                                                                                 |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `APP_BASE_URL`        | Public base URL of the application. The redirect URI is this value followed by `/api/auth/callback`.                     |
-| `OIDC_ISSUER`         | Issuer URL. Discovery is performed against this address.                                                                 |
-| `OIDC_CLIENT_ID`      | Client identifier registered with the provider.                                                                          |
-| `OIDC_CLIENT_SECRET`  | Client secret.                                                                                                           |
-| `OIDC_SCOPES`         | Space-separated scopes. Defaults to `openid`.                                                                            |
-| `OIDC_CLIENT_AUTH`    | Token endpoint authentication method. Accepts `client_secret_basic` or `client_secret_post`.                             |
-| `OIDC_ANCHOR_CLAIM`   | The claim used as the permanent account anchor. The claim must be immutable and should not be an email address.          |
-| `OIDC_PROVIDER_ID`    | Namespaces stored identities by environment. Modifying this value destroys existing accounts. |
-| `OIDC_STATE_SECRET`   | Signs the short-lived login transaction. Generate with `openssl rand -hex 32`.                                           |
-| `OIDC_ALLOW_INSECURE` | Permits a plain HTTP issuer. Restricted to development. The API will exit if this value is set in production.            |
+| Variable              | Function                                                                                                        |
+| --------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `APP_BASE_URL`        | Public base URL of the application. The redirect URI is this value followed by `/api/auth/callback`.            |
+| `OIDC_ISSUER`         | Issuer URL. Discovery is performed against this address.                                                        |
+| `OIDC_CLIENT_ID`      | Client identifier registered with the provider.                                                                 |
+| `OIDC_CLIENT_SECRET`  | Client secret.                                                                                                  |
+| `OIDC_SCOPES`         | Space-separated scopes. Defaults to `openid`.                                                                   |
+| `OIDC_CLIENT_AUTH`    | Token endpoint authentication method. Accepts `client_secret_basic` or `client_secret_post`.                    |
+| `OIDC_ANCHOR_CLAIM`   | The claim used as the permanent account anchor. The claim must be immutable and should not be an email address. |
+| `OIDC_PROVIDER_ID`    | Namespaces stored identities by environment. Modifying this value destroys existing accounts.                   |
+| `OIDC_STATE_SECRET`   | Signs the short-lived login transaction. Generate with `openssl rand -hex 32`.                                  |
+| `OIDC_ALLOW_INSECURE` | Permits a plain HTTP issuer. Restricted to development. The API will exit if this value is set in production.   |
 
 ### 4.2 Dex in development
 

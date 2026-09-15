@@ -3,7 +3,7 @@ import { describeRoute } from "hono-openapi";
 import { sValidator } from "@hono/standard-validator";
 import { getCookie } from "hono/cookie";
 import { requireAuth } from "./middleware.js";
-import { and, eq, gte, lt, count } from "drizzle-orm";
+import { and, desc, eq, gte, lt, count } from "drizzle-orm";
 import * as v from "valibot";
 import { toJsonSchema } from "@valibot/to-json-schema";
 import type { OpenAPIV3 } from "openapi-types";
@@ -20,6 +20,7 @@ import {
   accounts,
   identities,
   loginAttempts,
+  playerEloHistory,
   refreshTokens,
 } from "../db/schema.js";
 import { isUniqueViolation } from "../db/errors.js";
@@ -99,6 +100,14 @@ const meSchema: OpenAPIV3.SchemaObject = {
   },
 };
 const meContent = { "application/json": { schema: meSchema } };
+
+const eloSchema: OpenAPIV3.SchemaObject = {
+  type: "object",
+  properties: { elo: { type: "integer" } },
+  required: ["elo"],
+};
+const eloContent = { "application/json": { schema: eloSchema } };
+const DEFAULT_ELO = 100;
 
 async function issueSession(
   c: Parameters<typeof setAuthCookies>[0],
@@ -599,6 +608,37 @@ auth.get(
       handle: account.handle,
       kind: account.kind,
     });
+  },
+);
+
+auth.get(
+  "/elo",
+  requireAuth,
+  describeRoute({
+    tags: ["Auth"],
+    summary: "Get the current player's Elo rating",
+    responses: {
+      200: { description: "Current Elo rating", content: eloContent },
+      401: { description: "Not authenticated", content: errorContent },
+      404: { description: "Account not found", content: errorContent },
+    },
+  }),
+  async (c) => {
+    const { sub: accountId } = c.get("jwtPayload") as { sub: string };
+    const account = await db.query.accounts.findFirst({
+      where: eq(accounts.id, accountId),
+      columns: { id: true },
+    });
+    if (!account) return c.json({ error: "Account not found" }, 404);
+
+    const [latestRating] = await db
+      .select({ elo: playerEloHistory.elo })
+      .from(playerEloHistory)
+      .where(eq(playerEloHistory.accountId, accountId))
+      .orderBy(desc(playerEloHistory.recordedAt))
+      .limit(1);
+
+    return c.json({ elo: latestRating?.elo ?? DEFAULT_ELO });
   },
 );
 
