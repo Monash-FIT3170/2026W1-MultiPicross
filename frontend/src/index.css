@@ -266,6 +266,10 @@ body {
   gap: 6px;
 }
 
+.mp-mobile-action-mode {
+  display: none;
+}
+
 @media (max-width: 768px) {
   html,
   body,
@@ -539,6 +543,7 @@ body {
     align-items: stretch !important;
     justify-content: flex-start !important;
     gap: 12px !important;
+    transform: none !important;
     overflow-x: auto !important;
     overflow-y: visible !important;
     padding: 0 16px 12px !important;
@@ -547,6 +552,36 @@ body {
 
   .mp-nonogram-grid {
     align-self: center;
+  }
+
+  .mp-mobile-action-mode {
+    align-self: center;
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    margin: 0 auto 10px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    box-shadow: var(--shadow-xs);
+  }
+
+  .mp-mobile-action-mode button {
+    width: 46px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-ink-muted);
+    background: transparent;
+    border: 0;
+    border-radius: 9px;
+    cursor: pointer;
+  }
+
+  .mp-mobile-action-mode button.is-active {
+    color: #ffffff;
+    background: var(--color-blue-500);
   }
 
   .mp-game-sidebar-wrap {
