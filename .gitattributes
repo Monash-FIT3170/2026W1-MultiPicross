@@ -1,0 +1,15 @@
+# Normalize line endings to LF in the repo and on checkout, regardless of OS,
+# so formatting/lint checks behave the same locally and in CI.
+* text=auto eol=lf
+
+# Binary files must never be normalized.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
