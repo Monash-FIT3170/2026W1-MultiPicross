@@ -1,4 +1,9 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  type ReactNode,
+} from "react";
 
 type SettingsContextType = {
   isOpen: boolean;
@@ -28,7 +33,9 @@ export function useSettings() {
   const context = useContext(SettingsContext);
 
   if (!context) {
-    throw new Error("useSettings must be used inside SettingsProvider");
+    throw new Error(
+      "useSettings must be used inside SettingsProvider",
+    );
   }
 
   return context;
