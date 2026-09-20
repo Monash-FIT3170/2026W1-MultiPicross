@@ -22,26 +22,39 @@ const sections: { id: SettingsSection; label: string }[] = [
   { id: "account", label: "Account" },
 ];
 
+const getButtonClass = (isActive: boolean) =>
+  `rounded-lg border px-4 py-3 text-left text-sm font-ui transition ${
+    isActive
+      ? "border-[#B8D0EC] bg-[#EAF2FB] font-semibold"
+      : "border-transparent font-normal hover:border-[#B8D0EC] hover:bg-[#F0EEE9]"
+  }`;
+
 export function SettingsSidebar({
   activeSection,
   onSectionChange,
 }: SettingsSidebarProps) {
   return (
-    <nav className="flex w-48 flex-col gap-2">
-      {sections.map((section) => (
-        <button
-          key={section.id}
-          type="button"
-          onClick={() => onSectionChange(section.id)}
-          className={`rounded-lg px-4 py-3 text-left transition ${
-            activeSection === section.id
-              ? "bg-gray-200 font-semibold"
-              : "hover:bg-gray-100"
-          }`}
-        >
-          {section.label}
-        </button>
-      ))}
+    <nav className="flex h-full w-48 flex-col">
+      <div className="flex flex-col gap-1">
+        {sections.map((section) => (
+          <button
+            key={section.id}
+            type="button"
+            onClick={() => onSectionChange(section.id)}
+            className={getButtonClass(activeSection === section.id)}
+          >
+            {section.label}
+          </button>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => onSectionChange("account")}
+        className={`mt-auto ${getButtonClass(activeSection === "account")}`}
+      >
+        Account
+      </button>
     </nav>
   );
 }
