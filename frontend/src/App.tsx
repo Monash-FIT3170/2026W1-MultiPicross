@@ -17,6 +17,8 @@ import { PlayerNameRoute } from "./auth/PlayerNameRoute";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { useAuth } from "./auth/AuthContext";
 
+import { SettingsModal } from "./components/settings/SettingsModal";
+
 export default function App() {
   const { status, user } = useAuth();
   const location = useLocation();
@@ -34,37 +36,42 @@ export default function App() {
   }
 
   return (
-    // Adding a route here also needs RETURN_TO_PATHS in api/src/auth/claims.ts,
-    // or signing in from that page silently drops the user on the main menu.
-    <Routes>
-      <Route path="/" element={<MainMenu />} />
-      <Route path="/singleplayer" element={<Singleplayer />} />
-      <Route element={<PlayerNameRoute />}>
-        <Route path="/multiplayer/unrated" element={<UnratedMultiplayer />} />
-        <Route path="/multiplayer/ranked" element={<RankedMultiplayer />} />
-        {/* Guests arriving on an invite link are bounced to /nickname, which
-            navigates back here once a name is set. */}
-        <Route path="/room/:roomId" element={<Room />} />
-      </Route>
-      {/* Bare /multiplayer has no page of its own; without this it would hit the
-          catch-all below and silently land on the main menu. */}
-      <Route
-        path="/multiplayer"
-        element={<Navigate to="/multiplayer/unrated" replace />}
-      />
-      <Route path="/tutorial" element={<Tutorial />} />
-      <Route path="/settings" element={<Settings />} />
-      <Route path="/welcome" element={<ChooseHandle />} />
-      <Route path="/auth/error" element={<AuthError />} />
-      <Route element={<ProtectedRoute />}>
-        <Route path="/statistics" element={<Statistics />} />
-      </Route>
-      <Route element={<GuestOnly />}>
-        <Route path="/nickname" element={<GuestNickname />} />
-        <Route path="/login" element={<AuthLayout />} />
-      </Route>
-      {/* Without this an unmatched path renders an empty document, with no way back. */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      {/* // Adding a route here also needs RETURN_TO_PATHS in api/src/auth/claims.ts,
+      // or signing in from that page silently drops the user on the main menu. */}
+      <Routes>
+        <Route path="/" element={<MainMenu />} />
+        <Route path="/singleplayer" element={<Singleplayer />} />
+        <Route element={<PlayerNameRoute />}>
+          <Route path="/multiplayer/unrated" element={<UnratedMultiplayer />} />
+          <Route path="/multiplayer/ranked" element={<RankedMultiplayer />} />
+          {/* Guests arriving on an invite link are bounced to /nickname, which
+              navigates back here once a name is set. */}
+          <Route path="/room/:roomId" element={<Room />} />
+        </Route>
+        {/* Bare /multiplayer has no page of its own; without this it would hit the
+            catch-all below and silently land on the main menu. */}
+        <Route
+          path="/multiplayer"
+          element={<Navigate to="/multiplayer/unrated" replace />}
+        />
+        <Route path="/tutorial" element={<Tutorial />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/welcome" element={<ChooseHandle />} />
+        <Route path="/auth/error" element={<AuthError />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/statistics" element={<Statistics />} />
+        </Route>
+        <Route element={<GuestOnly />}>
+          <Route path="/nickname" element={<GuestNickname />} />
+          <Route path="/login" element={<AuthLayout />} />
+        </Route>
+        {/* Without this an unmatched path renders an empty document, with no way back. */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+
+      < SettingsModal/>
+    </>
+    
   );
 }
