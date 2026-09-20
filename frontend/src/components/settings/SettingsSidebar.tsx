@@ -23,10 +23,10 @@ const sections: { id: SettingsSection; label: string }[] = [
 ];
 
 const getButtonClass = (isActive: boolean) =>
-  `rounded-lg border px-4 py-3 text-left text-sm font-ui transition ${
+  `rounded-lg border px-3 py-3 text-left text-sm font-ui transition ${
     isActive
-      ? "border-[#B8D0EC] bg-[#EAF2FB] font-semibold"
-      : "border-transparent font-normal hover:border-[#B8D0EC] hover:bg-[#F0EEE9]"
+      ? "border-[#B8D0EC] bg-[#EAF2FB] text-[#3D5A80] font-bold hover:-translate-y-px"
+      : "border-transparent text-[#6B6B6B] font-semibold hover:-translate-y-px hover:border-[#B8D0EC] hover:bg-[#F0EEE9]"
   }`;
 
 export function SettingsSidebar({
@@ -43,7 +43,15 @@ export function SettingsSidebar({
             onClick={() => onSectionChange(section.id)}
             className={getButtonClass(activeSection === section.id)}
           >
-            {section.label}
+            <span className="flex items-center gap-3">
+              <img
+                src={section.icon}
+                alt=""
+                aria-hidden="true"
+                className="h-4 w-4 shrink-0 opacity-60"
+              />
+              <span>{section.label}</span>
+            </span>
           </button>
         ))}
       </div>
@@ -53,7 +61,15 @@ export function SettingsSidebar({
         onClick={() => onSectionChange("account")}
         className={`mt-auto ${getButtonClass(activeSection === "account")}`}
       >
-        Account
+        <span className="flex items-center gap-3">
+          <img
+            src={accountIcon}
+            alt=""
+            aria-hidden="true"
+            className="h-4 w-4 shrink-0 opacity-60"
+          />
+          <span>Account</span>
+        </span>
       </button>
     </nav>
   );
