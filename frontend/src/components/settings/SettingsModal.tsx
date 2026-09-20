@@ -11,6 +11,8 @@ import { GameplaySettings } from "./GameplaySettings";
 import { AudioSettings } from "./AudioSettings";
 import { AccessibilitySettings } from "./AccessibilitySettings";
 import { AccountSettings } from "./AccountSettings";
+import settingsIcon from "../../assets/settings.svg";
+import closeIcon from "../../assets/settings/close.svg";
 
 export function SettingsModal() {
   const { isOpen, closeSettings } = useSettings();
@@ -40,29 +42,47 @@ export function SettingsModal() {
           className="
             flex h-16 items-center justify-between
             border-b-2 border-[#E7E4DC]
-            px-8
+            pl-6 pr-4
           "
         >
-          <h1
-            id="settings-title"
-            className="text-xl font-bold tracking-[0.02em] font-ui"
-          >
-            Settings
-          </h1>
+          <div className="flex items-center gap-3">
+            <img
+              src={settingsIcon}
+              alt=""
+              aria-hidden="true"
+              className="h-6 w-6 opacity-90"
+            />
+
+            <h1
+              id="settings-title"
+              className="text-xl font-bold tracking-[0.02em] font-ui"
+            >
+              Settings
+            </h1>
+          </div>
 
           <button
             type="button"
             onClick={closeSettings}
             className="
-              flex h-8 w-8
+              flex h-10 w-10
               items-center justify-center
               rounded-lg
-              text-lg
+              border border-transparent
+              bg-transparent
+              transition
+              hover:-translate-y-px
+              hover:border-[#B8D0EC]
               hover:bg-[#F0EEE9]
             "
             aria-label="Close settings"
           >
-            ×
+            <img
+              src={closeIcon}
+              alt=""
+              aria-hidden="true"
+              className="h-4 w-4 opacity-60"
+            />
           </button>
         </header>
 
