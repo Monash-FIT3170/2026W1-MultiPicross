@@ -19,39 +19,36 @@ const sections: { id: SettingsSection; label: string }[] = [
   { id: "accessibility", label: "Accessibility" },
 ];
 
+const getButtonClass = (isActive: boolean) =>
+  `rounded-lg border px-4 py-3 text-left text-sm font-ui transition ${
+    isActive
+      ? "border-[#B8D0EC] bg-[#EAF2FB] font-semibold"
+      : "border-transparent font-normal hover:border-[#B8D0EC] hover:bg-[#F0EEE9]"
+  }`;
+
 export function SettingsSidebar({
   activeSection,
   onSectionChange,
 }: SettingsSidebarProps) {
   return (
     <nav className="flex h-full w-48 flex-col">
-      {/* Main categories */}
       <div className="flex flex-col gap-1">
         {sections.map((section) => (
           <button
             key={section.id}
             type="button"
             onClick={() => onSectionChange(section.id)}
-            className={`rounded-lg px-4 py-3 text-left text-sm font-ui transition ${
-              activeSection === section.id
-                ? "bg-[#F0EEE9] font-semibold"
-                : "font-normal hover:bg-[#F4F2EE]"
-            }`}
+            className={getButtonClass(activeSection === section.id)}
           >
             {section.label}
           </button>
         ))}
       </div>
 
-      {/* Account pinned to bottom */}
       <button
         type="button"
         onClick={() => onSectionChange("account")}
-        className={`mt-auto rounded-lg px-4 py-3 text-left text-sm font-ui transition ${
-          activeSection === "account"
-            ? "bg-[#F0EEE9] font-semibold"
-            : "font-normal hover:bg-[#F4F2EE]"
-        }`}
+        className={`mt-auto ${getButtonClass(activeSection === "account")}`}
       >
         Account
       </button>
