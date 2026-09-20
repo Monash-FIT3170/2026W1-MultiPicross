@@ -1,9 +1,6 @@
 import { useState } from "react";
 import { useSettings } from "./SettingsContext";
-import {
-  SettingsSidebar,
-  type SettingsSection,
-} from "./SettingsSidebar";
+import { SettingsSidebar, type SettingsSection } from "./SettingsSidebar";
 
 import { ProfileSettings } from "./ProfileSettings";
 import { AppearanceSettings } from "./AppearanceSettings";
