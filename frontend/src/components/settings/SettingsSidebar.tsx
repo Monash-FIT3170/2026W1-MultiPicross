@@ -13,63 +13,35 @@ type SettingsSidebarProps = {
   onSectionChange: (section: SettingsSection) => void;
 };
 
-const sections: { id: SettingsSection; label: string; icon: string }[] = [
-  { id: "profile", label: "Profile", icon: profileIcon },
-  { id: "appearance", label: "Appearance", icon: appearanceIcon },
-  { id: "gameplay", label: "Gameplay", icon: gameplayIcon },
-  { id: "audio", label: "Audio", icon: audioIcon },
-  { id: "accessibility", label: "Accessibility", icon: accessibilityIcon },
+const sections: { id: SettingsSection; label: string }[] = [
+  { id: "profile", label: "Profile" },
+  { id: "appearance", label: "Appearance" },
+  { id: "gameplay", label: "Gameplay" },
+  { id: "audio", label: "Audio" },
+  { id: "accessibility", label: "Accessibility" },
+  { id: "account", label: "Account" },
 ];
-
-const getButtonClass = (isActive: boolean) =>
-  `rounded-lg border px-3 py-3 text-left text-sm font-ui transition ${
-    isActive
-      ? "border-[#B8D0EC] bg-[#EAF2FB] text-[#3D5A80] font-bold hover:-translate-y-px"
-      : "border-transparent text-[#6B6B6B] font-semibold hover:-translate-y-px hover:border-[#B8D0EC] hover:bg-[#F0EEE9]"
-  }`;
 
 export function SettingsSidebar({
   activeSection,
   onSectionChange,
 }: SettingsSidebarProps) {
   return (
-    <nav className="flex h-full w-48 flex-col">
-      <div className="flex flex-col gap-1">
-        {sections.map((section) => (
-          <button
-            key={section.id}
-            type="button"
-            onClick={() => onSectionChange(section.id)}
-            className={getButtonClass(activeSection === section.id)}
-          >
-            <span className="flex items-center gap-3">
-              <img
-                src={section.icon}
-                alt=""
-                aria-hidden="true"
-                className="h-4 w-4 shrink-0 opacity-60"
-              />
-              <span>{section.label}</span>
-            </span>
-          </button>
-        ))}
-      </div>
-
-      <button
-        type="button"
-        onClick={() => onSectionChange("account")}
-        className={`mt-auto ${getButtonClass(activeSection === "account")}`}
-      >
-        <span className="flex items-center gap-3">
-          <img
-            src={accountIcon}
-            alt=""
-            aria-hidden="true"
-            className="h-4 w-4 shrink-0 opacity-60"
-          />
-          <span>Account</span>
-        </span>
-      </button>
+    <nav className="flex w-48 flex-col gap-2">
+      {sections.map((section) => (
+        <button
+          key={section.id}
+          type="button"
+          onClick={() => onSectionChange(section.id)}
+          className={`rounded-lg px-4 py-3 text-left transition ${
+            activeSection === section.id
+              ? "bg-gray-200 font-semibold"
+              : "hover:bg-gray-100"
+          }`}
+        >
+          {section.label}
+        </button>
+      ))}
     </nav>
   );
 }

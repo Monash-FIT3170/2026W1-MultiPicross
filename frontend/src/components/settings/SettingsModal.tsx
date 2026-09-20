@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { useSettings } from "./SettingsContext";
-import { SettingsSidebar, type SettingsSection } from "./SettingsSidebar";
+import {
+  SettingsSidebar,
+  type SettingsSection,
+} from "./SettingsSidebar";
 
 import { ProfileSettings } from "./ProfileSettings";
 import { AppearanceSettings } from "./AppearanceSettings";
@@ -28,66 +31,47 @@ export function SettingsModal() {
       <div
         className="
           flex h-[640px] w-[896px] max-h-[90vh] max-w-[95vw]
-          flex-col overflow-hidden
-          rounded-2xl
-          border border-[#E7E4DC]
-          bg-white
-          shadow-xl
+          flex-col overflow-hidden rounded-2xl bg-white shadow-xl
         "
       >
+        {/* Top header */}
         <header
           className="
             flex h-16 items-center justify-between
-            border-b-2 border-[#E7E4DC]
-            pl-6 pr-4
+            border-b-2 border-[#F0EEE9]
+            px-8
           "
         >
-          <div className="flex items-center gap-3">
-            <img
-              src={settingsIcon}
-              alt=""
-              aria-hidden="true"
-              className="h-6 w-6 opacity-90"
-            />
-
-            <h1
-              id="settings-title"
-              className="text-xl font-bold tracking-[0.02em] font-ui"
-            >
-              Settings
-            </h1>
-          </div>
+          <h1
+            id="settings-title"
+            className="text-xl font-bold tracking-[0.01em] font-ui"
+          >
+            Settings
+          </h1>
 
           <button
             type="button"
             onClick={closeSettings}
             className="
-              flex h-10 w-10
+              flex h-8 w-8
               items-center justify-center
               rounded-lg
-              border border-transparent
-              bg-transparent
-              transition
-              hover:-translate-y-px
-              hover:border-[#B8D0EC]
-              hover:bg-[#F0EEE9]
+              text-xl text-gray-600
+              hover:bg-gray-100
             "
             aria-label="Close settings"
           >
-            <img
-              src={closeIcon}
-              alt=""
-              aria-hidden="true"
-              className="h-4 w-4 opacity-60"
-            />
+            ×
           </button>
         </header>
 
+        {/* Settings body */}
         <div className="flex min-h-0 flex-1">
+          {/* Left category navigation */}
           <aside
             className="
               flex w-56 shrink-0 flex-col
-              border-r-2 border-[#E7E4DC]
+              border-r-2 border-[#F0EEE9]
               bg-[#F7F6F2]
               p-4
             "
@@ -98,7 +82,8 @@ export function SettingsModal() {
             />
           </aside>
 
-          <main className="min-w-0 flex-1 overflow-y-auto bg-white p-8">
+          {/* Right category content */}
+          <main className="min-w-0 flex-1 overflow-y-auto p-8">
             {activeSection === "profile" && <ProfileSettings />}
             {activeSection === "appearance" && <AppearanceSettings />}
             {activeSection === "gameplay" && <GameplaySettings />}
