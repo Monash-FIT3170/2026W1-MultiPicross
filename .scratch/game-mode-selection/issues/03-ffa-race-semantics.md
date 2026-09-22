@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: done
 
 # FFA race semantics: continue-after-first-finish, placement, sole survivor
 
