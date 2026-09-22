@@ -5,6 +5,7 @@ import { SettingsSelector } from "./components/SettingsSelector";
 
 export function AppearanceSettings() {
 
+  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [highContrast, setHighContrast] = useState(false);
   const [cellFillPop, setCellFillPop] = useState(true);
   const [showOpponentProgress, setShowOpponentProgress] = useState(true);
@@ -17,7 +18,61 @@ export function AppearanceSettings() {
         How the board and the menus look.
       </p>
 
-      <div className="mt-4">
+      <div className="mt-6 border-b border-[#E7E4DC] pb-5">
+        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[#6B6B6B] font-ui">
+          Theme
+        </p>
+
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setTheme("light")}
+            aria-pressed={theme === "light"}
+            className={`rounded-xl border-2 p-3 text-left transition ${
+              theme === "light"
+                ? "border-[#3D5A80]"
+                : "border-[#E7E4DC] hover:border-[#B8D0EC]"
+            }`}
+          >
+            <div className="flex h-12 items-center justify-center rounded-lg bg-[#F7F6F2]">
+              <div className="flex gap-1">
+                <span className="h-3 w-3 rounded-sm bg-[#3D5A80]" />
+                <span className="h-3 w-3 rounded-sm bg-white" />
+                <span className="h-3 w-3 rounded-sm bg-[#3D5A80]" />
+              </div>
+            </div>
+
+            <span className="mt-2 block text-sm font-medium font-ui">
+              Light
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTheme("dark")}
+            aria-pressed={theme === "dark"}
+            className={`rounded-xl border-2 p-3 text-left transition ${
+              theme === "dark"
+                ? "border-[#3D5A80]"
+                : "border-[#E7E4DC] hover:border-[#B8D0EC]"
+            }`}
+          >
+            <div className="flex h-12 items-center justify-center rounded-lg bg-[#29292D]">
+              <div className="flex gap-1">
+                <span className="h-3 w-3 rounded-sm bg-[#B8D0EC]" />
+                <span className="h-3 w-3 rounded-sm bg-[#484850]" />
+                <span className="h-3 w-3 rounded-sm bg-[#B8D0EC]" />
+              </div>
+            </div>
+
+            <span className="mt-2 block text-sm font-medium font-ui">
+              Dark
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <div>
         <SettingRow
           title="High contrast"
           description="Increase contrast between interface elements."
