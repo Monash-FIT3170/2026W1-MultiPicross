@@ -53,7 +53,16 @@ interface Snapshot {
   forfeit: boolean;
   colors?: string[];
   mode: string;
+  finishOrder: string[];
 }
+
+const FILLED_CELLS = [
+  [0, 0],
+  [0, 2],
+  [1, 1],
+  [2, 0],
+  [2, 2],
+];
 
 // Follows one client's snapshot stream. Waiting on content rather than on
 // "the next message" keeps assertions immune to how many broadcasts an
@@ -372,5 +381,140 @@ describe("PicrossRoom", () => {
     const rooms = res.data as Array<{ mode?: string }>;
 
     assert.ok(rooms.some((r) => r.mode === "1v1v1v1"));
+  });
+
+  // ── FFA race semantics ───────────────────────────────────────────────────
+
+  /** Boots a 1v1v1 room with all three seats filled and the match under way. */
+  async function startTriMatch() {
+    const room: ServerRoom = await colyseus.createRoom("picross_room", {
+      width: 3,
+      height: 3,
+      mode: "1v1v1",
+    });
+    const clientA = await colyseus.connectTo(room, { username: "A" });
+    const seenByA = track(clientA);
+    const clientB = await colyseus.connectTo(room, { username: "B" });
+    const seenByB = track(clientB);
+    const clientC = await colyseus.connectTo(room, { username: "C" });
+    const seenByC = track(clientC);
+
+    await seenByA.wait((s) => s.phase === "playing", "the match to start");
+
+    return {
+      room,
+      clientA,
+      clientB,
+      clientC,
+      seenByA,
+      seenByB,
+      seenByC,
+      aId: clientA.sessionId,
+      bId: clientB.sessionId,
+      cId: clientC.sessionId,
+    };
+  }
+
+  it("does not end a 1v1v1 match when the first player finishes", async () => {
+    const { clientA, seenByA, seenByB, aId } = await startTriMatch();
+
+    for (const cell of FILLED_CELLS) fill(clientA, cell);
+
+    const snapshot = await seenByB.wait(
+      (s) => s.players[aId]?.won === true,
+      "A to finish",
+    );
+
+    assert.strictEqual(snapshot.phase, "playing");
+    assert.strictEqual(snapshot.winnerId, aId);
+    assert.deepStrictEqual(snapshot.finishOrder, [aId]);
+
+    // Sanity: A's own stream agrees the match is still live.
+    await seenByA.wait((s) => s.phase === "playing", "match still playing");
+  });
+
+  it("ends a 1v1v1 match once every player has won or been eliminated, tracking finish order", async () => {
+    const { clientA, clientB, clientC, seenByA, seenByC, aId, bId, cId } =
+      await startTriMatch();
+
+    // A finishes first, B finishes second.
+    for (const cell of FILLED_CELLS) fill(clientA, cell);
+    await seenByA.wait((s) => s.players[aId]?.won === true, "A to finish");
+    for (const cell of FILLED_CELLS) fill(clientB, cell);
+    await seenByA.wait((s) => s.players[bId]?.won === true, "B to finish");
+
+    // C burns all three lives instead of finishing.
+    for (const cell of EMPTY_CELLS) fill(clientC, cell);
+    const final = await seenByC.wait(
+      (s) => s.phase === "finished",
+      "the match to end once C is eliminated",
+    );
+
+    assert.strictEqual(final.winnerId, aId, "first finisher stays the winner");
+    assert.deepStrictEqual(final.finishOrder, [aId, bId]);
+    assert.strictEqual(final.players[cId].won, false);
+    assert.strictEqual(final.forfeit, false);
+  });
+
+  it("continues a 1v1v1 match when one player leaves and two remain active", async () => {
+    const { clientA, seenByB, bId, cId } = await startTriMatch();
+
+    await clientA.leave();
+
+    const snapshot = await seenByB.wait(
+      (s) => Object.keys(s.players).length === 2,
+      "A's departure to be reflected",
+    );
+
+    assert.strictEqual(snapshot.phase, "playing");
+    assert.strictEqual(snapshot.winnerId, "");
+    assert.ok(snapshot.players[bId]);
+    assert.ok(snapshot.players[cId]);
+  });
+
+  it("declares the sole remaining player the winner once the other two have left", async () => {
+    const { clientA, clientB, seenByC, cId } = await startTriMatch();
+
+    await clientA.leave();
+    await clientB.leave();
+
+    const final = await seenByC.wait(
+      (s) => s.phase === "finished",
+      "the match to end once only C remains",
+    );
+
+    assert.strictEqual(final.forfeit, true);
+    assert.strictEqual(final.winnerId, cId);
+    assert.strictEqual(final.players[cId].won, true);
+  });
+
+  it("does not auto-win a sole active player who was left standing by elimination rather than a leave", async () => {
+    const { clientA, clientB, clientC, seenByA, seenByB, seenByC, aId, bId, cId } =
+      await startTriMatch();
+
+    // A and B both burn all their lives; nobody leaves. C is the only one
+    // left standing, but elimination alone (with nobody having left) must
+    // never auto-win the match for them — they still have to finish.
+    for (const cell of EMPTY_CELLS) fill(clientA, cell);
+    await seenByA.wait((s) => s.players[aId]?.livesLeft === 0, "A eliminated");
+    for (const cell of EMPTY_CELLS) fill(clientB, cell);
+    const stillPlaying = await seenByB.wait(
+      (s) => s.players[bId]?.livesLeft === 0,
+      "B eliminated",
+    );
+
+    assert.strictEqual(stillPlaying.phase, "playing");
+    assert.strictEqual(stillPlaying.winnerId, "");
+    assert.strictEqual(stillPlaying.players[cId].done, false);
+
+    // C finishes the puzzle themselves — nothing auto-decided it for them.
+    for (const cell of FILLED_CELLS) fill(clientC, cell);
+    const final = await seenByC.wait(
+      (s) => s.phase === "finished",
+      "C to finish and end the match",
+    );
+
+    assert.strictEqual(final.winnerId, cId);
+    assert.strictEqual(final.forfeit, false);
   });
 });
