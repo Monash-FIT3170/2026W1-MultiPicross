@@ -85,6 +85,27 @@
   --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+/* Dark mode colours */
+.dark {
+  --color-paper: #18191d;
+  --color-surface: #222328;
+  --color-surface-sunk: #2b2c32;
+
+  --color-ink: #f3f3f1;
+  --color-ink-soft: #d1d1ce;
+  --color-ink-muted: #a7a7a2;
+  --color-ink-faint: #7f807c;
+  --color-ink-clue: #e2e2df;
+
+  --color-line: #383a40;
+  --color-line-strong: #55575e;
+
+  --color-blue-50: #252f3d;
+  --color-blue-100: #2e4055;
+  --color-blue-200: #55779d;
+  --color-blue-500: #8eadd0;
+  --color-blue-600: #aac2dc;
+}
 
 /* Override the constrained #root from @layer below — unlayered styles win */
 html,

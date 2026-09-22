@@ -2,10 +2,11 @@ import { useState } from "react";
 import { SettingRow } from "./components/SettingRow";
 import { SettingsToggle } from "./components/SettingsToggle";
 import { SettingsSelector } from "./components/SettingsSelector";
+import { useSettings } from "./SettingsContext";
 
 export function AppearanceSettings() {
 
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const { theme, setTheme } = useSettings();
   const [highContrast, setHighContrast] = useState(false);
   const [cellFillPop, setCellFillPop] = useState(true);
   const [showOpponentProgress, setShowOpponentProgress] = useState(true);
