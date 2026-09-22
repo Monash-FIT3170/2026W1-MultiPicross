@@ -15,6 +15,7 @@ import {
   INVITE_CODE_LENGTH,
   ERR_NO_PUZZLE_FOR_SIZE,
 } from "./rooms/PicrossRoom.js";
+import { DEFAULT_GAME_MODE, isGameMode, type GameMode } from "./rooms/gameModes.js";
 
 // A range check rather than a fixed list keeps the two sides decoupled. The
 // upper bound matters: every player allocates several width*height arrays,
@@ -43,6 +44,16 @@ function parseBoardDimension(raw: unknown): number | null {
   return value;
 }
 
+// Parses a mode query param. Returns the default when absent, or null when
+// present but not one of the known modes — a 400 to the caller.
+function parseGameMode(raw: unknown): GameMode | null {
+  if (raw === undefined || raw === null || raw === "") {
+    return DEFAULT_GAME_MODE;
+  }
+  const text = String(raw).trim();
+  return isGameMode(text) ? text : null;
+}
+
 const server = defineServer({
   rooms: {
     my_room: defineRoom(MyRoom),
@@ -69,6 +80,13 @@ const server = defineServer({
         });
         return;
       }
+      const mode = parseGameMode(req.query.mode);
+      if (mode === null) {
+        res.status(400).json({
+          error: "mode must be one of 1v1, 1v1v1, 1v1v1v1, 2v2",
+        });
+        return;
+      }
       const isPublic = req.query.public === "true";
 
       try {
@@ -76,6 +94,7 @@ const server = defineServer({
           width,
           height,
           isPublic,
+          mode,
         });
         res.json({
           roomId: room.roomId,
@@ -141,6 +160,7 @@ const server = defineServer({
             roomId: r.roomId,
             width: r.metadata?.width,
             height: r.metadata?.height,
+            mode: r.metadata?.mode,
             clients: r.clients,
             maxClients: r.maxClients,
           })),

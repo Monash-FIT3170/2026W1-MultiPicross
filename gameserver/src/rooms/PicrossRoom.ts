@@ -5,6 +5,13 @@ import { verifyRoomToken } from "../auth/roomToken.js";
 import { requireEnv } from "../env.js";
 import { recordRankedResult } from "../elo/ratedResults.js";
 import { recordMpResults, type MpMode } from "../results/recordResults.js";
+import {
+  DEFAULT_GAME_MODE,
+  GAME_MODES,
+  isGameMode,
+  type GameMode,
+  type GameModeConfig,
+} from "./gameModes.js";
 
 interface RoomAuth {
   username: string | null;
@@ -107,24 +114,31 @@ export class PicrossRoom extends Room {
   private isRanked = false;
   private rankedResultRecorded = false;
   private puzzleId = "";
-  private mode: MpMode = "unrated";
+  private mpMode: MpMode = "unrated";
   private startedAt = 0;
   private resultsRecorded = false;
+  private mode: GameMode = DEFAULT_GAME_MODE;
+  private modeConfig: GameModeConfig = GAME_MODES[DEFAULT_GAME_MODE];
 
   async onCreate(options: {
     width?: number;
     height?: number;
     isRanked?: boolean;
     isPublic?: boolean;
+    mode?: string;
   }) {
     this.isRanked = options.isRanked === true;
-    this.mode = this.isRanked
+    this.mpMode = this.isRanked
       ? "ranked"
       : options.isPublic
         ? "public"
         : "unrated";
     const width = options.width ?? 10;
     const height = options.height ?? 10;
+
+    this.mode = isGameMode(options.mode) ? options.mode : DEFAULT_GAME_MODE;
+    this.modeConfig = GAME_MODES[this.mode];
+    this.maxClients = this.modeConfig.maxPlayers;
 
     const rows = await sql`
       SELECT id, width, height, row_clues, col_clues, solution, colors
@@ -157,6 +171,7 @@ export class PicrossRoom extends Room {
       inviteCode: code,
       width: this.width,
       height: this.height,
+      mode: this.mode,
     });
 
     if (!options.isPublic) {
@@ -243,7 +258,7 @@ export class PicrossRoom extends Room {
     };
     this.players.set(client.sessionId, player);
 
-    if (this.players.size === 2) {
+    if (this.players.size === this.modeConfig.maxPlayers) {
       this.setPhase("playing");
     }
 
@@ -372,7 +387,7 @@ export class PicrossRoom extends Room {
             {
               accountId: p.accountId,
               puzzleId: this.puzzleId,
-              mode: this.mode,
+              mode: this.mpMode,
               solved: p.won,
               won: sessionId === this.winnerId,
               elapsedSeconds: Math.round(
@@ -530,6 +545,7 @@ export class PicrossRoom extends Room {
       players,
       winnerId: this.winnerId,
       forfeit: this.forfeit,
+      mode: this.mode,
     };
 
     if (this.state.phase === "finished") {
