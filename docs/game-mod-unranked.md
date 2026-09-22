@@ -13,12 +13,12 @@ Ranked play stays exactly as it is today — 1v1, Elo-rated, matchmaking-queue-b
 
 ## 2. Game Modes
 
-| Mode | Players | Structure | Win condition |
-|---|---|---|---|
-| 1v1 | 2 | Individual | First to complete the puzzle wins |
-| 1v1v1 | 3 | Individual (FFA) | First to complete wins; others keep racing |
-| 1v1v1v1 | 4 | Individual (FFA) | First to complete wins; others keep racing |
-| 2v2 | 4 | 2 teams of 2 | First team with a member completing the puzzle wins |
+| Mode    | Players | Structure        | Win condition                                       |
+| ------- | ------- | ---------------- | --------------------------------------------------- |
+| 1v1     | 2       | Individual       | First to complete the puzzle wins                   |
+| 1v1v1   | 3       | Individual (FFA) | First to complete wins; others keep racing          |
+| 1v1v1v1 | 4       | Individual (FFA) | First to complete wins; others keep racing          |
+| 2v2     | 4       | 2 teams of 2     | First team with a member completing the puzzle wins |
 
 All players/teams in a match solve the **same** puzzle. Terms are defined precisely in `CONTEXT.md` (Game Mode, FFA, Team, Elimination, Sole Survivor, Placement).
 
@@ -36,6 +36,7 @@ All players/teams in a match solve the **same** puzzle. Terms are defined precis
 ## Step 1 — Game Mode as a concept
 
 Define four selectable modes: `1v1`, `1v1v1`, `1v1v1v1`, `2v2`. Each implies:
+
 - Required player count (2, 3, 4, 4)
 - Whether it's team-based (`2v2` only)
 - Team count (2, for `2v2`)
@@ -43,6 +44,7 @@ Define four selectable modes: `1v1`, `1v1v1`, `1v1v1v1`, `2v2`. Each implies:
 This is a single, shared, mode-agnostic concept — not four hardcoded parallel implementations. It is scoped to unranked rooms only; ranked's room-creation path is untouched and implicitly keeps behaving as `1v1`.
 
 **Acceptance criteria**
+
 - A room can be created with any of the 4 modes.
 - Ranked-created rooms are unaffected and behave exactly as before.
 
@@ -51,6 +53,7 @@ This is a single, shared, mode-agnostic concept — not four hardcoded parallel 
 A room does not start (does not transition to "playing") until the number of joined players exactly equals the mode's required player count. No manual start button. No early start with a partial lobby.
 
 **Acceptance criteria**
+
 - A `1v1v1v1` room with 3/4 players stays in the waiting state.
 - The room starts automatically the instant the 4th player joins.
 - 1v1 behavior is unchanged (starts at 2/2, as today).
@@ -62,6 +65,7 @@ Teams are assigned by join order: the 1st and 2nd players to join are Team 1; th
 Team assignment is **not** locked in early — if a player leaves during the waiting phase, team assignment is recomputed fresh from current join order as new players fill the room, right up until the match starts.
 
 **Acceptance criteria**
+
 - In a 2v2 room, the 1st and 2nd joiners are shown as Team 1; 3rd and 4th as Team 2.
 - If the 2nd joiner leaves before the room is full, the next joiner takes their place on Team 1.
 - Once the match starts, team assignment is fixed for the remainder of the match.
@@ -69,15 +73,18 @@ Team assignment is **not** locked in early — if a player leaves during the wai
 ## Step 4 — Win conditions and match end
 
 **FFA (1v1v1 / 1v1v1v1):**
+
 - The match does **not** end when the first player finishes. Remaining players keep racing.
 - The match ends once every remaining player has either finished (won) or been eliminated (out of lives, or left).
 - Only players who actually complete the puzzle receive a numbered placement (1st, 2nd, ...), in completion order. Players who don't finish are simply "did not finish" — no ranking between them.
 
 **2v2:**
+
 - The match ends immediately for all 4 players the instant either member of a team completes the puzzle. The whole match stops — the winning player's teammate and both opposing players do not continue.
 - There is no placement concept beyond team win/loss.
 
 **Acceptance criteria**
+
 - FFA: match continues after the first finisher; ends only when all players are done; finishers are placed in completion order; non-finishers are unplaced.
 - 2v2: any single completion ends the match for all 4 players immediately.
 - Existing 1v1 behavior (win on first completion) is unchanged, since 1v1 is a degenerate case of both rules.
@@ -90,6 +97,7 @@ Team assignment is **not** locked in early — if a player leaves during the wai
 - Late joining to backfill an empty slot is not supported, for any mode.
 
 **Acceptance criteria**
+
 - FFA: a player leaving mid-match eliminates only them; others keep playing.
 - FFA: if all but one player have left/been eliminated, that player auto-wins.
 - 2v2: one member leaving does not end their team's chances; the teammate continues.
@@ -106,6 +114,7 @@ Every player still has their own independent board and progress — 2v2 teammate
 - This holds true for the rest of the match, including after it ends — there is no "reveal everyone's board" moment at the end. The summary shows final progress/placement instead.
 
 **Acceptance criteria**
+
 - A player's client only ever receives full board detail for themselves.
 - Other players show as progress bars with live-updating percentage, lives, and status.
 - No board data for other players is ever sent to the client, even once the match ends.
@@ -119,6 +128,7 @@ Every player still has their own independent board and progress — 2v2 teammate
 - Guests (players without an account) can create/join any of the 4 modes, exactly as they can with 1v1 today.
 
 **Acceptance criteria**
+
 - Mode can be selected at room creation.
 - Public room listings show mode + current/required player count (e.g. "1v1v1v1 · 15×15 · 3/4 players").
 - No guest restrictions on any mode.
@@ -129,6 +139,7 @@ Every player still has their own independent board and progress — 2v2 teammate
 - For 2v2, joined players are grouped under "Team 1" / "Team 2" headings as they join, reflecting the live (not-yet-locked-in) team assignment from Step 3.
 
 **Acceptance criteria**
+
 - Waiting room correctly reflects required vs. joined count for all 4 modes.
 - 2v2 waiting room visibly groups players by (current) team.
 
@@ -140,6 +151,7 @@ Every player still has their own independent board and progress — 2v2 teammate
 - On narrow (mobile) screens, the layout stacks: board on top, progress-bar list full-width below — consistent with the existing mobile collapse pattern used elsewhere in the app.
 
 **Acceptance criteria**
+
 - All non-self players are visible as progress rows during a live match.
 - 2v2 rows are color-coded by team.
 - Layout is usable on both desktop and mobile widths.
@@ -152,6 +164,7 @@ Every player still has their own independent board and progress — 2v2 teammate
   - 2v2: leaving warns that your team continues without you if your teammate is still active, or that your team forfeits if your teammate has already been eliminated too.
 
 **Acceptance criteria**
+
 - Outcome banner text is correct for all 4 modes.
 - Abandon dialog warns correctly based on mode and current match state.
 
@@ -161,6 +174,7 @@ Every player still has their own independent board and progress — 2v2 teammate
 - Game Mode itself is never carried in the URL — it is sourced from the server's room state once connected, avoiding a second source of truth.
 
 **Acceptance criteria**
+
 - Ranked vs. unranked navigation continues to work correctly after the rename.
 - No regressions to existing ranked flow from this rename.
 

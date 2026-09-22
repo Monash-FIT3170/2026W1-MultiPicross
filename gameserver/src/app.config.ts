@@ -15,7 +15,11 @@ import {
   INVITE_CODE_LENGTH,
   ERR_NO_PUZZLE_FOR_SIZE,
 } from "./rooms/PicrossRoom.js";
-import { DEFAULT_GAME_MODE, isGameMode, type GameMode } from "./rooms/gameModes.js";
+import {
+  DEFAULT_GAME_MODE,
+  isGameMode,
+  type GameMode,
+} from "./rooms/gameModes.js";
 
 // A range check rather than a fixed list keeps the two sides decoupled. The
 // upper bound matters: every player allocates several width*height arrays,
