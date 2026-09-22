@@ -52,6 +52,7 @@ interface Snapshot {
   winnerId: string;
   forfeit: boolean;
   colors?: string[];
+  mode: string;
 }
 
 // Follows one client's snapshot stream. Waiting on content rather than on
@@ -294,5 +295,82 @@ describe("PicrossRoom", () => {
     assert.deepStrictEqual(res.data, {
       error: "No puzzle available at 7x7",
     });
+  });
+
+  // ── Game modes ───────────────────────────────────────────────────────────
+
+  it("defaults to 1v1 when no mode is given", async () => {
+    const room: ServerRoom = await colyseus.createRoom("picross_room", {
+      width: 3,
+      height: 3,
+    });
+
+    assert.strictEqual(room.metadata?.mode, "1v1");
+    assert.strictEqual(room.maxClients, 2);
+  });
+
+  it("falls back to 1v1 when an invalid mode is requested at room-creation time", async () => {
+    const room: ServerRoom = await colyseus.createRoom("picross_room", {
+      width: 3,
+      height: 3,
+      mode: "5v5",
+    });
+
+    assert.strictEqual(room.metadata?.mode, "1v1");
+    assert.strictEqual(room.maxClients, 2);
+  });
+
+  it("rejects an invalid mode on /create-room with a 400", async () => {
+    const res = await colyseus.http
+      .post("/create-room?width=3&height=3&mode=5v5")
+      .catch((err: { statusCode?: number; data?: unknown }) => err);
+
+    assert.strictEqual(res.statusCode, 400);
+  });
+
+  it("passes mode through /create-room and does not start until the room is full", async () => {
+    const created = await colyseus.http.post(
+      "/create-room?width=3&height=3&mode=1v1v1v1",
+    );
+    const roomId = (created.data as { roomId: string }).roomId;
+    const room = colyseus.getRoomById<ServerRoom>(roomId);
+
+    assert.strictEqual(room.metadata?.mode, "1v1v1v1");
+    assert.strictEqual(room.maxClients, 4);
+
+    const clientA = await colyseus.connectTo(room, { username: "A" });
+    const seenByA = track(clientA);
+    const clientB = await colyseus.connectTo(room, { username: "B" });
+    track(clientB);
+    const clientC = await colyseus.connectTo(room, { username: "C" });
+    track(clientC);
+
+    // 3/4 players joined — the room must not have started yet.
+    const stillWaiting = await seenByA.wait(
+      (s) => Object.keys(s.players).length === 3,
+      "the third player to be reflected in the snapshot",
+    );
+    assert.strictEqual(stillWaiting.phase, "waiting");
+
+    const clientD = await colyseus.connectTo(room, { username: "D" });
+    track(clientD);
+
+    const started = await seenByA.wait(
+      (s) => s.phase === "playing",
+      "the match to start once the 4th player joins",
+    );
+    assert.strictEqual(Object.keys(started.players).length, 4);
+    assert.strictEqual(started.mode, "1v1v1v1");
+  });
+
+  it("lists mode in /public-rooms", async () => {
+    await colyseus.http.post(
+      "/create-room?width=3&height=3&mode=1v1v1v1&public=true",
+    );
+
+    const res = await colyseus.http.get("/public-rooms");
+    const rooms = res.data as Array<{ mode?: string }>;
+
+    assert.ok(rooms.some((r) => r.mode === "1v1v1v1"));
   });
 });
