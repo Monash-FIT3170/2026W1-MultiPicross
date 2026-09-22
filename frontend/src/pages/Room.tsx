@@ -353,9 +353,11 @@ export function Room() {
   } = snapshot;
 
   if (phase === "waiting") {
-    const playerList = Object.values(players);
+    const playerEntries = Object.entries(players);
     const requiredPlayers = maxPlayersFor(mode);
-    const openSlots = Math.max(0, requiredPlayers - playerList.length);
+    const openSlots = Math.max(0, requiredPlayers - playerEntries.length);
+    const isTeamMode = mode === "2v2";
+    const myTeam = mySessionId ? players[mySessionId]?.team : null;
     return (
       <div
         style={{
@@ -380,7 +382,10 @@ export function Room() {
           <div style={{ width: 80 }} />
         </div>
 
-        <div style={{ maxWidth: 480, margin: "0 auto", textAlign: "center" }}>
+        <div
+          className="mp-room-waiting-card"
+          style={{ maxWidth: 480, margin: "0 auto", textAlign: "center" }}
+        >
           <div
             style={{
               width: 56,
@@ -423,7 +428,7 @@ export function Room() {
               fontWeight: 600,
             }}
           >
-            {mode} · {playerList.length}/{requiredPlayers} players
+            {mode} · {playerEntries.length}/{requiredPlayers} players
           </p>
 
           <div className="mp-surface" style={{ padding: 24, marginBottom: 20 }}>
@@ -462,46 +467,58 @@ export function Room() {
           </Button>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {playerList.map((p, i) => (
-              <div
-                key={i}
-                className="mp-surface"
-                style={{
-                  padding: "12px 16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                }}
-              >
+            {playerEntries.map(([id, p]) => {
+              // 2v2 only: color-code by team relative to the viewer, no text
+              // labels — mirrors the in-match progress rows.
+              const teamAccent = isTeamMode
+                ? p.team === myTeam
+                  ? "var(--color-sage-400)"
+                  : "var(--color-coral-400)"
+                : undefined;
+              return (
                 <div
+                  key={id}
+                  className="mp-surface"
                   style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: "var(--color-sage-400)",
-                    flexShrink: 0,
-                  }}
-                />
-                <span
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: "var(--color-ink)",
+                    padding: "12px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    borderLeft: teamAccent
+                      ? `4px solid ${teamAccent}`
+                      : undefined,
                   }}
                 >
-                  {p.username}
-                </span>
-                <span
-                  style={{
-                    fontSize: 12,
-                    color: "var(--color-ink-faint)",
-                    marginLeft: "auto",
-                  }}
-                >
-                  Connected
-                </span>
-              </div>
-            ))}
+                  <div
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: "var(--color-sage-400)",
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: "var(--color-ink)",
+                    }}
+                  >
+                    {p.username}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      color: "var(--color-ink-faint)",
+                      marginLeft: "auto",
+                    }}
+                  >
+                    Connected
+                  </span>
+                </div>
+              );
+            })}
             {Array.from({ length: openSlots }, (_, i) => (
               <div
                 key={`open-slot-${i}`}
@@ -537,10 +554,10 @@ export function Room() {
   // "playing" or "finished"
   const sessionIds = Object.keys(players);
   const myId = mySessionId ?? sessionIds[0];
-  const opponentId = sessionIds.find((id) => id !== myId) ?? null;
+  const otherIds = sessionIds.filter((id) => id !== myId);
 
   const me = players[myId];
-  const opponent = opponentId ? players[opponentId] : null;
+  const otherPlayers = otherIds.map((id) => ({ id, ...players[id] }));
 
   if (!me) {
     return (
@@ -566,15 +583,42 @@ export function Room() {
     [],
   );
 
-  // onLeave only crowns a survivor who is not already eliminated, so against
-  // an opponent who is out of lives the match ends with no winner at all.
-  const opponentCanWin = opponent !== null && !opponent.done;
+  const isTeamMode = mode === "2v2";
+  const winnerPlayer = winnerId ? players[winnerId] : null;
+
+  // onLeave/elimination only crowns a survivor who is not already
+  // eliminated, so against an opponent (FFA) or opposing team (2v2) that's
+  // already out of lives, the match can end with no winner at all.
+  const someoneElseCanStillWin = isTeamMode
+    ? otherPlayers.some((p) => p.team !== me.team && !p.done)
+    : otherPlayers.some((p) => !p.done);
+  const myTeammateActive = isTeamMode
+    ? otherPlayers.some((p) => p.team === me.team && !p.done)
+    : false;
 
   const isFinished = phase === "finished";
   const iWon = isFinished && winnerId === myId;
-  const opponentWon =
-    isFinished && opponentId !== null && winnerId === opponentId;
+  // 2v2: a teammate finishing wins the match for the whole team, including me.
+  const myTeamWon =
+    isFinished &&
+    !iWon &&
+    isTeamMode &&
+    winnerPlayer !== null &&
+    winnerPlayer.team === me.team;
+  const someoneElseWon = isFinished && !iWon && !myTeamWon && winnerId !== "";
   const noWinner = isFinished && !winnerId;
+
+  // Abandon-dialog warning, generalized per mode. 1v1 keeps its original
+  // wording verbatim (a single named opponent either wins or can't).
+  const abandonBody = isTeamMode
+    ? myTeammateActive
+      ? "Leaving now removes you from your team — your teammate can still win."
+      : "Your team has already been eliminated, so leaving now ends the game with no winner."
+    : otherPlayers.length > 1
+      ? "Leaving now eliminates you from the race."
+      : someoneElseCanStillWin
+        ? "Leaving now counts as a forfeit, your opponent wins."
+        : "Your opponent is already out of lives, so leaving now ends the game with no winner.";
 
   const cs = autoCellSize(width, height);
   // Height of the column-clue block above a grid's body, so panels beside the
@@ -582,8 +626,17 @@ export function Room() {
   const clueOffset =
     Math.max(1, ...(colClues ?? [[]]).map((c) => c.length)) * cs;
 
+  // FFA only: 1st/2nd/3rd/... place for whoever's actually finished, in
+  // completion order. Team modes and non-finishers have no placement.
+  const placementOf = (sessionId: string): number | null => {
+    if (isTeamMode) return null;
+    const idx = snapshot.finishOrder.indexOf(sessionId);
+    return idx === -1 ? null : idx + 1;
+  };
+
   return (
     <div
+      className="mp-room-page"
       style={{
         minHeight: "100vh",
         background: "var(--color-paper)",
@@ -644,6 +697,7 @@ export function Room() {
       </p>
 
       <div
+        className="mp-room-layout"
         style={{
           display: "flex",
           gap: 40,
@@ -653,13 +707,14 @@ export function Room() {
         }}
       >
         {/* My board */}
-        <div>
+        <div className="mp-room-board">
           <PlayerLabel
             name={`${me.username} (you)`}
             livesLeft={me.livesLeft}
             done={me.done}
             won={me.won}
             isWinner={iWon}
+            placement={placementOf(myId)}
           />
           <NonogramGrid
             rowClues={rowClues}
@@ -679,6 +734,7 @@ export function Room() {
 
         {/* Sidebar with stats */}
         <div
+          className="mp-room-sidebar"
           style={{
             paddingTop: clueOffset,
             display: "flex",
@@ -719,17 +775,36 @@ export function Room() {
           </div>
         </div>
 
-        {/* Opponent progress */}
-        {opponent ? (
-          <div style={{ paddingTop: clueOffset, minWidth: 200 }}>
-            <PlayerProgressRow
-              name={opponent.username}
-              livesLeft={opponent.livesLeft}
-              done={opponent.done}
-              won={opponent.won}
-              isWinner={opponentWon}
-              progress={opponent.progress}
-            />
+        {/* Other players' progress */}
+        {otherPlayers.length > 0 ? (
+          <div
+            className="mp-room-progress-stack"
+            style={{ paddingTop: clueOffset, minWidth: 200 }}
+          >
+            {otherPlayers.map((p) => {
+              const rowWon = isFinished && p.won;
+              // 2v2 only: color-code by team relative to the viewer, no text
+              // labels — own team gets a sage accent, opposing team coral.
+              const teamAccent = isTeamMode
+                ? p.team === me.team
+                  ? "var(--color-sage-400)"
+                  : "var(--color-coral-400)"
+                : undefined;
+              return (
+                <div key={p.id} className="mp-room-progress">
+                  <PlayerProgressRow
+                    name={p.username}
+                    livesLeft={p.livesLeft}
+                    done={p.done}
+                    won={p.won}
+                    isWinner={rowWon}
+                    progress={p.progress}
+                    placement={placementOf(p.id)}
+                    accentColor={teamAccent}
+                  />
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div
@@ -765,18 +840,20 @@ export function Room() {
       {/* Outcome banner */}
       {isFinished && (
         <div
+          className="mp-outcome-banner"
           style={{
             position: "fixed",
             left: "50%",
             bottom: 32,
             transform: "translateX(-50%)",
             padding: "16px 24px",
-            background: iWon
-              ? "var(--color-sage-50)"
-              : opponentWon
-                ? "var(--color-coral-50)"
-                : "var(--color-butter-50)",
-            border: `1px solid ${iWon ? "var(--color-sage-100)" : opponentWon ? "var(--color-coral-100)" : "var(--color-butter-100)"}`,
+            background:
+              iWon || myTeamWon
+                ? "var(--color-sage-50)"
+                : someoneElseWon
+                  ? "var(--color-coral-50)"
+                  : "var(--color-butter-50)",
+            border: `1px solid ${iWon || myTeamWon ? "var(--color-sage-100)" : someoneElseWon ? "var(--color-coral-100)" : "var(--color-butter-100)"}`,
             borderRadius: 14,
             display: "flex",
             alignItems: "center",
@@ -787,12 +864,12 @@ export function Room() {
           }}
         >
           <Icon
-            name={iWon ? "check" : opponentWon ? "x" : "info"}
+            name={iWon || myTeamWon ? "check" : someoneElseWon ? "x" : "info"}
             size={20}
             color={
-              iWon
+              iWon || myTeamWon
                 ? "var(--color-sage-500)"
-                : opponentWon
+                : someoneElseWon
                   ? "var(--color-coral-500)"
                   : "#8a7338"
             }
@@ -809,15 +886,21 @@ export function Room() {
                 ? forfeit
                   ? "Opponent left — you win!"
                   : "You win!"
-                : opponentWon
-                  ? `${opponent?.username ?? "Opponent"} wins`
-                  : noWinner
-                    ? forfeit
-                      ? "Opponent left — no winner"
-                      : "Both players out of lives"
-                    : "Game over"}
+                : myTeamWon
+                  ? forfeit
+                    ? "Opponent left — your team wins!"
+                    : `${winnerPlayer?.username ?? "Your teammate"} finished — your team wins!`
+                  : someoneElseWon
+                    ? isTeamMode
+                      ? `Team ${(winnerPlayer?.team ?? 0) + 1} wins`
+                      : `${winnerPlayer?.username ?? "Opponent"} wins`
+                    : noWinner
+                      ? forfeit
+                        ? "Opponent left — no winner"
+                        : "Everyone's out of lives"
+                      : "Game over"}
             </div>
-            {iWon && !forfeit && (
+            {(iWon || myTeamWon) && !forfeit && (
               <div style={{ fontSize: 12, color: "var(--color-sage-500)" }}>
                 Solved in {fmtSeconds(displaySeconds)}
               </div>
@@ -853,11 +936,7 @@ export function Room() {
         <ConfirmDialog
           titleId="abandon-title"
           title="Abandon this game?"
-          body={
-            opponentCanWin
-              ? "Leaving now counts as a forfeit, your opponent wins."
-              : "Your opponent is already out of lives, so leaving now ends the game with no winner."
-          }
+          body={abandonBody}
           confirmLabel="Abandon"
           onConfirm={handleAbandonConfirm}
           onCancel={cancelAbandon}
@@ -887,18 +966,26 @@ function CenteredMessage({ children }: { children: React.ReactNode }) {
   );
 }
 
+function ordinal(n: number): string {
+  const suffixes: Record<number, string> = { 1: "st", 2: "nd", 3: "rd" };
+  const suffix = n % 100 >= 11 && n % 100 <= 13 ? "th" : (suffixes[n % 10] ?? "th");
+  return `${n}${suffix}`;
+}
+
 function PlayerLabel({
   name,
   livesLeft,
   done,
   won,
   isWinner,
+  placement,
 }: {
   name: string;
   livesLeft: number;
   done: boolean;
   won: boolean;
   isWinner: boolean;
+  placement?: number | null;
 }) {
   return (
     <div
@@ -930,7 +1017,22 @@ function PlayerLabel({
           Winner
         </span>
       )}
-      {done && !won && !isWinner && (
+      {!isWinner && placement != null && (
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: "var(--color-blue-500)",
+            background: "var(--color-blue-50)",
+            border: "1px solid var(--color-blue-100)",
+            borderRadius: 999,
+            padding: "2px 8px",
+          }}
+        >
+          {ordinal(placement)}
+        </span>
+      )}
+      {done && !won && !isWinner && placement == null && (
         <span
           style={{
             fontSize: 11,
@@ -956,6 +1058,11 @@ function PlayerLabel({
 // status, instead of their actual board — the server no longer sends board
 // data for anyone but the viewer's own player (see PicrossRoom's per-client
 // snapshot scoping), so there is nothing else to render for them.
+//
+// `accentColor`, when set (2v2 only), color-codes the row's left border by
+// team membership relative to the viewer — sage for the viewer's own team,
+// coral for the opposing team. No text label ("Your Team"/"Opponents") is
+// used; color alone is the distinguishing signal, per design.
 function PlayerProgressRow({
   name,
   livesLeft,
@@ -963,6 +1070,8 @@ function PlayerProgressRow({
   won,
   isWinner,
   progress,
+  placement,
+  accentColor,
 }: {
   name: string;
   livesLeft: number;
@@ -970,16 +1079,25 @@ function PlayerProgressRow({
   won: boolean;
   isWinner: boolean;
   progress: number;
+  placement?: number | null;
+  accentColor?: string;
 }) {
   const pct = Math.round(Math.min(1, Math.max(0, progress)) * 100);
   return (
-    <div className="mp-surface" style={{ padding: "16px 20px" }}>
+    <div
+      className="mp-surface"
+      style={{
+        padding: "16px 20px",
+        borderLeft: accentColor ? `4px solid ${accentColor}` : undefined,
+      }}
+    >
       <PlayerLabel
         name={name}
         livesLeft={livesLeft}
         done={done}
         won={won}
         isWinner={isWinner}
+        placement={placement ?? null}
       />
       <div
         style={{
