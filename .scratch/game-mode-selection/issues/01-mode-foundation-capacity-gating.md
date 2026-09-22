@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: done
 
 # Game Mode foundation: mode config, capacity gating, mode-aware room creation
 
