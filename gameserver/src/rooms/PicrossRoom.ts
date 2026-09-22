@@ -113,6 +113,8 @@ export class PicrossRoom extends Room {
   private rankedResultRecorded = false;
   private mode: GameMode = DEFAULT_GAME_MODE;
   private modeConfig: GameModeConfig = GAME_MODES[DEFAULT_GAME_MODE];
+  /** FFA only: sessionIds in completion order. Team modes have no placement. */
+  private finishOrder: string[] = [];
 
   async onCreate(options: {
     width?: number;
@@ -290,20 +292,17 @@ export class PicrossRoom extends Room {
 
   onLeave(client: Client) {
     if (this.state.phase === "playing") {
-      // A forfeit win may only go to a player who is still alive. If the last
-      // player standing had already burned all three lives their elimination
-      // stands and nobody wins — crowning them was reporting a loss as a win.
-      // Never overwrite an already-decided winner either.
-      if (!this.winnerId) {
-        const survivors = [...this.players.entries()].filter(
-          ([sessionId, p]) => sessionId !== client.sessionId && !p.done,
-        );
-        if (survivors.length === 1) {
-          this.winnerId = survivors[0][0];
-        }
-      }
+      this.players.delete(client.sessionId);
       this.forfeit = true;
-      this.setPhase("finished");
+      this.checkSoleSurvivor();
+      // checkSoleSurvivor only ends the match when it finds a winner. With
+      // no players left able to win (everyone remaining already
+      // eliminated) the match still has to end — just with no winner.
+      if (this.state.phase === "playing" && this.allPlayersDone()) {
+        this.setPhase("finished");
+      }
+      this.broadcast("state", this.buildSnapshot());
+      return;
     }
     this.players.delete(client.sessionId);
     this.broadcast("state", this.buildSnapshot());
@@ -317,6 +316,61 @@ export class PicrossRoom extends Room {
       this.lock();
       void this.recordRankedResult();
     }
+  }
+
+  /** True once every remaining player has either won or been eliminated. */
+  private allPlayersDone(): boolean {
+    return [...this.players.values()].every((p) => p.done);
+  }
+
+  // Called once a player's board is fully solved. Team modes end the match
+  // immediately, same as 1v1 always has — the team just won, so nothing else
+  // to play for. FFA modes keep racing: the first finisher takes 1st place,
+  // but the match only ends once every player has won or been eliminated.
+  private handlePlayerWin(sessionId: string, player: PlayerData) {
+    player.done = true;
+    player.won = true;
+    if (!this.winnerId) this.winnerId = sessionId;
+
+    if (this.modeConfig.teamBased) {
+      this.setPhase("finished");
+      return;
+    }
+
+    this.finishOrder.push(sessionId);
+    if (this.allPlayersDone()) this.setPhase("finished");
+  }
+
+  // Called once a player runs out of lives. Running out of lives never ends
+  // the match by itself while other players remain connected and active —
+  // only every remaining player being done (won or eliminated) does. A
+  // survivor keeps playing normally; they don't win just because everyone
+  // else is out of lives (they still have to finish, or be the one left
+  // after someone actually leaves — see checkSoleSurvivor).
+  private handlePlayerElimination(player: PlayerData) {
+    player.done = true;
+    if (this.allPlayersDone()) this.setPhase("finished");
+  }
+
+  // Called after a player leaves while no winner has been decided yet. If
+  // the leave drops the field to exactly one active (non-eliminated) player,
+  // there is no one left to race against — declare them the winner
+  // immediately rather than making them finish alone. This is a leave-only
+  // shortcut: a player simply running out of lives does not trigger it (see
+  // handlePlayerElimination) — the last remaining player must actually
+  // finish unless someone leaves.
+  private checkSoleSurvivor() {
+    if (this.winnerId) return;
+
+    const survivors = [...this.players.entries()].filter(
+      ([, p]) => !p.done,
+    );
+    if (survivors.length !== 1) return;
+
+    const [winnerId, winner] = survivors[0];
+    this.winnerId = winnerId;
+    winner.won = true;
+    this.setPhase("finished");
   }
 
   private async recordRankedResult(): Promise<void> {
@@ -368,18 +422,13 @@ export class PicrossRoom extends Room {
         (v, i) => v === 0 || player.confirmedFilled[i],
       );
       if (isComplete) {
-        player.done = true;
-        player.won = true;
-        this.winnerId = sessionId;
-        this.setPhase("finished");
+        this.handlePlayerWin(sessionId, player);
       }
     } else {
       player.revealedEmpty[idx] = true;
       player.livesLeft = Math.max(0, player.livesLeft - 1);
       if (player.livesLeft === 0) {
-        player.done = true;
-        const allDone = [...this.players.values()].every((p) => p.done);
-        if (allDone) this.setPhase("finished");
+        this.handlePlayerElimination(player);
       }
     }
 
@@ -420,14 +469,9 @@ export class PicrossRoom extends Room {
         (v, i) => v === 0 || player.confirmedFilled[i],
       );
       if (isComplete) {
-        player.done = true;
-        player.won = true;
-        this.winnerId = sessionId;
-        this.setPhase("finished");
+        this.handlePlayerWin(sessionId, player);
       } else if (player.livesLeft === 0) {
-        player.done = true;
-        const allDone = [...this.players.values()].every((p) => p.done);
-        if (allDone) this.setPhase("finished");
+        this.handlePlayerElimination(player);
       }
 
       // Must precede the broadcast: the client needs the index before the grid
@@ -481,6 +525,7 @@ export class PicrossRoom extends Room {
       winnerId: this.winnerId,
       forfeit: this.forfeit,
       mode: this.mode,
+      finishOrder: [...this.finishOrder],
     };
 
     if (this.state.phase === "finished") {
