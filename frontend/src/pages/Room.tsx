@@ -61,6 +61,18 @@ function buildGrid(p: Required<Pick<PlayerSnapshot, "confirmedFilled" | "crosses
   return cellsToGrid(p.confirmedFilled, p.crosses, p.revealedEmpty);
 }
 
+const MODE_MAX_PLAYERS: Record<string, number> = {
+  "1v1": 2,
+  "1v1v1": 3,
+  "1v1v1v1": 4,
+  "2v2": 4,
+};
+
+/** Falls back to 2 (1v1) for an unrecognized mode string. */
+function maxPlayersFor(mode: string): number {
+  return MODE_MAX_PLAYERS[mode] ?? 2;
+}
+
 // leave() throws while a socket is mid-handshake — an SDK reconnect in
 // flight when the user navigates away. The connection is going either way.
 function leaveQuietly(room: ColyseusRoom | null) {
@@ -337,10 +349,13 @@ export function Room() {
     winnerId,
     forfeit,
     colors,
+    mode,
   } = snapshot;
 
   if (phase === "waiting") {
     const playerList = Object.values(players);
+    const requiredPlayers = maxPlayersFor(mode);
+    const openSlots = Math.max(0, requiredPlayers - playerList.length);
     return (
       <div
         style={{
@@ -389,16 +404,26 @@ export function Room() {
               color: "var(--color-ink)",
             }}
           >
-            Waiting for opponent
+            Waiting for players
           </h1>
           <p
             style={{
-              margin: "0 0 32px",
+              margin: "0 0 8px",
               color: "var(--color-ink-muted)",
               fontSize: 14,
             }}
           >
-            Share the invite code or URL with a friend to start.
+            Share the invite code or URL with friends to start.
+          </p>
+          <p
+            style={{
+              margin: "0 0 32px",
+              color: "var(--color-ink-faint)",
+              fontSize: 13,
+              fontWeight: 600,
+            }}
+          >
+            {mode} · {playerList.length}/{requiredPlayers} players
           </p>
 
           <div className="mp-surface" style={{ padding: 24, marginBottom: 20 }}>
@@ -477,8 +502,9 @@ export function Room() {
                 </span>
               </div>
             ))}
-            {playerList.length < 2 && (
+            {Array.from({ length: openSlots }, (_, i) => (
               <div
+                key={`open-slot-${i}`}
                 className="mp-surface"
                 style={{
                   padding: "12px 16px",
@@ -498,10 +524,10 @@ export function Room() {
                   }}
                 />
                 <span style={{ fontSize: 14, color: "var(--color-ink-muted)" }}>
-                  Waiting for player 2…
+                  Waiting for player…
                 </span>
               </div>
-            )}
+            ))}
           </div>
         </div>
       </div>
