@@ -407,9 +407,7 @@ export class PicrossRoom extends Room {
   private checkSoleSurvivor() {
     if (this.modeConfig.teamBased) return;
 
-    const survivors = [...this.players.entries()].filter(
-      ([, p]) => !p.done,
-    );
+    const survivors = [...this.players.entries()].filter(([, p]) => !p.done);
     if (survivors.length !== 1) return;
 
     const [winnerId, winner] = survivors[0];

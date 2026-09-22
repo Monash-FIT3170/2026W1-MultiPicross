@@ -57,7 +57,11 @@ interface RoomSnapshot {
 
 // Board arrays are only ever present in the snapshot for the viewer's own
 // player, so this only makes sense to call on `me` — never on another player.
-function buildGrid(p: Required<Pick<PlayerSnapshot, "confirmedFilled" | "crosses" | "revealedEmpty">>): CellValue[] {
+function buildGrid(
+  p: Required<
+    Pick<PlayerSnapshot, "confirmedFilled" | "crosses" | "revealedEmpty">
+  >,
+): CellValue[] {
   return cellsToGrid(p.confirmedFilled, p.crosses, p.revealedEmpty);
 }
 
@@ -968,7 +972,8 @@ function CenteredMessage({ children }: { children: React.ReactNode }) {
 
 function ordinal(n: number): string {
   const suffixes: Record<number, string> = { 1: "st", 2: "nd", 3: "rd" };
-  const suffix = n % 100 >= 11 && n % 100 <= 13 ? "th" : (suffixes[n % 10] ?? "th");
+  const suffix =
+    n % 100 >= 11 && n % 100 <= 13 ? "th" : (suffixes[n % 10] ?? "th");
   return `${n}${suffix}`;
 }
 
