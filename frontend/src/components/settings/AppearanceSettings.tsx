@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { SettingRow } from "./components/SettingRow";
 import { SettingsToggle } from "./components/SettingsToggle";
+import { SettingsSelector } from "./components/SettingsSelector";
 
 export function AppearanceSettings() {
 
   const [highContrast, setHighContrast] = useState(false);
   const [cellFillPop, setCellFillPop] = useState(true);
   const [showOpponentProgress, setShowOpponentProgress] = useState(true);
+  const [animations, setAnimations] = useState("Full");
 
   return (
     <div>
@@ -31,12 +33,12 @@ export function AppearanceSettings() {
           title="Animations"
           description="Show cell pops, win banners, menu transitions."
         >
-          <button
-            type="button"
-            className="rounded-lg border border-[#E7E4DC] px-4 py-2 font-ui text-sm"
-          >
-            Full
-          </button>
+          <SettingsSelector
+            options={["Full", "Subtle", "Off"]}
+            value={animations}
+            onChange={setAnimations}
+            label="Animation level"
+          />
         </SettingRow>
 
         <SettingRow

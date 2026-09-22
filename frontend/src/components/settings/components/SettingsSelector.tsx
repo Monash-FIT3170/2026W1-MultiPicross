@@ -1,30 +1,41 @@
-import type { ReactNode } from "react";
-
-type SettingRowProps = {
-  title: string;
-  description: string;
-  children: ReactNode;
-  showDivider?: boolean;
+type SettingsSelectorProps = {
+  options: string[];
+  value: string;
+  onChange: (value: string) => void;
+  label: string;
 };
 
-export function SettingRow({
-  title,
-  description,
-  children,
-  showDivider = true,
-}: SettingRowProps) {
+export function SettingsSelector({
+  options,
+  value,
+  onChange,
+  label,
+}: SettingsSelectorProps) {
   return (
     <div
-      className={`flex items-center justify-between gap-6 py-5 ${
-        showDivider ? "border-b border-[#E7E4DC]" : ""
-      }`}
+      className="flex rounded-full bg-[#F0EEE9] p-0.5"
+      role="group"
+      aria-label={label}
     >
-      <div className="min-w-0">
-        <h3 className="text-base font-semibold font-ui">{title}</h3>
-        <p className="mt-1 text-sm text-[#6B6B6B] font-ui">{description}</p>
-      </div>
+      {options.map((option) => {
+        const isSelected = value === option;
 
-      <div className="shrink-0">{children}</div>
+        return (
+          <button
+            key={option}
+            type="button"
+            onClick={() => onChange(option)}
+            aria-pressed={isSelected}
+            className={`min-h-8 rounded-full px-3 text-[13px] font-ui transition ${
+              isSelected
+                ? "bg-white font-medium text-[#3D5A80] shadow-sm"
+                : "text-[#6B6B6B] hover:text-black"
+            }`}
+          >
+            {option}
+          </button>
+        );
+      })}
     </div>
   );
 }
