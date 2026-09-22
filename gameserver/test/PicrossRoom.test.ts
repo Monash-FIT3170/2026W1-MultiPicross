@@ -508,8 +508,17 @@ describe("PicrossRoom", () => {
   });
 
   it("does not auto-win a sole active player who was left standing by elimination rather than a leave", async () => {
-    const { clientA, clientB, clientC, seenByA, seenByB, seenByC, aId, bId, cId } =
-      await startTriMatch();
+    const {
+      clientA,
+      clientB,
+      clientC,
+      seenByA,
+      seenByB,
+      seenByC,
+      aId,
+      bId,
+      cId,
+    } = await startTriMatch();
 
     // A and B both burn all their lives; nobody leaves. C is the only one
     // left standing, but elimination alone (with nobody having left) must
@@ -680,7 +689,9 @@ describe("PicrossRoom", () => {
     );
 
     assert.strictEqual(final.forfeit, true);
-    assert.ok(final.winnerId === cId || final.players[final.winnerId]?.team === 1);
+    assert.ok(
+      final.winnerId === cId || final.players[final.winnerId]?.team === 1,
+    );
     assert.strictEqual(final.players[final.winnerId].won, true);
   });
 
@@ -692,7 +703,10 @@ describe("PicrossRoom", () => {
     // Team 2 (C, D) auto-wins immediately — unlike FFA, elimination alone
     // is enough to end a 2v2 match once a whole team is wiped out.
     for (const cell of EMPTY_CELLS) fill(clientA, cell);
-    await seenByA.wait((s) => s.players[clientA.sessionId]?.livesLeft === 0, "A eliminated");
+    await seenByA.wait(
+      (s) => s.players[clientA.sessionId]?.livesLeft === 0,
+      "A eliminated",
+    );
     for (const cell of EMPTY_CELLS) fill(clientB, cell);
 
     const final = await seenByD.wait(
@@ -742,8 +756,12 @@ describe("PicrossRoom", () => {
     const { clientA, seenByA, seenByB, aId } = await startMatch();
 
     assert.strictEqual(
-      (await seenByB.wait((s) => s.players[aId] !== undefined, "initial snapshot"))
-        .players[aId].progress,
+      (
+        await seenByB.wait(
+          (s) => s.players[aId] !== undefined,
+          "initial snapshot",
+        )
+      ).players[aId].progress,
       0,
     );
 
