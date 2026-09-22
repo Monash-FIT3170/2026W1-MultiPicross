@@ -39,6 +39,7 @@ interface PlayerView {
   done: boolean;
   won: boolean;
   connected: boolean;
+  team: number | null;
 }
 
 interface Snapshot {
@@ -516,5 +517,174 @@ describe("PicrossRoom", () => {
 
     assert.strictEqual(final.winnerId, cId);
     assert.strictEqual(final.forfeit, false);
+  });
+
+  // ── 2v2 teams ────────────────────────────────────────────────────────────
+
+  /** Boots a 2v2 room with all four seats filled and the match under way. */
+  async function startSquadMatch() {
+    const room: ServerRoom = await colyseus.createRoom("picross_room", {
+      width: 3,
+      height: 3,
+      mode: "2v2",
+    });
+    const clientA = await colyseus.connectTo(room, { username: "A" });
+    const seenByA = track(clientA);
+    const clientB = await colyseus.connectTo(room, { username: "B" });
+    const seenByB = track(clientB);
+    const clientC = await colyseus.connectTo(room, { username: "C" });
+    const seenByC = track(clientC);
+    const clientD = await colyseus.connectTo(room, { username: "D" });
+    const seenByD = track(clientD);
+
+    await seenByA.wait((s) => s.phase === "playing", "the match to start");
+
+    return {
+      room,
+      clientA,
+      clientB,
+      clientC,
+      clientD,
+      seenByA,
+      seenByB,
+      seenByC,
+      seenByD,
+      aId: clientA.sessionId,
+      bId: clientB.sessionId,
+      cId: clientC.sessionId,
+      dId: clientD.sessionId,
+    };
+  }
+
+  it("assigns the 1st and 2nd joiners to Team 1 and the 3rd and 4th to Team 2", async () => {
+    const { seenByA, aId, bId, cId, dId } = await startSquadMatch();
+
+    const snapshot = await seenByA.wait(
+      (s) => s.phase === "playing",
+      "the match to start",
+    );
+
+    assert.strictEqual(snapshot.players[aId].team, 0);
+    assert.strictEqual(snapshot.players[bId].team, 0);
+    assert.strictEqual(snapshot.players[cId].team, 1);
+    assert.strictEqual(snapshot.players[dId].team, 1);
+  });
+
+  it("recomputes team assignment when a player leaves before the room is full", async () => {
+    const room: ServerRoom = await colyseus.createRoom("picross_room", {
+      width: 3,
+      height: 3,
+      mode: "2v2",
+    });
+    const clientA = await colyseus.connectTo(room, { username: "A" });
+    const seenByA = track(clientA);
+    const clientB = await colyseus.connectTo(room, { username: "B" });
+    track(clientB);
+
+    // B leaves before the room fills — pre-match, so no forfeit logic
+    // applies, just a seat opening back up.
+    await clientB.leave();
+    await seenByA.wait(
+      (s) => Object.keys(s.players).length === 1,
+      "B's departure to be reflected",
+    );
+
+    const clientC = await colyseus.connectTo(room, { username: "C" });
+    track(clientC);
+    const clientD = await colyseus.connectTo(room, { username: "D" });
+    track(clientD);
+    const clientE = await colyseus.connectTo(room, { username: "E" });
+    track(clientE);
+
+    const started = await seenByA.wait(
+      (s) => s.phase === "playing",
+      "the match to start once refilled",
+    );
+
+    // Reshuffled order is A, C, D, E (B's slot was simply removed, not held
+    // open) — so A+C are Team 1 and D+E are Team 2.
+    assert.strictEqual(started.players[clientA.sessionId].team, 0);
+    assert.strictEqual(started.players[clientC.sessionId].team, 0);
+    assert.strictEqual(started.players[clientD.sessionId].team, 1);
+    assert.strictEqual(started.players[clientE.sessionId].team, 1);
+  });
+
+  it("ends a 2v2 match immediately once either team member finishes", async () => {
+    const { clientB, seenByA, seenByC, aId, bId, cId, dId } =
+      await startSquadMatch();
+
+    // B (Team 1, alongside A) finishes — the match ends for everyone even
+    // though A, C, and D haven't made any progress.
+    for (const cell of FILLED_CELLS) fill(clientB, cell);
+
+    const final = await seenByC.wait(
+      (s) => s.phase === "finished",
+      "the match to end once B finishes",
+    );
+
+    assert.strictEqual(final.winnerId, bId);
+    assert.strictEqual(final.players[bId].won, true);
+    assert.strictEqual(final.players[aId].won, false);
+    assert.strictEqual(final.players[cId].won, false);
+    assert.strictEqual(final.players[dId].won, false);
+  });
+
+  it("keeps a team alive when only one of its members leaves", async () => {
+    const { clientA, seenByB, bId, cId, dId } = await startSquadMatch();
+
+    // A (Team 1) leaves; B (A's teammate) is still active, so Team 1 is not
+    // eliminated and the match continues normally.
+    await clientA.leave();
+
+    const snapshot = await seenByB.wait(
+      (s) => Object.keys(s.players).length === 3,
+      "A's departure to be reflected",
+    );
+
+    assert.strictEqual(snapshot.phase, "playing");
+    assert.strictEqual(snapshot.winnerId, "");
+    assert.ok(snapshot.players[bId]);
+    assert.ok(snapshot.players[cId]);
+    assert.ok(snapshot.players[dId]);
+  });
+
+  it("auto-wins the surviving team once the opposing team is fully wiped out by leaving", async () => {
+    const { clientA, clientB, seenByC, cId } = await startSquadMatch();
+
+    // Both members of Team 1 leave — Team 2 (C, D) auto-wins without
+    // needing to finish.
+    await clientA.leave();
+    await clientB.leave();
+
+    const final = await seenByC.wait(
+      (s) => s.phase === "finished",
+      "the match to end once Team 1 is wiped out",
+    );
+
+    assert.strictEqual(final.forfeit, true);
+    assert.ok(final.winnerId === cId || final.players[final.winnerId]?.team === 1);
+    assert.strictEqual(final.players[final.winnerId].won, true);
+  });
+
+  it("auto-wins the surviving team once the opposing team is fully eliminated by lives, with no leave involved", async () => {
+    const { clientA, clientB, clientC, seenByA, seenByB, seenByD, dId } =
+      await startSquadMatch();
+
+    // Both members of Team 1 (A, B) burn all their lives; nobody leaves.
+    // Team 2 (C, D) auto-wins immediately — unlike FFA, elimination alone
+    // is enough to end a 2v2 match once a whole team is wiped out.
+    for (const cell of EMPTY_CELLS) fill(clientA, cell);
+    await seenByA.wait((s) => s.players[clientA.sessionId]?.livesLeft === 0, "A eliminated");
+    for (const cell of EMPTY_CELLS) fill(clientB, cell);
+
+    const final = await seenByD.wait(
+      (s) => s.phase === "finished",
+      "the match to end once Team 1 is fully eliminated",
+    );
+
+    assert.strictEqual(final.forfeit, false);
+    assert.strictEqual(final.players[final.winnerId].team, 1);
+    assert.strictEqual(final.players[final.winnerId].won, true);
+    assert.ok(final.winnerId === dId || final.winnerId === clientC.sessionId);
   });
 });
