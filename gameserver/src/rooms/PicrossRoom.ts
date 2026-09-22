@@ -255,8 +255,7 @@ export class PicrossRoom extends Room {
       this.setPhase("playing");
     }
 
-    client.send("state", this.buildSnapshot());
-    this.broadcast("state", this.buildSnapshot(), { except: client });
+    this.broadcastState();
   }
 
   // Team assignment is derived from join order, not locked in until the
@@ -290,7 +289,7 @@ export class PicrossRoom extends Room {
     const player = this.players.get(client.sessionId);
     if (player) {
       player.connected = false;
-      this.broadcast("state", this.buildSnapshot());
+      this.broadcastState();
     }
 
     try {
@@ -306,7 +305,7 @@ export class PicrossRoom extends Room {
     if (player) player.connected = true;
     // The snapshot travels as a custom "state" message rather than in schema
     // state, so nothing replays it on reconnect — resend it explicitly.
-    this.broadcast("state", this.buildSnapshot());
+    this.broadcastState();
   }
 
   onLeave(client: Client) {
@@ -323,7 +322,7 @@ export class PicrossRoom extends Room {
       if (this.state.phase === "playing" && this.allPlayersDone()) {
         this.setPhase("finished");
       }
-      this.broadcast("state", this.buildSnapshot());
+      this.broadcastState();
       return;
     }
     // Pre-match: team assignment is derived fresh from current join order,
@@ -331,7 +330,7 @@ export class PicrossRoom extends Room {
     // for the next join to recompute it.
     this.players.delete(client.sessionId);
     this.assignTeams();
-    this.broadcast("state", this.buildSnapshot());
+    this.broadcastState();
   }
 
   // Centralizes the "finished rooms must not be joinable/listed" invariant
@@ -350,15 +349,19 @@ export class PicrossRoom extends Room {
   }
 
   // Called once a player's board is fully solved. Team modes end the match
-  // immediately, same as 1v1 always has — the team just won, so nothing else
-  // to play for. FFA modes keep racing: the first finisher takes 1st place,
-  // but the match only ends once every player has won or been eliminated.
+  // immediately — the team just won, so nothing else to play for. 1v1 also
+  // ends immediately: it's always been "first (and only other) player to
+  // finish wins," and with exactly 2 players that's indistinguishable from
+  // "the other player has nothing left to race for." 3+ player FFA modes
+  // (1v1v1, 1v1v1v1) are the only ones that keep racing: the first finisher
+  // takes 1st place, but the match only ends once every player has won or
+  // been eliminated.
   private handlePlayerWin(sessionId: string, player: PlayerData) {
     player.done = true;
     player.won = true;
     if (!this.winnerId) this.winnerId = sessionId;
 
-    if (this.modeConfig.teamBased) {
+    if (this.modeConfig.teamBased || this.modeConfig.maxPlayers === 2) {
       this.setPhase("finished");
       return;
     }
@@ -500,7 +503,7 @@ export class PicrossRoom extends Room {
       }
     }
 
-    this.broadcast("state", this.buildSnapshot());
+    this.broadcastState();
   }
 
   private handleCross(
@@ -549,38 +552,46 @@ export class PicrossRoom extends Room {
       player.crosses[idx] = markCross;
     }
 
-    this.broadcast("state", this.buildSnapshot());
+    this.broadcastState();
   }
 
-  private buildSnapshot() {
-    const players: Record<
-      string,
-      {
-        username: string;
-        confirmedFilled: boolean[];
-        crosses: boolean[];
-        revealedEmpty: boolean[];
-        mistakeCross: boolean[];
-        livesLeft: number;
-        done: boolean;
-        won: boolean;
-        connected: boolean;
-        team: number | null;
-      }
-    > = {};
+  /** Fraction of the puzzle's filled cells this player has correctly filled. */
+  private progressFor(p: PlayerData): number {
+    const totalFilled = this.solution.reduce((sum, v) => sum + v, 0);
+    if (totalFilled === 0) return 0;
+    const filled = p.confirmedFilled.reduce(
+      (sum, v, i) => sum + (v && this.solution[i] === 1 ? 1 : 0),
+      0,
+    );
+    return filled / totalFilled;
+  }
+
+  // Every client receives their own player's full board (cells, crosses,
+  // mistakes) exactly as before, but every OTHER player is reduced to
+  // aggregated progress data. Nobody's real board layout — solved or
+  // unsolved — reaches a client it doesn't belong to, including once the
+  // match is "finished": there is no reveal-everyone's-board moment.
+  private buildSnapshotFor(viewerSessionId: string) {
+    const players: Record<string, unknown> = {};
 
     this.players.forEach((p, id) => {
+      const isViewer = id === viewerSessionId;
       players[id] = {
         username: p.username,
-        confirmedFilled: [...p.confirmedFilled],
-        crosses: [...p.crosses],
-        revealedEmpty: [...p.revealedEmpty],
-        mistakeCross: [...p.mistakeCross],
         livesLeft: p.livesLeft,
         done: p.done,
         won: p.won,
         connected: p.connected,
         team: p.team,
+        progress: this.progressFor(p),
+        ...(isViewer
+          ? {
+              confirmedFilled: [...p.confirmedFilled],
+              crosses: [...p.crosses],
+              revealedEmpty: [...p.revealedEmpty],
+              mistakeCross: [...p.mistakeCross],
+            }
+          : {}),
       };
     });
 
@@ -603,6 +614,13 @@ export class PicrossRoom extends Room {
     }
 
     return snapshot;
+  }
+
+  /** Sends every connected client the "state" message scoped to their view. */
+  private broadcastState() {
+    this.clients.forEach((c) => {
+      c.send("state", this.buildSnapshotFor(c.sessionId));
+    });
   }
 
   onDispose() {
