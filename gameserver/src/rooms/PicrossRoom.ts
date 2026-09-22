@@ -4,6 +4,13 @@ import { sql } from "../db/client.js";
 import { verifyRoomToken } from "../auth/roomToken.js";
 import { requireEnv } from "../env.js";
 import { recordRankedResult } from "../elo/ratedResults.js";
+import {
+  DEFAULT_GAME_MODE,
+  GAME_MODES,
+  isGameMode,
+  type GameMode,
+  type GameModeConfig,
+} from "./gameModes.js";
 
 interface RoomAuth {
   username: string | null;
@@ -104,16 +111,23 @@ export class PicrossRoom extends Room {
   private forfeit = false;
   private isRanked = false;
   private rankedResultRecorded = false;
+  private mode: GameMode = DEFAULT_GAME_MODE;
+  private modeConfig: GameModeConfig = GAME_MODES[DEFAULT_GAME_MODE];
 
   async onCreate(options: {
     width?: number;
     height?: number;
     isRanked?: boolean;
     isPublic?: boolean;
+    mode?: string;
   }) {
     this.isRanked = options.isRanked === true;
     const width = options.width ?? 10;
     const height = options.height ?? 10;
+
+    this.mode = isGameMode(options.mode) ? options.mode : DEFAULT_GAME_MODE;
+    this.modeConfig = GAME_MODES[this.mode];
+    this.maxClients = this.modeConfig.maxPlayers;
 
     const rows = await sql`
       SELECT width, height, row_clues, col_clues, solution, colors
@@ -145,6 +159,7 @@ export class PicrossRoom extends Room {
       inviteCode: code,
       width: this.width,
       height: this.height,
+      mode: this.mode,
     });
 
     if (!options.isPublic) {
@@ -230,7 +245,7 @@ export class PicrossRoom extends Room {
     };
     this.players.set(client.sessionId, player);
 
-    if (this.players.size === 2) {
+    if (this.players.size === this.modeConfig.maxPlayers) {
       this.setPhase("playing");
     }
 
@@ -465,6 +480,7 @@ export class PicrossRoom extends Room {
       players,
       winnerId: this.winnerId,
       forfeit: this.forfeit,
+      mode: this.mode,
     };
 
     if (this.state.phase === "finished") {
