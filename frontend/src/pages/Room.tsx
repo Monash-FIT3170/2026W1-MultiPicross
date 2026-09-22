@@ -23,15 +23,19 @@ import {
 
 interface PlayerSnapshot {
   username: string;
-  confirmedFilled: boolean[];
-  crosses: boolean[];
-  revealedEmpty: boolean[];
-  mistakeCross: boolean[];
+  /** Present only in the snapshot sent to this player's own client. */
+  confirmedFilled?: boolean[];
+  crosses?: boolean[];
+  revealedEmpty?: boolean[];
+  mistakeCross?: boolean[];
   livesLeft: number;
   done: boolean;
   won: boolean;
   /** False while the player is inside their server-side reconnection window. */
   connected: boolean;
+  team: number | null;
+  /** Fraction (0-1) of the puzzle's filled cells this player has correctly filled. */
+  progress: number;
 }
 
 interface RoomSnapshot {
@@ -45,11 +49,15 @@ interface RoomSnapshot {
   winnerId: string;
   forfeit: boolean;
   colors?: string[];
+  mode: string;
+  finishOrder: string[];
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function buildGrid(p: PlayerSnapshot): CellValue[] {
+// Board arrays are only ever present in the snapshot for the viewer's own
+// player, so this only makes sense to call on `me` — never on another player.
+function buildGrid(p: Required<Pick<PlayerSnapshot, "confirmedFilled" | "crosses" | "revealedEmpty">>): CellValue[] {
   return cellsToGrid(p.confirmedFilled, p.crosses, p.revealedEmpty);
 }
 
@@ -518,8 +526,12 @@ export function Room() {
     );
   }
 
-  const myGrid = buildGrid(me);
-  const opponentGrid = opponent ? buildGrid(opponent) : null;
+  // `me` always carries board arrays — it's the viewer's own player.
+  const myGrid = buildGrid({
+    confirmedFilled: me.confirmedFilled ?? [],
+    crosses: me.crosses ?? [],
+    revealedEmpty: me.revealedEmpty ?? [],
+  });
   const myMistakeCrossIndices = (me.mistakeCross ?? []).reduce<number[]>(
     (acc, v, i) => {
       if (v) acc.push(i);
@@ -527,12 +539,6 @@ export function Room() {
     },
     [],
   );
-  const opponentMistakeCrossIndices = opponent
-    ? (opponent.mistakeCross ?? []).reduce<number[]>((acc, v, i) => {
-        if (v) acc.push(i);
-        return acc;
-      }, [])
-    : [];
 
   // onLeave only crowns a survivor who is not already eliminated, so against
   // an opponent who is out of lives the match ends with no winner at all.
@@ -687,43 +693,17 @@ export function Room() {
           </div>
         </div>
 
-        {/* Opponent board */}
-        {opponent && opponentGrid ? (
-          <div>
-            <PlayerLabel
+        {/* Opponent progress */}
+        {opponent ? (
+          <div style={{ paddingTop: clueOffset, minWidth: 200 }}>
+            <PlayerProgressRow
               name={opponent.username}
               livesLeft={opponent.livesLeft}
               done={opponent.done}
               won={opponent.won}
               isWinner={opponentWon}
+              progress={opponent.progress}
             />
-            <div
-              style={{
-                // Heavier than it looks like it needs to be on purpose: the
-                // server sends the opponent's real cells, so the blur is the
-                // only thing standing between a viewer and their board.
-                filter: isFinished ? "none" : "blur(16px)",
-                transition: "filter 0.6s ease",
-                overflow: "hidden",
-                borderRadius: 6,
-              }}
-            >
-              <NonogramGrid
-                rowClues={rowClues}
-                colClues={colClues}
-                grid={opponentGrid}
-                width={width}
-                height={height}
-                interactive={false}
-                // Both come back with the reveal at the end of the match.
-                hideGridlines={!isFinished}
-                hideClues={!isFinished}
-                colors={isFinished ? colors : undefined}
-                completed={opponent.won}
-                mistakeCrossIndices={opponentMistakeCrossIndices}
-                cellSize={Math.max(12, cs - 8)}
-              />
-            </div>
           </div>
         ) : (
           <div
@@ -941,6 +921,69 @@ function PlayerLabel({
       )}
       <div style={{ marginLeft: "auto" }}>
         <LivesPips lives={livesLeft} />
+      </div>
+    </div>
+  );
+}
+
+// Represents any player other than the viewer: a progress bar plus lives and
+// status, instead of their actual board — the server no longer sends board
+// data for anyone but the viewer's own player (see PicrossRoom's per-client
+// snapshot scoping), so there is nothing else to render for them.
+function PlayerProgressRow({
+  name,
+  livesLeft,
+  done,
+  won,
+  isWinner,
+  progress,
+}: {
+  name: string;
+  livesLeft: number;
+  done: boolean;
+  won: boolean;
+  isWinner: boolean;
+  progress: number;
+}) {
+  const pct = Math.round(Math.min(1, Math.max(0, progress)) * 100);
+  return (
+    <div className="mp-surface" style={{ padding: "16px 20px" }}>
+      <PlayerLabel
+        name={name}
+        livesLeft={livesLeft}
+        done={done}
+        won={won}
+        isWinner={isWinner}
+      />
+      <div
+        style={{
+          height: 8,
+          borderRadius: 999,
+          background: "var(--color-line)",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${pct}%`,
+            borderRadius: 999,
+            background: isWinner
+              ? "var(--color-sage-400)"
+              : "var(--color-blue-400)",
+            transition: "width 200ms ease",
+          }}
+        />
+      </div>
+      <div
+        style={{
+          marginTop: 6,
+          fontSize: 12,
+          color: "var(--color-ink-faint)",
+          textAlign: "right",
+        }}
+      >
+        {pct}%
       </div>
     </div>
   );

@@ -32,14 +32,17 @@ type SqlClient = (typeof import("../src/db/client.js"))["sql"];
 
 interface PlayerView {
   username: string;
-  confirmedFilled: boolean[];
-  crosses: boolean[];
-  revealedEmpty: boolean[];
+  /** Present only in the snapshot sent to this player's own client. */
+  confirmedFilled?: boolean[];
+  crosses?: boolean[];
+  revealedEmpty?: boolean[];
+  mistakeCross?: boolean[];
   livesLeft: number;
   done: boolean;
   won: boolean;
   connected: boolean;
   team: number | null;
+  progress: number;
 }
 
 interface Snapshot {
@@ -207,6 +210,21 @@ describe("PicrossRoom", () => {
       bId: clientB.sessionId,
     };
   }
+
+  it("ends a 1v1 match immediately once one player completes the puzzle, even though the other hasn't finished", async () => {
+    const { clientA, seenByB, aId, bId } = await startMatch();
+
+    for (const cell of FILLED_CELLS) fill(clientA, cell);
+    const final = await seenByB.wait(
+      (s) => s.phase === "finished",
+      "the match to end once A finishes",
+    );
+
+    assert.strictEqual(final.winnerId, aId);
+    assert.strictEqual(final.players[aId].won, true);
+    assert.strictEqual(final.players[bId].won, false);
+    assert.strictEqual(final.forfeit, false);
+  });
 
   // ── D1 ─────────────────────────────────────────────────────────────────────
 
@@ -686,5 +704,80 @@ describe("PicrossRoom", () => {
     assert.strictEqual(final.players[final.winnerId].team, 1);
     assert.strictEqual(final.players[final.winnerId].won, true);
     assert.ok(final.winnerId === dId || final.winnerId === clientC.sessionId);
+  });
+
+  // ── Progress-bar visibility (per-client snapshot scoping) ───────────────
+
+  it("only includes board arrays for a client's own player, not for others", async () => {
+    const { clientA, seenByA, seenByB, aId, bId } = await startMatch();
+
+    fill(clientA, FILLED_CELLS[0]);
+    const fromA = await seenByA.wait(
+      (s) => s.players[aId]?.confirmedFilled?.[0] === true,
+      "A's own fill to appear in A's snapshot",
+    );
+
+    // A's own entry carries full board data.
+    assert.ok(Array.isArray(fromA.players[aId].confirmedFilled));
+    assert.ok(Array.isArray(fromA.players[aId].crosses));
+    assert.ok(Array.isArray(fromA.players[aId].revealedEmpty));
+    assert.ok(Array.isArray(fromA.players[aId].mistakeCross));
+
+    // B's entry, as seen by A, carries none of that — aggregated data only.
+    assert.strictEqual(fromA.players[bId].confirmedFilled, undefined);
+    assert.strictEqual(fromA.players[bId].crosses, undefined);
+    assert.strictEqual(fromA.players[bId].revealedEmpty, undefined);
+    assert.strictEqual(fromA.players[bId].mistakeCross, undefined);
+
+    // Symmetric from B's point of view: B's own board is present, A's isn't.
+    const fromB = await seenByB.wait(
+      (s) => s.players[aId] !== undefined,
+      "a snapshot to reach B",
+    );
+    assert.ok(Array.isArray(fromB.players[bId].confirmedFilled));
+    assert.strictEqual(fromB.players[aId].confirmedFilled, undefined);
+  });
+
+  it("computes progress as the fraction of filled cells correctly filled", async () => {
+    const { clientA, seenByA, seenByB, aId } = await startMatch();
+
+    assert.strictEqual(
+      (await seenByB.wait((s) => s.players[aId] !== undefined, "initial snapshot"))
+        .players[aId].progress,
+      0,
+    );
+
+    fill(clientA, FILLED_CELLS[0]);
+    const afterOne = await seenByB.wait(
+      (s) => s.players[aId]?.progress > 0,
+      "A's progress to update after one fill",
+    );
+    // 1 of 5 filled cells in the 3x3 fixture.
+    assert.strictEqual(afterOne.players[aId].progress, 1 / 5);
+
+    for (const cell of FILLED_CELLS.slice(1)) fill(clientA, cell);
+    const finished = await seenByB.wait(
+      (s) => s.phase === "finished",
+      "A to finish",
+    );
+    assert.strictEqual(finished.players[aId].progress, 1);
+  });
+
+  it("keeps other players' board data hidden even after the match ends", async () => {
+    const { clientA, seenByB, aId } = await startMatch();
+
+    for (const cell of FILLED_CELLS) fill(clientA, cell);
+    const final = await seenByB.wait(
+      (s) => s.phase === "finished",
+      "the match to end",
+    );
+
+    // B's own view of the finished match still has no board data for A.
+    assert.strictEqual(final.players[aId].confirmedFilled, undefined);
+    assert.strictEqual(final.players[aId].crosses, undefined);
+    assert.strictEqual(final.players[aId].progress, 1);
+    // The solved-board reveal (colors) is unrelated to per-player board
+    // data and is unaffected by this change.
+    assert.ok(Array.isArray(final.colors));
   });
 });
