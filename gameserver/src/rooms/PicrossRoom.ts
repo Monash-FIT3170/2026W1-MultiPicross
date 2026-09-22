@@ -94,6 +94,8 @@ interface PlayerData {
   won: boolean;
   /** False while the player is inside their reconnection window. */
   connected: boolean;
+  /** Null outside team-based modes. */
+  team: number | null;
 }
 
 export class PicrossRoom extends Room {
@@ -244,8 +246,10 @@ export class PicrossRoom extends Room {
       done: false,
       won: false,
       connected: true,
+      team: null,
     };
     this.players.set(client.sessionId, player);
+    this.assignTeams();
 
     if (this.players.size === this.modeConfig.maxPlayers) {
       this.setPhase("playing");
@@ -253,6 +257,21 @@ export class PicrossRoom extends Room {
 
     client.send("state", this.buildSnapshot());
     this.broadcast("state", this.buildSnapshot(), { except: client });
+  }
+
+  // Team assignment is derived from join order, not locked in until the
+  // match starts: the 1st and 2nd players currently in the room are Team 1,
+  // the 3rd and 4th are Team 2. Recomputing for everyone on every join (using
+  // Map's insertion-order iteration) means a pre-match leave-and-replace
+  // naturally slots the newcomer into the vacated team instead of always
+  // joining Team 2, since indices shift for everyone once a player is gone.
+  private assignTeams() {
+    if (!this.modeConfig.teamBased) return;
+    let index = 0;
+    for (const player of this.players.values()) {
+      player.team = Math.floor(index / 2);
+      index++;
+    }
   }
 
   /**
@@ -295,16 +314,23 @@ export class PicrossRoom extends Room {
       this.players.delete(client.sessionId);
       this.forfeit = true;
       this.checkSoleSurvivor();
-      // checkSoleSurvivor only ends the match when it finds a winner. With
-      // no players left able to win (everyone remaining already
-      // eliminated) the match still has to end — just with no winner.
+      this.checkTeamWipeout();
+      // Neither check above always ends the match — with 2+ active players
+      // (FFA) or an active member on both teams (2v2) remaining, it simply
+      // continues. If nobody left standing can still win (everyone
+      // remaining is already eliminated), the match still has to end, just
+      // with no winner.
       if (this.state.phase === "playing" && this.allPlayersDone()) {
         this.setPhase("finished");
       }
       this.broadcast("state", this.buildSnapshot());
       return;
     }
+    // Pre-match: team assignment is derived fresh from current join order,
+    // so a departure here must be reflected immediately rather than waiting
+    // for the next join to recompute it.
     this.players.delete(client.sessionId);
+    this.assignTeams();
     this.broadcast("state", this.buildSnapshot());
   }
 
@@ -341,26 +367,42 @@ export class PicrossRoom extends Room {
     if (this.allPlayersDone()) this.setPhase("finished");
   }
 
-  // Called once a player runs out of lives. Running out of lives never ends
-  // the match by itself while other players remain connected and active —
-  // only every remaining player being done (won or eliminated) does. A
+  // Called once a player runs out of lives. In FFA, running out of lives
+  // never ends the match by itself while other players remain active — a
   // survivor keeps playing normally; they don't win just because everyone
-  // else is out of lives (they still have to finish, or be the one left
-  // after someone actually leaves — see checkSoleSurvivor).
+  // else is out of lives (see checkSoleSurvivor, leave-only). In team-based
+  // modes, a full team wipeout DOES auto-win the match for the other team
+  // even via elimination alone (see checkTeamWipeout) — a fully eliminated
+  // team has nothing left to play for, unlike an eliminated FFA individual
+  // whose teammates-of-one-person framing doesn't apply.
   private handlePlayerElimination(player: PlayerData) {
     player.done = true;
-    if (this.allPlayersDone()) this.setPhase("finished");
+    this.checkTeamWipeout();
+    // Team modes always have a winnerId by the time anyone could be
+    // eliminated (either from an earlier completion, or checkTeamWipeout
+    // just above) and the match is already finished in that case — so this
+    // only ever fires the FFA "everyone's done" ending, whether or not
+    // someone has already won.
+    if (this.state.phase === "playing" && this.allPlayersDone()) {
+      this.setPhase("finished");
+    }
   }
 
-  // Called after a player leaves while no winner has been decided yet. If
-  // the leave drops the field to exactly one active (non-eliminated) player,
-  // there is no one left to race against — declare them the winner
-  // immediately rather than making them finish alone. This is a leave-only
-  // shortcut: a player simply running out of lives does not trigger it (see
-  // handlePlayerElimination) — the last remaining player must actually
-  // finish unless someone leaves.
+  // Called after a player leaves. If the leave drops the field to exactly
+  // one active (non-eliminated) player, there is no one left to race
+  // against — the match ends for them right away rather than making them
+  // finish alone. This is a leave-only shortcut: a player simply running out
+  // of lives does not trigger it (see handlePlayerElimination) — the last
+  // remaining player must actually finish unless someone leaves. Not used in
+  // team-based modes (see checkTeamWipeout instead).
+  //
+  // An FFA match can already have a winnerId here (the 1st-place finisher)
+  // while still "playing", since remaining players keep racing for
+  // placement — that recorded 1st place is never overwritten, but the sole
+  // survivor still has nothing left to race against, so the match ends for
+  // them too.
   private checkSoleSurvivor() {
-    if (this.winnerId) return;
+    if (this.modeConfig.teamBased) return;
 
     const survivors = [...this.players.entries()].filter(
       ([, p]) => !p.done,
@@ -368,6 +410,32 @@ export class PicrossRoom extends Room {
     if (survivors.length !== 1) return;
 
     const [winnerId, winner] = survivors[0];
+    if (!this.winnerId) this.winnerId = winnerId;
+    winner.won = true;
+    this.setPhase("finished");
+  }
+
+  // Team-based equivalent of checkSoleSurvivor. Unlike FFA, a full team
+  // wipeout auto-wins the match for the other team even when it happens
+  // purely through elimination (no leave involved) — a fully eliminated
+  // team is a clearer terminal state than "last FFA player standing" is for
+  // N individuals, so this is checked from both onLeave and
+  // handlePlayerElimination.
+  private checkTeamWipeout() {
+    if (this.winnerId || !this.modeConfig.teamBased) return;
+
+    const activeTeams = new Set(
+      [...this.players.values()].filter((p) => !p.done).map((p) => p.team),
+    );
+    if (activeTeams.size !== 1) return;
+
+    const [survivingTeam] = activeTeams;
+    const survivor = [...this.players.entries()].find(
+      ([, p]) => !p.done && p.team === survivingTeam,
+    );
+    if (!survivor) return;
+
+    const [winnerId, winner] = survivor;
     this.winnerId = winnerId;
     winner.won = true;
     this.setPhase("finished");
@@ -497,6 +565,7 @@ export class PicrossRoom extends Room {
         done: boolean;
         won: boolean;
         connected: boolean;
+        team: number | null;
       }
     > = {};
 
@@ -511,6 +580,7 @@ export class PicrossRoom extends Room {
         done: p.done,
         won: p.won,
         connected: p.connected,
+        team: p.team,
       };
     });
 

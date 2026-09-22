@@ -27,14 +27,14 @@ Concretely, in `PicrossRoom.ts`:
 
 ## Acceptance criteria
 
-- [ ] In a `1v1v1v1` match, the first player to finish does not end the match; remaining players keep playing.
-- [ ] The match ends once all 4 players are won/eliminated; finishers appear in `finishOrder` in completion order; non-finishers are absent from `finishOrder`.
-- [ ] A player leaving mid-`1v1v1v1`-match with 2+ others still active does not end the match or declare anyone a winner.
-- [ ] If a leave drops the field to exactly one active player, that player is declared the winner immediately (no need to finish), consistent with today's 1v1 rule.
-- [ ] An elimination (out of lives) never auto-wins the match for a sole remaining active player, regardless of player count or prior leaves — they must keep playing until they finish or someone actually leaves.
-- [ ] `forfeit` is `true` for any match that ends via a leave (whether or not a winner was crowned), and `false` when the match ends via elimination (everyone done, no leave involved).
-- [ ] Existing 1v1 tests in `gameserver/test/PicrossRoom.test.ts` pass unmodified.
-- [ ] New tests cover: continue-after-first-finish, `finishOrder` correctness, leave-without-ending-match, and sole-survivor auto-win for a 3-4 player FFA room.
+- [x] In a `1v1v1v1` match, the first player to finish does not end the match; remaining players keep playing.
+- [x] The match ends once all 4 players are won/eliminated; finishers appear in `finishOrder` in completion order; non-finishers are absent from `finishOrder`.
+- [x] A player leaving mid-`1v1v1v1`-match with 2+ others still active does not end the match or declare anyone a winner.
+- [x] If a leave drops the field to exactly one active player, that player is declared the winner immediately (no need to finish), consistent with today's 1v1 rule. (Note: this holds even after an earlier player has already finished — see the note above about the `checkSoleSurvivor` bugfix landed alongside issue 04.)
+- [x] An elimination (out of lives) never auto-wins the match for a sole remaining active player, regardless of player count or prior leaves — they must keep playing until they finish or someone actually leaves.
+- [x] `forfeit` is `true` for any match that ends via a leave (whether or not a winner was crowned), and `false` when the match ends via elimination (everyone done, no leave involved).
+- [x] Existing 1v1 tests in `gameserver/test/PicrossRoom.test.ts` pass unmodified.
+- [x] New tests cover: continue-after-first-finish, `finishOrder` correctness, leave-without-ending-match, and sole-survivor auto-win for a 3-4 player FFA room.
 
 ## Blocked by
 
