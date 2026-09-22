@@ -1,6 +1,13 @@
+import { useState } from "react";
 import { SettingRow } from "./components/SettingRow";
+import { SettingsToggle } from "./components/SettingsToggle";
 
 export function AppearanceSettings() {
+
+  const [highContrast, setHighContrast] = useState(false);
+  const [cellFillPop, setCellFillPop] = useState(true);
+  const [showOpponentProgress, setShowOpponentProgress] = useState(true);
+
   return (
     <div>
       <h2 className="text-xl font-bold font-ui">Appearance</h2>
@@ -13,12 +20,11 @@ export function AppearanceSettings() {
           title="High contrast"
           description="Increase contrast between interface elements."
         >
-          <button
-            type="button"
-            className="rounded-lg border border-[#E7E4DC] px-4 py-2 font-ui text-sm"
-          >
-            Toggle
-          </button>
+          <SettingsToggle
+            checked={highContrast}
+            onChange={setHighContrast}
+            label="High contrast"
+          />
         </SettingRow>
 
         <SettingRow
@@ -37,12 +43,11 @@ export function AppearanceSettings() {
           title="Cell fill pop"
           description="A small scale bounce when a fill is correct."
         >
-          <button
-            type="button"
-            className="rounded-lg border border-[#E7E4DC] px-4 py-2 font-ui text-sm"
-          >
-            Toggle
-          </button>
+          <SettingsToggle
+            checked={cellFillPop}
+            onChange={setCellFillPop}
+            label="Cell fill pop"
+          />
         </SettingRow>
 
         <SettingRow
@@ -50,12 +55,11 @@ export function AppearanceSettings() {
           description="Show cells your opponent has filled."
           showDivider={false}
         >
-          <button
-            type="button"
-            className="rounded-lg border border-[#E7E4DC] px-4 py-2 font-ui text-sm"
-          >
-            Toggle
-          </button>
+          <SettingsToggle
+            checked={showOpponentProgress}
+            onChange={setShowOpponentProgress}
+            label="Show opponent progress"
+          />
         </SettingRow>
       </div>
     </div>
