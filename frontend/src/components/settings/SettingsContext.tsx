@@ -22,6 +22,9 @@ type SettingsContextType = {
 
   cellFillPop: boolean;
   setCellFillPop: (enabled: boolean) => void;
+
+  showOpponentProgress: boolean;
+  setShowOpponentProgress: (enabled: boolean) => void;
 };
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -32,6 +35,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [animationLevel, setAnimationLevel] =
     useState<AnimationLevel>("full");
   const [cellFillPop, setCellFillPop] = useState(true);
+  const [showOpponentProgress, setShowOpponentProgress] = useState(true);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -72,6 +76,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setAnimationLevel,
         cellFillPop,
         setCellFillPop,
+        showOpponentProgress,
+        setShowOpponentProgress,
       }}
     >
       {children}

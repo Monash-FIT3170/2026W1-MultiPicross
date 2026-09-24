@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { SettingRow } from "./components/SettingRow";
 import { SettingsToggle } from "./components/SettingsToggle";
 import { SettingsSelector } from "./components/SettingsSelector";
@@ -13,9 +12,9 @@ export function AppearanceSettings() {
     setAnimationLevel,
     cellFillPop,
     setCellFillPop,
+    showOpponentProgress,
+    setShowOpponentProgress,
   } = useSettings();
-
-  const [showOpponentProgress, setShowOpponentProgress] = useState(true);
 
   return (
     <div>
