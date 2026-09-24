@@ -4,7 +4,6 @@ import { SettingsSelector } from "./components/SettingsSelector";
 import { useSettings } from "./SettingsContext";
 
 export function AppearanceSettings() {
-
   const {
     theme,
     setTheme,
@@ -118,7 +117,9 @@ export function AppearanceSettings() {
                   : "Off"
             }
             onChange={(value) =>
-              setAnimationLevel(value.toLowerCase() as "full" | "subtle" | "off")
+              setAnimationLevel(
+                value.toLowerCase() as "full" | "subtle" | "off",
+              )
             }
             label="Animation level"
           />

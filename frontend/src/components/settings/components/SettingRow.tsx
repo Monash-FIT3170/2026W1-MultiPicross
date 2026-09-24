@@ -21,11 +21,11 @@ export function SettingRow({
     >
       <div className="min-w-0">
         <h3 className="text-sm font-semibold text-[var(--color-ink)] font-ui">
-            {title}
+          {title}
         </h3>
 
         <p className="mt-1 text-[14px] text-[var(--color-ink-muted)] font-ui">
-            {description}
+          {description}
         </p>
       </div>
 

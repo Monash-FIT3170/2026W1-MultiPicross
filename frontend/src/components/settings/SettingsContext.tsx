@@ -32,8 +32,7 @@ const SettingsContext = createContext<SettingsContextType | null>(null);
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>("light");
-  const [animationLevel, setAnimationLevel] =
-    useState<AnimationLevel>("full");
+  const [animationLevel, setAnimationLevel] = useState<AnimationLevel>("full");
   const [cellFillPop, setCellFillPop] = useState(true);
   const [showOpponentProgress, setShowOpponentProgress] = useState(true);
 
