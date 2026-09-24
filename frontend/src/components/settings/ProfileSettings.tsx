@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import {
   HANDLE_MAX,
@@ -8,6 +9,7 @@ import {
 } from "../../auth/handle";
 import { useSettings } from "./SettingsContext";
 import plusIcon from "../../assets/settings/plus.svg";
+import profileIcon from "../../assets/settings/profile.svg";
 
 const accentOptions = [
   "#3D5A80",
@@ -19,13 +21,88 @@ const accentOptions = [
 ];
 
 export function ProfileSettings() {
-  const { user, setHandle } = useAuth();
-  const { profileAccent, setProfileAccent } = useSettings();
+
+  const navigate = useNavigate();
+  const { status, user, setHandle } = useAuth();
+  const {
+    profileAccent,
+    setProfileAccent,
+    closeSettings,
+  } = useSettings();
 
   const [value, setValue] = useState(user?.handle ?? "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+
+  function handleSignIn() {
+    closeSettings();
+    navigate("/login");
+  }
+
+  if (status !== "authenticated" || !user) {
+    return (
+      <div>
+        <h2 className="text-xl font-bold text-[var(--color-ink)] font-ui">
+          Profile
+        </h2>
+
+        <p className="mt-1 text-[14px] text-[var(--color-ink-muted)] font-ui">
+          Manage your player profile and identity.
+        </p>
+
+        <div
+          className="
+            mt-8 flex flex-col items-center justify-center
+            rounded-2xl
+            border-2 border-[var(--color-line)]
+            bg-[var(--color-surface-sunk)]
+            px-8 py-12
+            text-center
+          "
+        >
+          <div
+            className="
+              flex h-11 w-11 items-center justify-center
+              rounded-full
+              border-2 border-[var(--color-line-strong)]
+            "
+          >
+            <img
+              src={profileIcon}
+              alt=""
+              aria-hidden="true"
+              className="settings-icon h-5 w-5 opacity-60"
+            />
+          </div>
+
+          <h3 className="mt-4 text-base text-[16px] font-bold text-[var(--color-ink)] font-ui">
+            You're playing as a guest
+          </h3>
+
+          <p className="mt-2 max-w-md text-[14px] text-[var(--color-ink-muted)] font-ui">
+            Sign in to pick a handle, set a nickname, and keep your settings across devices.
+          </p>
+
+          <button
+            type="button"
+            onClick={handleSignIn}
+            className="
+              mt-6 min-h-11 rounded-xl
+              bg-[var(--color-blue-500)]
+              px-6
+              text-sm font-semibold
+              text-white font-ui
+              transition
+              hover:opacity-90
+            "
+          >
+            Sign in
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
