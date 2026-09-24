@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from "react";
 
-type Theme = "light" | "dark";
+type Theme = "light" | "dark" | "high-contrast";
 
 type SettingsContextType = {
   isOpen: boolean;
@@ -15,6 +15,9 @@ type SettingsContextType = {
 
   theme: Theme;
   setTheme: (theme: Theme) => void;
+
+  highContrast: boolean;
+  setHighContrast: (enabled: boolean) => void;
 };
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -22,9 +25,14 @@ const SettingsContext = createContext<SettingsContextType | null>(null);
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>("light");
+  const [highContrast, setHighContrast] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
+    document.documentElement.classList.toggle(
+      "high-contrast",
+      theme === "high-contrast",
+    );
   }, [theme]);
 
   return (
@@ -34,7 +42,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         openSettings: () => setIsOpen(true),
         closeSettings: () => setIsOpen(false),
         theme,
-        setTheme
+        setTheme,
+        highContrast,
+        setHighContrast
       }}
     >
       {children}

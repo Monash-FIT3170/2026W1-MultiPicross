@@ -6,8 +6,12 @@ import { useSettings } from "./SettingsContext";
 
 export function AppearanceSettings() {
 
-  const { theme, setTheme } = useSettings();
-  const [highContrast, setHighContrast] = useState(false);
+  const {
+    theme,
+    setTheme,
+    highContrast,
+    setHighContrast,
+  } = useSettings();
   const [cellFillPop, setCellFillPop] = useState(true);
   const [showOpponentProgress, setShowOpponentProgress] = useState(true);
   const [animations, setAnimations] = useState("Full");
@@ -24,7 +28,7 @@ export function AppearanceSettings() {
           Theme
         </p>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <button
             type="button"
             onClick={() => setTheme("light")}
@@ -43,7 +47,7 @@ export function AppearanceSettings() {
               </div>
             </div>
 
-            <span className="mt-2 block text-sm font-medium font-ui">
+            <span className="mt-2 block text-[13px] font-medium font-ui">
               Light
             </span>
           </button>
@@ -66,25 +70,37 @@ export function AppearanceSettings() {
               </div>
             </div>
 
-            <span className="mt-2 block text-sm font-medium font-ui">
+            <span className="mt-2 block text-[13px] font-medium font-ui">
               Dark
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTheme("high-contrast")}
+            aria-pressed={theme === "high-contrast"}
+            className={`rounded-xl border-2 p-3 text-left transition ${
+              theme === "high-contrast"
+                ? "border-[#3D5A80]"
+                : "border-[#E7E4DC] hover:border-[#B8D0EC]"
+            }`}
+          >
+            <div className="flex h-12 items-center justify-center rounded-lg border border-black bg-white">
+              <div className="flex gap-1">
+                <span className="h-3 w-3 rounded-sm bg-black" />
+                <span className="h-3 w-3 rounded-sm border border-black bg-white" />
+                <span className="h-3 w-3 rounded-sm bg-black" />
+              </div>
+            </div>
+
+            <span className="mt-2 block text-[13px] font-medium font-ui">
+              High Contrast
             </span>
           </button>
         </div>
       </div>
 
       <div>
-        <SettingRow
-          title="High contrast"
-          description="Increase contrast between interface elements."
-        >
-          <SettingsToggle
-            checked={highContrast}
-            onChange={setHighContrast}
-            label="High contrast"
-          />
-        </SettingRow>
-
         <SettingRow
           title="Animations"
           description="Show cell pops, win banners, menu transitions."
