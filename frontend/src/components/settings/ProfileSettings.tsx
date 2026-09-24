@@ -21,14 +21,9 @@ const accentOptions = [
 ];
 
 export function ProfileSettings() {
-
   const navigate = useNavigate();
   const { status, user, setHandle } = useAuth();
-  const {
-    profileAccent,
-    setProfileAccent,
-    closeSettings,
-  } = useSettings();
+  const { profileAccent, setProfileAccent, closeSettings } = useSettings();
 
   const [value, setValue] = useState(user?.handle ?? "");
   const [loading, setLoading] = useState(false);
@@ -81,7 +76,8 @@ export function ProfileSettings() {
           </h3>
 
           <p className="mt-2 max-w-md text-[14px] text-[var(--color-ink-muted)] font-ui">
-            Sign in to pick a handle, set a nickname, and keep your settings across devices.
+            Sign in to pick a handle, set a nickname, and keep your settings
+            across devices.
           </p>
 
           <button
