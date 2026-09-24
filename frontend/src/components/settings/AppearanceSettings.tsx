@@ -9,12 +9,11 @@ export function AppearanceSettings() {
   const {
     theme,
     setTheme,
-    highContrast,
-    setHighContrast,
+    animationLevel,
+    setAnimationLevel,
   } = useSettings();
   const [cellFillPop, setCellFillPop] = useState(true);
   const [showOpponentProgress, setShowOpponentProgress] = useState(true);
-  const [animations, setAnimations] = useState("Full");
 
   return (
     <div>
@@ -107,8 +106,16 @@ export function AppearanceSettings() {
         >
           <SettingsSelector
             options={["Full", "Subtle", "Off"]}
-            value={animations}
-            onChange={setAnimations}
+            value={
+              animationLevel === "full"
+                ? "Full"
+                : animationLevel === "subtle"
+                  ? "Subtle"
+                  : "Off"
+            }
+            onChange={(value) =>
+              setAnimationLevel(value.toLowerCase() as "full" | "subtle" | "off")
+            }
             label="Animation level"
           />
         </SettingRow>
