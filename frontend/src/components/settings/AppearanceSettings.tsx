@@ -11,8 +11,10 @@ export function AppearanceSettings() {
     setTheme,
     animationLevel,
     setAnimationLevel,
+    cellFillPop,
+    setCellFillPop,
   } = useSettings();
-  const [cellFillPop, setCellFillPop] = useState(true);
+
   const [showOpponentProgress, setShowOpponentProgress] = useState(true);
 
   return (
