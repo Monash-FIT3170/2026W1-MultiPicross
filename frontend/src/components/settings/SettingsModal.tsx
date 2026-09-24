@@ -47,7 +47,7 @@ export function SettingsModal() {
               src={settingsIcon}
               alt=""
               aria-hidden="true"
-              className="h-6 w-6 opacity-90"
+              className="settings-icon h-6 w-6 opacity-90"
             />
 
             <h1
@@ -83,7 +83,7 @@ export function SettingsModal() {
               src={closeIcon}
               alt=""
               aria-hidden="true"
-              className="h-4 w-4 opacity-60"
+              className="settings-icon h-4 w-4 opacity-60"
             />
           </button>
         </header>

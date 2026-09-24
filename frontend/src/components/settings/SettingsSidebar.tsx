@@ -52,7 +52,7 @@ export function SettingsSidebar({
                 src={section.icon}
                 alt=""
                 aria-hidden="true"
-                className="h-4 w-4 shrink-0 opacity-60"
+                className="settings-icon h-4 w-4 shrink-0 opacity-60"
               />
               <span>{section.label}</span>
             </span>
@@ -70,7 +70,7 @@ export function SettingsSidebar({
             src={accountIcon}
             alt=""
             aria-hidden="true"
-            className="h-4 w-4 shrink-0 opacity-60"
+            className="settings-icon h-4 w-4 shrink-0 opacity-60"
           />
           <span>Account</span>
         </span>
