@@ -19,6 +19,9 @@ type SettingsContextType = {
 
   animationLevel: AnimationLevel;
   setAnimationLevel: (level: AnimationLevel) => void;
+
+  cellFillPop: boolean;
+  setCellFillPop: (enabled: boolean) => void;
 };
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -28,6 +31,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>("light");
   const [animationLevel, setAnimationLevel] =
     useState<AnimationLevel>("full");
+  const [cellFillPop, setCellFillPop] = useState(true);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -49,6 +53,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     );
   }, [animationLevel]);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      "cell-fill-pop-off",
+      !cellFillPop,
+    );
+  }, [cellFillPop]);
+
   return (
     <SettingsContext.Provider
       value={{
@@ -59,6 +70,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setTheme,
         animationLevel,
         setAnimationLevel,
+        cellFillPop,
+        setCellFillPop,
       }}
     >
       {children}

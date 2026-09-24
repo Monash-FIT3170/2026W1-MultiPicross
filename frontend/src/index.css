@@ -310,6 +310,9 @@ body {
   animation: none !important;
   transition: none !important;
 }
+.cell-fill-pop-off .mp-pop {
+  animation: none !important;
+}
 
 .mp-room-progress-stack {
   display: flex;
