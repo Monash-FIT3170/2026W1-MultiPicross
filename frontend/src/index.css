@@ -106,6 +106,28 @@
   --color-blue-500: #8eadd0;
   --color-blue-600: #aac2dc;
 }
+/* High contrast colours */
+.high-contrast {
+  --color-paper: var(--color-contrast-background);
+  --color-surface: var(--color-contrast-background);
+  --color-surface-sunk: var(--color-contrast-background);
+
+  --color-ink: #000000;
+  --color-ink-soft: #000000;
+  --color-ink-muted: #000000;
+  --color-ink-faint: #000000;
+  --color-ink-clue: #000000;
+
+  --color-line: #000000;
+  --color-line-strong: #000000;
+
+  --color-blue-500: var(--color-contrast-accent-primary);
+
+  --color-cell-filled: var(--color-contrast-cell-filled);
+  --color-accent-primary: var(--color-contrast-accent-primary);
+  --color-accent-error: var(--color-contrast-accent-error);
+  --color-accent-win: var(--color-contrast-accent-win);
+}
 
 /* Override the constrained #root from @layer below — unlayered styles win */
 html,
