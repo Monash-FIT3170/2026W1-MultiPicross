@@ -106,6 +106,9 @@
   --color-blue-500: #8eadd0;
   --color-blue-600: #aac2dc;
 }
+.dark .settings-icon {
+  filter: invert(1);
+}
 /* High contrast colours */
 .high-contrast {
   --color-paper: var(--color-contrast-background);
@@ -127,6 +130,9 @@
   --color-accent-primary: var(--color-contrast-accent-primary);
   --color-accent-error: var(--color-contrast-accent-error);
   --color-accent-win: var(--color-contrast-accent-win);
+}
+.high-contrast .settings-icon {
+  filter: brightness(0);
 }
 
 /* Override the constrained #root from @layer below — unlayered styles win */
