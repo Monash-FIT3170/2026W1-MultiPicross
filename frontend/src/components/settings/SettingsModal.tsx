@@ -30,15 +30,15 @@ export function SettingsModal() {
           flex h-[640px] w-[896px] max-h-[90vh] max-w-[95vw]
           flex-col overflow-hidden
           rounded-2xl
-          border border-[#E7E4DC]
-          bg-white
+          border border-[var(--color-line)]
+          bg-[var(--color-surface)]
           shadow-xl
         "
       >
         <header
           className="
             flex h-16 items-center justify-between
-            border-b-2 border-[#E7E4DC]
+            border-b-2 border-[var(--color-line)]
             pl-6 pr-4
           "
         >
@@ -52,7 +52,12 @@ export function SettingsModal() {
 
             <h1
               id="settings-title"
-              className="text-xl font-bold tracking-[0.02em] font-ui"
+              className="
+                text-xl font-bold
+                tracking-[0.02em]
+                text-[var(--color-ink)]
+                font-ui
+              "
             >
               Settings
             </h1>
@@ -69,8 +74,8 @@ export function SettingsModal() {
               bg-transparent
               transition
               hover:-translate-y-px
-              hover:border-[#B8D0EC]
-              hover:bg-[#F0EEE9]
+              hover:border-[var(--color-blue-200)]
+              hover:bg-[var(--color-surface-sunk)]
             "
             aria-label="Close settings"
           >
@@ -87,8 +92,8 @@ export function SettingsModal() {
           <aside
             className="
               flex w-56 shrink-0 flex-col
-              border-r-2 border-[#E7E4DC]
-              bg-[#F7F6F2]
+              border-r-2 border-[var(--color-line)]
+              bg-[var(--color-paper)]
               p-4
             "
           >
@@ -98,7 +103,14 @@ export function SettingsModal() {
             />
           </aside>
 
-          <main className="min-w-0 flex-1 overflow-y-auto bg-white p-8">
+          <main
+            className="
+              min-w-0 flex-1
+              overflow-y-auto
+              bg-[var(--color-surface)]
+              p-8
+            "
+          >
             {activeSection === "profile" && <ProfileSettings />}
             {activeSection === "appearance" && <AppearanceSettings />}
             {activeSection === "gameplay" && <GameplaySettings />}

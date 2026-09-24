@@ -6,7 +6,12 @@ import accessibilityIcon from "../../assets/settings/accessibility.svg";
 import accountIcon from "../../assets/settings/account.svg";
 
 export type SettingsSection =
-  "profile" | "appearance" | "gameplay" | "audio" | "accessibility" | "account";
+  | "profile"
+  | "appearance"
+  | "gameplay"
+  | "audio"
+  | "accessibility"
+  | "account";
 
 type SettingsSidebarProps = {
   activeSection: SettingsSection;
@@ -24,8 +29,8 @@ const sections: { id: SettingsSection; label: string; icon: string }[] = [
 const getButtonClass = (isActive: boolean) =>
   `rounded-lg border px-3 py-3 text-left text-sm font-ui transition ${
     isActive
-      ? "border-[#B8D0EC] bg-[#EAF2FB] text-[#3D5A80] font-bold hover:-translate-y-px"
-      : "border-transparent text-[#6B6B6B] font-semibold hover:-translate-y-px hover:border-[#B8D0EC] hover:bg-[#F0EEE9]"
+      ? "border-[var(--color-blue-200)] bg-[var(--color-blue-50)] text-[var(--color-blue-500)] font-bold hover:-translate-y-px"
+      : "border-transparent text-[var(--color-ink-muted)] font-semibold hover:-translate-y-px hover:border-[var(--color-blue-200)] hover:bg-[var(--color-surface-sunk)]"
   }`;
 
 export function SettingsSidebar({

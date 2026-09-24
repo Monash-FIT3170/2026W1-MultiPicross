@@ -13,7 +13,7 @@ export function SettingsSelector({
 }: SettingsSelectorProps) {
   return (
     <div
-      className="flex rounded-full bg-[#F0EEE9] p-0.5"
+      className="flex rounded-full bg-[var(--color-surface-sunk)] p-0.5"
       role="group"
       aria-label={label}
     >
@@ -28,8 +28,8 @@ export function SettingsSelector({
             aria-pressed={isSelected}
             className={`min-h-8 rounded-full px-3 text-[13px] font-ui transition ${
               isSelected
-                ? "bg-white font-medium text-[#3D5A80] shadow-sm"
-                : "text-[#6B6B6B] hover:text-black"
+                ? "bg-[var(--color-surface)] font-medium text-[var(--color-blue-500)] shadow-sm"
+                : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
             }`}
           >
             {option}

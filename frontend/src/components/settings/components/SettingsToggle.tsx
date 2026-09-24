@@ -20,11 +20,13 @@ export function SettingsToggle({
     >
       <span
         className={`flex h-7 w-12 items-center rounded-full p-1 transition ${
-          checked ? "bg-[#3D5A80]" : "bg-[#D6D3CC]"
+          checked
+            ? "bg-[var(--color-blue-500)]"
+            : "bg-[var(--color-line-strong)]"
         }`}
       >
         <span
-          className={`h-5 w-5 rounded-full bg-white transition-transform ${
+          className={`h-5 w-5 rounded-full bg-[var(--color-surface)] transition-transform ${
             checked ? "translate-x-5" : "translate-x-0"
           }`}
         />

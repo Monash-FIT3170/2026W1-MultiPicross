@@ -16,15 +16,15 @@ export function SettingRow({
   return (
     <div
       className={`flex items-center justify-between gap-6 py-4 ${
-        showDivider ? "border-b border-[#E7E4DC]" : ""
+        showDivider ? "border-b border-[var(--color-line)]" : ""
       }`}
     >
       <div className="min-w-0">
-        <h3 className="text-sm font-semibold text-black font-ui">
+        <h3 className="text-sm font-semibold text-[var(--color-ink)] font-ui">
             {title}
         </h3>
 
-        <p className="mt-1 text-[14px] text-[#6B6B6B] font-ui">
+        <p className="mt-1 text-[14px] text-[var(--color-ink-muted)] font-ui">
             {description}
         </p>
       </div>
