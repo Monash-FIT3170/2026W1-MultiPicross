@@ -6,9 +6,21 @@ import {
   HANDLE_PATTERN,
   HANDLE_RULE,
 } from "../../auth/handle";
+import { useSettings } from "./SettingsContext";
+import plusIcon from "../../assets/settings/plus.svg";
+
+const accentOptions = [
+  "#3D5A80",
+  "#9284C6",
+  "#4CAF83",
+  "#E47D60",
+  "#DCBA70",
+  "#222225",
+];
 
 export function ProfileSettings() {
   const { user, setHandle } = useAuth();
+  const { profileAccent, setProfileAccent } = useSettings();
 
   const [value, setValue] = useState(user?.handle ?? "");
   const [loading, setLoading] = useState(false);
@@ -36,7 +48,6 @@ export function ProfileSettings() {
       setLoading(false);
     }
   }
-
   return (
     <div>
       <h2 className="text-xl font-bold text-[var(--color-ink)] font-ui">
@@ -47,7 +58,98 @@ export function ProfileSettings() {
         Your handle is unique. Your nickname is what other players see.
       </p>
 
-      <form onSubmit={onSubmit} noValidate className="mt-8">
+      {/* Profile accent */}
+      <div className="mt-6 flex items-center gap-3">
+        <div
+          className="
+            flex h-12 w-12 shrink-0 items-center justify-center
+            rounded-full text-sm font-bold text-white font-ui
+          "
+          style={{ backgroundColor: profileAccent }}
+        >
+          {user?.handle?.slice(0, 2).toUpperCase() ?? "?"}
+        </div>
+
+        <div>
+          <p
+            className="
+              pl-[10px]
+              text-xs font-medium uppercase tracking-wider
+              text-[var(--color-ink-faint)] font-ui
+            "
+          >
+            Accent
+          </p>
+
+          <div className="mt-1 flex items-center -space-x-2">
+            {accentOptions.map((color) => {
+              const selected =
+                profileAccent.toLowerCase() === color.toLowerCase();
+
+              return (
+                <button
+                  key={color}
+                  type="button"
+                  onClick={() => setProfileAccent(color)}
+                  aria-label={`Select ${color} profile accent`}
+                  aria-pressed={selected}
+                  className="
+                    flex h-11 w-11 items-center justify-center
+                    rounded-full
+                  "
+                >
+                  <span
+                    className={`
+                      h-6 w-6 rounded-full
+                      ${
+                        selected
+                          ? "ring-2 ring-[var(--color-blue-500)] ring-offset-2 ring-offset-[var(--color-surface)]"
+                          : ""
+                      }
+                    `}
+                    style={{ backgroundColor: color }}
+                  />
+                </button>
+              );
+            })}
+
+            {/* Custom colour */}
+            <label
+              className="
+                relative flex h-11 w-11 cursor-pointer
+                items-center justify-center rounded-full
+              "
+              aria-label="Choose custom profile accent colour"
+            >
+              <span
+                className="
+                  flex h-6 w-6 items-center justify-center
+                  rounded-full
+                  border border-[var(--color-line-strong)]
+                "
+              >
+                <img
+                  src={plusIcon}
+                  alt=""
+                  aria-hidden="true"
+                  className="settings-icon h-2.5 w-2.5"
+                />
+              </span>
+
+              <input
+                type="color"
+                value={profileAccent}
+                onChange={(e) => setProfileAccent(e.target.value)}
+                className="absolute inset-0 cursor-pointer opacity-0"
+                aria-label="Custom profile accent colour"
+              />
+            </label>
+          </div>
+        </div>
+      </div>
+
+      {/* Handle */}
+      <form onSubmit={onSubmit} noValidate className="mt-6">
         <label
           htmlFor="profile-handle"
           className="text-sm font-medium text-[var(--color-ink)] font-ui"
@@ -117,7 +219,7 @@ export function ProfileSettings() {
         </p>
 
         {error && (
-          <p className="mt-2 text-sm text-[var(--color-accent-error)] font-ui">
+          <p className="mt-2 text-[13px] text-[var(--color-accent-error)] font-ui">
             {error}
           </p>
         )}
