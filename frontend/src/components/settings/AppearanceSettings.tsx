@@ -19,13 +19,16 @@ export function AppearanceSettings() {
 
   return (
     <div>
-      <h2 className="text-xl font-bold font-ui">Appearance</h2>
-      <p className="mt-1 text-[14px] text-[#6B6B6B] font-ui">
+      <h2 className="text-xl font-bold text-[var(--color-ink)] font-ui">
+        Appearance
+      </h2>
+
+      <p className="mt-1 text-[14px] text-[var(--color-ink-muted)] font-ui">
         How the board and the menus look.
       </p>
 
-      <div className="mt-6 border-b border-[#E7E4DC] pb-5">
-        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[#6B6B6B] font-ui">
+      <div className="mt-6 border-b border-[var(--color-line)] pb-5">
+        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-[var(--color-ink-muted)] font-ui">
           Theme
         </p>
 
@@ -34,10 +37,10 @@ export function AppearanceSettings() {
             type="button"
             onClick={() => setTheme("light")}
             aria-pressed={theme === "light"}
-            className={`rounded-xl border-2 p-3 text-left transition ${
+            className={`rounded-xl border-2 p-3 text-left text-[var(--color-ink)] transition ${
               theme === "light"
-                ? "border-[#3D5A80]"
-                : "border-[#E7E4DC] hover:border-[#B8D0EC]"
+                ? "border-[var(--color-blue-500)]"
+                : "border-[var(--color-line)] hover:border-[var(--color-blue-200)]"
             }`}
           >
             <div className="flex h-12 items-center justify-center rounded-lg bg-[#F7F6F2]">
@@ -57,10 +60,10 @@ export function AppearanceSettings() {
             type="button"
             onClick={() => setTheme("dark")}
             aria-pressed={theme === "dark"}
-            className={`rounded-xl border-2 p-3 text-left transition ${
+            className={`rounded-xl border-2 p-3 text-left text-[var(--color-ink)] transition ${
               theme === "dark"
-                ? "border-[#3D5A80]"
-                : "border-[#E7E4DC] hover:border-[#B8D0EC]"
+                ? "border-[var(--color-blue-500)]"
+                : "border-[var(--color-line)] hover:border-[var(--color-blue-200)]"
             }`}
           >
             <div className="flex h-12 items-center justify-center rounded-lg bg-[#29292D]">
@@ -80,10 +83,10 @@ export function AppearanceSettings() {
             type="button"
             onClick={() => setTheme("high-contrast")}
             aria-pressed={theme === "high-contrast"}
-            className={`rounded-xl border-2 p-3 text-left transition ${
+            className={`rounded-xl border-2 p-3 text-left text-[var(--color-ink)] transition ${
               theme === "high-contrast"
-                ? "border-[#3D5A80]"
-                : "border-[#E7E4DC] hover:border-[#B8D0EC]"
+                ? "border-[var(--color-blue-500)]"
+                : "border-[var(--color-line)] hover:border-[var(--color-blue-200)]"
             }`}
           >
             <div className="flex h-12 items-center justify-center rounded-lg border border-black bg-white">
