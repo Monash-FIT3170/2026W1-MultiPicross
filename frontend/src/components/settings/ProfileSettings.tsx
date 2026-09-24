@@ -215,7 +215,8 @@ export function ProfileSettings() {
         </div>
 
         <p className="mt-2 text-xs text-[var(--color-ink-faint)] font-ui">
-          Letters, numbers and underscores. {HANDLE_MIN}–{HANDLE_MAX} characters.
+          Letters, numbers and underscores. {HANDLE_MIN}–{HANDLE_MAX}{" "}
+          characters.
         </p>
 
         {error && (
@@ -225,9 +226,7 @@ export function ProfileSettings() {
         )}
 
         {saved && (
-          <p className="mt-2 text-sm text-green-700 font-ui">
-            Handle updated.
-          </p>
+          <p className="mt-2 text-sm text-green-700 font-ui">Handle updated.</p>
         )}
       </form>
     </div>
