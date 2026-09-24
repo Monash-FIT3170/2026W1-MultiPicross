@@ -296,6 +296,21 @@ body {
   animation: mp-pop 320ms var(--ease-out) forwards;
 }
 
+/* Reduced animation */
+.animations-subtle *,
+.animations-subtle *::before,
+.animations-subtle *::after {
+  animation-duration: 0.1s !important;
+  transition-duration: 0.1s !important;
+}
+/* No animation */
+.animations-off *,
+.animations-off *::before,
+.animations-off *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
 .mp-room-progress-stack {
   display: flex;
   flex-direction: column;

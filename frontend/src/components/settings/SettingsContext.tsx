@@ -7,6 +7,7 @@ import {
 } from "react";
 
 type Theme = "light" | "dark" | "high-contrast";
+type AnimationLevel = "full" | "subtle" | "off";
 
 type SettingsContextType = {
   isOpen: boolean;
@@ -16,8 +17,8 @@ type SettingsContextType = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
 
-  highContrast: boolean;
-  setHighContrast: (enabled: boolean) => void;
+  animationLevel: AnimationLevel;
+  setAnimationLevel: (level: AnimationLevel) => void;
 };
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -25,7 +26,8 @@ const SettingsContext = createContext<SettingsContextType | null>(null);
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>("light");
-  const [highContrast, setHighContrast] = useState(false);
+  const [animationLevel, setAnimationLevel] =
+    useState<AnimationLevel>("full");
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -35,6 +37,18 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     );
   }, [theme]);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      "animations-subtle",
+      animationLevel === "subtle",
+    );
+
+    document.documentElement.classList.toggle(
+      "animations-off",
+      animationLevel === "off",
+    );
+  }, [animationLevel]);
+
   return (
     <SettingsContext.Provider
       value={{
@@ -43,8 +57,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         closeSettings: () => setIsOpen(false),
         theme,
         setTheme,
-        highContrast,
-        setHighContrast
+        animationLevel,
+        setAnimationLevel,
       }}
     >
       {children}
