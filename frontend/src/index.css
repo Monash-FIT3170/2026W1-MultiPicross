@@ -621,44 +621,40 @@ body {
     padding: 0 16px;
   }
 
+  /* Board on top, full-width stat panel and progress-bar list stacked below
+     it, in that order — matches how mp-room-layout's DOM order actually
+     renders (board, sidebar, progress stack) rather than forcing a row. */
   .mp-room-layout {
+    flex-direction: column !important;
     flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 16px !important;
   }
 
   .mp-room-board {
     align-self: center;
     max-width: 100%;
+    padding-top: 0 !important;
   }
 
   .mp-room-board > div:first-child {
     padding: 0 2px;
   }
 
-  .mp-room-opponent-board {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding-bottom: 8px;
-  }
-
   .mp-room-sidebar {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    width: 100%;
+    padding-top: 0 !important;
   }
 
-  .mp-room-sidebar > div:nth-child(4) {
-    display: none !important;
-  }
-
-  .mp-room-sidebar > button {
-    display: inline-flex !important;
+  .mp-room-sidebar > div {
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .mp-room-progress-stack {
-    grid-column: 1 / -1;
-    min-width: 0;
     width: 100%;
-    gap: 10px;
+    min-width: 0 !important;
+    padding-top: 0 !important;
   }
 
   .mp-room-waiting-card {
