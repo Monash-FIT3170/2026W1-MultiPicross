@@ -54,6 +54,15 @@ type SettingsContextType = {
 
   crossSound: boolean;
   setCrossSound: (enabled: boolean) => void;
+
+  reducedMotion: boolean;
+  setReducedMotion: (enabled: boolean) => void;
+
+  largerClueNumbers: boolean;
+  setLargerClueNumbers: (enabled: boolean) => void;
+
+  boldGridLines: boolean;
+  setBoldGridLines: (enabled: boolean) => void;
 };
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -73,6 +82,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [volume, setVolume] = useState(60);
   const [cellFillSound, setCellFillSound] = useState(true);
   const [crossSound, setCrossSound] = useState(true);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [largerClueNumbers, setLargerClueNumbers] = useState(false);
+  const [boldGridLines, setBoldGridLines] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -133,6 +145,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setCellFillSound,
         crossSound,
         setCrossSound,
+        reducedMotion,
+        setReducedMotion,
+        largerClueNumbers,
+        setLargerClueNumbers,
+        boldGridLines,
+        setBoldGridLines,
       }}
     >
       {children}
