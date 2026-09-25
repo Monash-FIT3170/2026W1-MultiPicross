@@ -36,6 +36,12 @@ type SettingsContextType = {
 
   dragToFill: boolean;
   setDragToFill: (enabled: boolean) => void;
+
+  autoCrossSolvedLines: boolean;
+  setAutoCrossSolvedLines: (enabled: boolean) => void;
+
+  confirmBeforeAbandoning: boolean;
+  setConfirmBeforeAbandoning: (enabled: boolean) => void;
 };
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -49,6 +55,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [profileAccent, setProfileAccent] = useState<ProfileAccent>("#3D5A80");
   const [primaryClick, setPrimaryClick] = useState<PrimaryClick>("fill");
   const [dragToFill, setDragToFill] = useState(true);
+  const [autoCrossSolvedLines, setAutoCrossSolvedLines] = useState(true);
+  const [confirmBeforeAbandoning, setConfirmBeforeAbandoning] = useState(true);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -97,6 +105,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setPrimaryClick,
         dragToFill,
         setDragToFill,
+        autoCrossSolvedLines,
+        setAutoCrossSolvedLines,
+        confirmBeforeAbandoning,
+        setConfirmBeforeAbandoning,
       }}
     >
       {children}
