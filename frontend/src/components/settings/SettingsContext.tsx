@@ -45,6 +45,15 @@ type SettingsContextType = {
 
   singleplayerLives: boolean;
   setSingleplayerLives: (enabled: boolean) => void;
+
+  volume: number;
+  setVolume: (volume: number) => void;
+
+  cellFillSound: boolean;
+  setCellFillSound: (enabled: boolean) => void;
+
+  crossSound: boolean;
+  setCrossSound: (enabled: boolean) => void;
 };
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -61,6 +70,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [autoCrossSolvedLines, setAutoCrossSolvedLines] = useState(true);
   const [confirmBeforeAbandoning, setConfirmBeforeAbandoning] = useState(true);
   const [singleplayerLives, setSingleplayerLives] = useState(true);
+  const [volume, setVolume] = useState(60);
+  const [cellFillSound, setCellFillSound] = useState(true);
+  const [crossSound, setCrossSound] = useState(true);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -115,6 +127,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setConfirmBeforeAbandoning,
         singleplayerLives,
         setSingleplayerLives,
+        volume,
+        setVolume,
+        cellFillSound,
+        setCellFillSound,
+        crossSound,
+        setCrossSound,
       }}
     >
       {children}
