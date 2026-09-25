@@ -13,13 +13,12 @@ type SettingsSidebarProps = {
   onSectionChange: (section: SettingsSection) => void;
 };
 
-const sections: { id: SettingsSection; label: string }[] = [
-  { id: "profile", label: "Profile" },
-  { id: "appearance", label: "Appearance" },
-  { id: "gameplay", label: "Gameplay" },
-  { id: "audio", label: "Audio" },
-  { id: "accessibility", label: "Accessibility" },
-  { id: "account", label: "Account" },
+const sections: { id: SettingsSection; label: string; icon: string }[] = [
+  { id: "profile", label: "Profile", icon: profileIcon },
+  { id: "appearance", label: "Appearance", icon: appearanceIcon },
+  { id: "gameplay", label: "Gameplay", icon: gameplayIcon },
+  { id: "audio", label: "Audio", icon: audioIcon },
+  { id: "accessibility", label: "Accessibility", icon: accessibilityIcon },
 ];
 
 const getButtonClass = (isActive: boolean) =>
