@@ -8,6 +8,7 @@ import {
 
 type Theme = "light" | "dark" | "high-contrast";
 type AnimationLevel = "full" | "subtle" | "off";
+type ProfileAccent = string;
 
 type SettingsContextType = {
   isOpen: boolean;
@@ -25,6 +26,9 @@ type SettingsContextType = {
 
   showOpponentProgress: boolean;
   setShowOpponentProgress: (enabled: boolean) => void;
+
+  profileAccent: ProfileAccent;
+  setProfileAccent: (accent: ProfileAccent) => void;
 };
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -35,6 +39,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [animationLevel, setAnimationLevel] = useState<AnimationLevel>("full");
   const [cellFillPop, setCellFillPop] = useState(true);
   const [showOpponentProgress, setShowOpponentProgress] = useState(true);
+  const [profileAccent, setProfileAccent] = useState<ProfileAccent>("#3D5A80");
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -77,6 +82,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setCellFillPop,
         showOpponentProgress,
         setShowOpponentProgress,
+        profileAccent,
+        setProfileAccent,
       }}
     >
       {children}
