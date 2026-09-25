@@ -10,12 +10,14 @@ import statsIcon from "../assets/stats.svg";
 import tutorialIcon from "../assets/tutorial.svg";
 import settingsIcon from "../assets/settings.svg";
 import trophyIcon from "../assets/trophy.webp";
+import { useSettings } from "../components/settings/SettingsContext";
 
 export default function MainMenu() {
   const navigate = useNavigate();
   const { status, user, guestNickname, playerName, logout } = useAuth();
 
   const isAuth = status === "authenticated";
+  const { openSettings } = useSettings();
 
   const wordmarkRef = useRef<HTMLDivElement>(null);
   const taglineRef = useRef<HTMLParagraphElement>(null);
@@ -439,7 +441,7 @@ export default function MainMenu() {
                 />
               }
               label="Settings"
-              onClick={() => navigate("/settings")}
+              onClick={openSettings}
             />
           </div>
         </div>
