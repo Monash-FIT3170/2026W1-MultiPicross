@@ -85,6 +85,55 @@
   --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+/* Dark mode colours */
+.dark {
+  --color-paper: #18191d;
+  --color-surface: #222328;
+  --color-surface-sunk: #2b2c32;
+
+  --color-ink: #f3f3f1;
+  --color-ink-soft: #d1d1ce;
+  --color-ink-muted: #a7a7a2;
+  --color-ink-faint: #7f807c;
+  --color-ink-clue: #e2e2df;
+
+  --color-line: #383a40;
+  --color-line-strong: #55575e;
+
+  --color-blue-50: #252f3d;
+  --color-blue-100: #2e4055;
+  --color-blue-200: #55779d;
+  --color-blue-500: #8eadd0;
+  --color-blue-600: #aac2dc;
+}
+.dark .settings-icon {
+  filter: invert(1);
+}
+/* High contrast colours */
+.high-contrast {
+  --color-paper: var(--color-contrast-background);
+  --color-surface: var(--color-contrast-background);
+  --color-surface-sunk: var(--color-contrast-background);
+
+  --color-ink: #000000;
+  --color-ink-soft: #000000;
+  --color-ink-muted: #000000;
+  --color-ink-faint: #000000;
+  --color-ink-clue: #000000;
+
+  --color-line: #000000;
+  --color-line-strong: #000000;
+
+  --color-blue-500: var(--color-contrast-accent-primary);
+
+  --color-cell-filled: var(--color-contrast-cell-filled);
+  --color-accent-primary: var(--color-contrast-accent-primary);
+  --color-accent-error: var(--color-contrast-accent-error);
+  --color-accent-win: var(--color-contrast-accent-win);
+}
+.high-contrast .settings-icon {
+  filter: brightness(0);
+}
 
 /* Override the constrained #root from @layer below — unlayered styles win */
 html,
@@ -251,6 +300,24 @@ body {
 }
 .mp-pop {
   animation: mp-pop 320ms var(--ease-out) forwards;
+}
+
+/* Reduced animation */
+.animations-subtle *,
+.animations-subtle *::before,
+.animations-subtle *::after {
+  animation-duration: 0.1s !important;
+  transition-duration: 0.1s !important;
+}
+/* No animation */
+.animations-off *,
+.animations-off *::before,
+.animations-off *::after {
+  animation: none !important;
+  transition: none !important;
+}
+.cell-fill-pop-off .mp-pop {
+  animation: none !important;
 }
 
 .mp-room-progress-stack {
