@@ -9,6 +9,7 @@ import {
 type Theme = "light" | "dark" | "high-contrast";
 type AnimationLevel = "full" | "subtle" | "off";
 type ProfileAccent = string;
+type PrimaryClick = "fill" | "cross";
 
 type SettingsContextType = {
   isOpen: boolean;
@@ -29,6 +30,9 @@ type SettingsContextType = {
 
   profileAccent: ProfileAccent;
   setProfileAccent: (accent: ProfileAccent) => void;
+
+  primaryClick: PrimaryClick;
+  setPrimaryClick: (action: PrimaryClick) => void;
 };
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -40,6 +44,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [cellFillPop, setCellFillPop] = useState(true);
   const [showOpponentProgress, setShowOpponentProgress] = useState(true);
   const [profileAccent, setProfileAccent] = useState<ProfileAccent>("#3D5A80");
+  const [primaryClick, setPrimaryClick] = useState<PrimaryClick>("fill");
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -84,6 +89,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setShowOpponentProgress,
         profileAccent,
         setProfileAccent,
+        primaryClick,
+        setPrimaryClick,
       }}
     >
       {children}
