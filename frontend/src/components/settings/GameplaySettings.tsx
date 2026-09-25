@@ -1,9 +1,15 @@
 import { useSettings } from "./SettingsContext";
 import { SettingRow } from "./components/SettingRow";
 import { SettingsSelector } from "./components/SettingsSelector";
+import { SettingsToggle } from "./components/SettingsToggle";
 
 export function GameplaySettings() {
-  const { primaryClick, setPrimaryClick } = useSettings();
+  const {
+    primaryClick,
+    setPrimaryClick,
+    dragToFill,
+    setDragToFill,
+  } = useSettings();
 
   return (
     <div>
@@ -19,7 +25,6 @@ export function GameplaySettings() {
         <SettingRow
           title="Primary click"
           description="Choose what happens when you click a cell."
-          showDivider={false}
         >
           <SettingsSelector
             options={["Fill", "Cross"]}
@@ -28,6 +33,18 @@ export function GameplaySettings() {
               setPrimaryClick(value === "Fill" ? "fill" : "cross")
             }
             label="Primary click action"
+          />
+        </SettingRow>
+
+        <SettingRow
+          title="Drag to fill"
+          description="Fill multiple cells by clicking and dragging."
+          showDivider={false}
+        >
+          <SettingsToggle
+            checked={dragToFill}
+            onChange={setDragToFill}
+            label="Drag to fill"
           />
         </SettingRow>
       </div>
