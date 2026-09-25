@@ -12,6 +12,8 @@ export function GameplaySettings() {
     setAutoCrossSolvedLines,
     confirmBeforeAbandoning,
     setConfirmBeforeAbandoning,
+    singleplayerLives,
+    setSingleplayerLives,
   } = useSettings();
 
   return (
@@ -104,12 +106,23 @@ export function GameplaySettings() {
         <SettingRow
           title="Confirm before abandoning"
           description="Ask before you leave a game in progress."
-          showDivider={false}
         >
           <SettingsToggle
             checked={confirmBeforeAbandoning}
             onChange={setConfirmBeforeAbandoning}
             label="Confirm before abandoning"
+          />
+        </SettingRow>
+
+        <SettingRow
+          title="Singleplayer lives"
+          description="Use a limited number of lives in singleplayer games."
+          showDivider={false}
+        >
+          <SettingsToggle
+            checked={singleplayerLives}
+            onChange={setSingleplayerLives}
+            label="Singleplayer lives"
           />
         </SettingRow>
       </div>

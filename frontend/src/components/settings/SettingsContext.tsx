@@ -42,6 +42,9 @@ type SettingsContextType = {
 
   confirmBeforeAbandoning: boolean;
   setConfirmBeforeAbandoning: (enabled: boolean) => void;
+
+  singleplayerLives: boolean;
+  setSingleplayerLives: (enabled: boolean) => void;
 };
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -57,6 +60,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [dragToFill, setDragToFill] = useState(true);
   const [autoCrossSolvedLines, setAutoCrossSolvedLines] = useState(true);
   const [confirmBeforeAbandoning, setConfirmBeforeAbandoning] = useState(true);
+  const [singleplayerLives, setSingleplayerLives] = useState(true);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -109,6 +113,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setAutoCrossSolvedLines,
         confirmBeforeAbandoning,
         setConfirmBeforeAbandoning,
+        singleplayerLives,
+        setSingleplayerLives,
       }}
     >
       {children}
