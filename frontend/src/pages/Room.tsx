@@ -23,11 +23,10 @@ import {
 
 interface PlayerSnapshot {
   username: string;
-  /** Present only in the snapshot sent to this player's own client. */
-  confirmedFilled?: boolean[];
-  crosses?: boolean[];
-  revealedEmpty?: boolean[];
-  mistakeCross?: boolean[];
+  confirmedFilled: boolean[];
+  crosses: boolean[];
+  revealedEmpty: boolean[];
+  mistakeCross: boolean[];
   livesLeft: number;
   done: boolean;
   won: boolean;
@@ -55,13 +54,7 @@ interface RoomSnapshot {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-// Board arrays are only ever present in the snapshot for the viewer's own
-// player, so this only makes sense to call on `me` — never on another player.
-function buildGrid(
-  p: Required<
-    Pick<PlayerSnapshot, "confirmedFilled" | "crosses" | "revealedEmpty">
-  >,
-): CellValue[] {
+function buildGrid(p: PlayerSnapshot): CellValue[] {
   return cellsToGrid(p.confirmedFilled, p.crosses, p.revealedEmpty);
 }
 
@@ -675,19 +668,22 @@ export function Room() {
     );
   }
 
-  // `me` always carries board arrays — it's the viewer's own player.
-  const myGrid = buildGrid({
-    confirmedFilled: me.confirmedFilled ?? [],
-    crosses: me.crosses ?? [],
-    revealedEmpty: me.revealedEmpty ?? [],
-  });
-  const myMistakeCrossIndices = (me.mistakeCross ?? []).reduce<number[]>(
+  const myGrid = buildGrid(me);
+  const myMistakeCrossIndices = me.mistakeCross.reduce<number[]>(
     (acc, v, i) => {
       if (v) acc.push(i);
       return acc;
     },
     [],
   );
+
+  // Every player's board is present in the snapshot now, so any player's
+  // mistake-cross indices can be computed the same way as `me`'s.
+  const mistakeCrossIndicesOf = (p: PlayerSnapshot): number[] =>
+    p.mistakeCross.reduce<number[]>((acc, v, i) => {
+      if (v) acc.push(i);
+      return acc;
+    }, []);
 
   const isTeamMode = mode === "2v2";
   const winnerPlayer = winnerId ? players[winnerId] : null;
@@ -933,6 +929,13 @@ export function Room() {
                     progress={p.progress}
                     placement={placementOf(p.id)}
                     accentColor={teamAccent}
+                    rowClues={rowClues}
+                    colClues={colClues}
+                    width={width}
+                    height={height}
+                    grid={buildGrid(p)}
+                    mistakeCrossIndices={mistakeCrossIndicesOf(p)}
+                    revealed={isFinished}
                   />
                 </div>
               );
@@ -1222,6 +1225,13 @@ function PlayerProgressRow({
   progress,
   placement,
   accentColor,
+  rowClues,
+  colClues,
+  width,
+  height,
+  grid,
+  mistakeCrossIndices,
+  revealed,
 }: {
   name: string;
   livesLeft: number;
@@ -1231,6 +1241,14 @@ function PlayerProgressRow({
   progress: number;
   placement?: number | null;
   accentColor?: string;
+  rowClues: number[][];
+  colClues: number[][];
+  width: number;
+  height: number;
+  grid: CellValue[];
+  mistakeCrossIndices: number[];
+  /** True once the match has ended — un-blurs the board (no color reveal). */
+  revealed: boolean;
 }) {
   const pct = Math.round(Math.min(1, Math.max(0, progress)) * 100);
   return (
@@ -1241,6 +1259,32 @@ function PlayerProgressRow({
         borderLeft: accentColor ? `4px solid ${accentColor}` : undefined,
       }}
     >
+      <div
+        style={{
+          // A blur is the only thing standing between a viewer and this
+          // player's real board — the server sends it in full (see
+          // PicrossRoom's buildSnapshot).
+          filter: revealed ? "none" : "blur(16px)",
+          transition: "filter 0.6s ease",
+          overflow: "hidden",
+          borderRadius: 6,
+          marginBottom: 8,
+        }}
+      >
+        <NonogramGrid
+          rowClues={rowClues}
+          colClues={colClues}
+          grid={grid}
+          width={width}
+          height={height}
+          interactive={false}
+          hideGridlines={!revealed}
+          hideClues={!revealed}
+          completed={won}
+          mistakeCrossIndices={mistakeCrossIndices}
+          cellSize={12}
+        />
+      </div>
       <PlayerLabel
         name={name}
         livesLeft={livesLeft}
