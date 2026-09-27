@@ -32,7 +32,6 @@ type SqlClient = (typeof import("../src/db/client.js"))["sql"];
 
 interface PlayerView {
   username: string;
-  /** Present only in the snapshot sent to this player's own client. */
   confirmedFilled?: boolean[];
   crosses?: boolean[];
   revealedEmpty?: boolean[];
@@ -720,9 +719,9 @@ describe("PicrossRoom", () => {
     assert.ok(final.winnerId === dId || final.winnerId === clientC.sessionId);
   });
 
-  // ── Progress-bar visibility (per-client snapshot scoping) ───────────────
+  // ── Board visibility (shared snapshot, all players' boards included) ────
 
-  it("only includes board arrays for a client's own player, not for others", async () => {
+  it("includes board arrays for every player, not just a client's own", async () => {
     const { clientA, seenByA, seenByB, aId, bId } = await startMatch();
 
     fill(clientA, FILLED_CELLS[0]);
@@ -737,19 +736,19 @@ describe("PicrossRoom", () => {
     assert.ok(Array.isArray(fromA.players[aId].revealedEmpty));
     assert.ok(Array.isArray(fromA.players[aId].mistakeCross));
 
-    // B's entry, as seen by A, carries none of that — aggregated data only.
-    assert.strictEqual(fromA.players[bId].confirmedFilled, undefined);
-    assert.strictEqual(fromA.players[bId].crosses, undefined);
-    assert.strictEqual(fromA.players[bId].revealedEmpty, undefined);
-    assert.strictEqual(fromA.players[bId].mistakeCross, undefined);
+    // B's entry, as seen by A, also carries full board data.
+    assert.ok(Array.isArray(fromA.players[bId].confirmedFilled));
+    assert.ok(Array.isArray(fromA.players[bId].crosses));
+    assert.ok(Array.isArray(fromA.players[bId].revealedEmpty));
+    assert.ok(Array.isArray(fromA.players[bId].mistakeCross));
 
-    // Symmetric from B's point of view: B's own board is present, A's isn't.
+    // Symmetric from B's point of view: both boards are present too.
     const fromB = await seenByB.wait(
       (s) => s.players[aId] !== undefined,
       "a snapshot to reach B",
     );
     assert.ok(Array.isArray(fromB.players[bId].confirmedFilled));
-    assert.strictEqual(fromB.players[aId].confirmedFilled, undefined);
+    assert.ok(Array.isArray(fromB.players[aId].confirmedFilled));
   });
 
   it("computes progress as the fraction of filled cells correctly filled", async () => {
@@ -781,7 +780,7 @@ describe("PicrossRoom", () => {
     assert.strictEqual(finished.players[aId].progress, 1);
   });
 
-  it("keeps other players' board data hidden even after the match ends", async () => {
+  it("keeps other players' board data visible after the match ends", async () => {
     const { clientA, seenByB, aId } = await startMatch();
 
     for (const cell of FILLED_CELLS) fill(clientA, cell);
@@ -790,9 +789,9 @@ describe("PicrossRoom", () => {
       "the match to end",
     );
 
-    // B's own view of the finished match still has no board data for A.
-    assert.strictEqual(final.players[aId].confirmedFilled, undefined);
-    assert.strictEqual(final.players[aId].crosses, undefined);
+    // B's own view of the finished match still has A's board data.
+    assert.ok(Array.isArray(final.players[aId].confirmedFilled));
+    assert.ok(Array.isArray(final.players[aId].crosses));
     assert.strictEqual(final.players[aId].progress, 1);
     // The solved-board reveal (colors) is unrelated to per-player board
     // data and is unaffected by this change.

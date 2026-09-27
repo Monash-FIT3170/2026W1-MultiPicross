@@ -564,16 +564,13 @@ export class PicrossRoom extends Room {
     return filled / totalFilled;
   }
 
-  // Every client receives their own player's full board (cells, crosses,
-  // mistakes) exactly as before, but every OTHER player is reduced to
-  // aggregated progress data. Nobody's real board layout — solved or
-  // unsolved — reaches a client it doesn't belong to, including once the
-  // match is "finished": there is no reveal-everyone's-board moment.
-  private buildSnapshotFor(viewerSessionId: string) {
+  // Every client receives every player's full board (cells, crosses,
+  // mistakes), plus aggregated progress data. The client is responsible for
+  // blurring other players' boards during play (see Room.tsx).
+  private buildSnapshot() {
     const players: Record<string, unknown> = {};
 
     this.players.forEach((p, id) => {
-      const isViewer = id === viewerSessionId;
       players[id] = {
         username: p.username,
         livesLeft: p.livesLeft,
@@ -582,14 +579,10 @@ export class PicrossRoom extends Room {
         connected: p.connected,
         team: p.team,
         progress: this.progressFor(p),
-        ...(isViewer
-          ? {
-              confirmedFilled: [...p.confirmedFilled],
-              crosses: [...p.crosses],
-              revealedEmpty: [...p.revealedEmpty],
-              mistakeCross: [...p.mistakeCross],
-            }
-          : {}),
+        confirmedFilled: [...p.confirmedFilled],
+        crosses: [...p.crosses],
+        revealedEmpty: [...p.revealedEmpty],
+        mistakeCross: [...p.mistakeCross],
       };
     });
 
@@ -614,11 +607,9 @@ export class PicrossRoom extends Room {
     return snapshot;
   }
 
-  /** Sends every connected client the "state" message scoped to their view. */
+  /** Sends every connected client the same "state" message. */
   private broadcastState() {
-    this.clients.forEach((c) => {
-      c.send("state", this.buildSnapshotFor(c.sessionId));
-    });
+    this.broadcast("state", this.buildSnapshot());
   }
 
   onDispose() {
