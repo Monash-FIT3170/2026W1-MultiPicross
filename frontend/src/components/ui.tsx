@@ -232,11 +232,11 @@ export function Logo({ size = 28 }: LogoProps) {
           fontFamily: "Cairo, sans-serif",
           fontWeight: 700,
           fontSize: s - 8,
-          color: "#1c1c1e",
+          color: "var(--color-ink)",
           letterSpacing: "-0.01em",
         }}
       >
-        Multi<span style={{ color: "#3d5a80" }}>Picross</span>
+        Multi<span style={{ color: "var(--color-blue-500)" }}>Picross</span>
       </span>
     </div>
   );
@@ -468,7 +468,7 @@ export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   // always-current reference so the outside-click effect never goes stale
-  const closeRef = useRef<() => void>(() => {});
+  const closeRef = useRef<() => void>(() => { });
 
   function openDropdown() {
     setOpen(true);
