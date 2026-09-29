@@ -29,3 +29,7 @@ This is **HITL** because the right delay and feel can only be judged by a human:
 ## Blocked by
 
 - `.scratch/2v2-shared-team-board/issues/03-teammate-cursor.md`
+
+## Comments
+
+- 2026-09-29: Implemented alongside issue 03 (sample buffer + `INTERPOLATION_DELAY_MS = 100` in `TeammateCursor.tsx`; null hides immediately, reappearance snaps). Still needs the human feel check and sign-off on the delay value — the automated browser session could only confirm the pointer lands in the right place, not how it feels in motion.
