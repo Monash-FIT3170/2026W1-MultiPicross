@@ -92,13 +92,33 @@
   --tut-dim: 68%;
 
   --tut-lit-bg: var(--color-surface-sunk);
-  --tut-stage-dim: color-mix(in srgb, var(--color-surface-sunk), var(--tut-scrim) var(--tut-dim));
+  --tut-stage-dim: color-mix(
+    in srgb,
+    var(--color-surface-sunk),
+    var(--tut-scrim) var(--tut-dim)
+  );
   --tut-dim-cell: color-mix(in srgb, #ffffff, var(--tut-scrim) var(--tut-dim));
   --tut-dim-line: color-mix(in srgb, #d6d2c8, var(--tut-scrim) var(--tut-dim));
-  --tut-dim-frame: color-mix(in srgb, var(--color-line-strong), var(--tut-scrim) var(--tut-dim));
-  --tut-dim-ink: color-mix(in srgb, var(--color-ink-clue), var(--tut-scrim) var(--tut-dim));
-  --tut-dim-fill: color-mix(in srgb, var(--color-blue-500), var(--tut-scrim) var(--tut-dim));
-  --tut-dim-cross: color-mix(in srgb, var(--color-coral-400), var(--tut-scrim) var(--tut-dim));
+  --tut-dim-frame: color-mix(
+    in srgb,
+    var(--color-line-strong),
+    var(--tut-scrim) var(--tut-dim)
+  );
+  --tut-dim-ink: color-mix(
+    in srgb,
+    var(--color-ink-clue),
+    var(--tut-scrim) var(--tut-dim)
+  );
+  --tut-dim-fill: color-mix(
+    in srgb,
+    var(--color-blue-500),
+    var(--tut-scrim) var(--tut-dim)
+  );
+  --tut-dim-cross: color-mix(
+    in srgb,
+    var(--color-coral-400),
+    var(--tut-scrim) var(--tut-dim)
+  );
 
   display: flex;
   align-items: center;
