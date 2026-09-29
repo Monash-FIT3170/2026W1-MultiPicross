@@ -6,7 +6,7 @@ import TutorialGrid, {
   type GridLit,
 } from "../components/TutorialGrid";
 import { Button, Icon, Logo } from "../components/ui";
-import tutorialTheme from "../assets/sounds/tutorial-theme.mp3";
+import tutorialTheme from "../assets/sounds/tutorial-theme.wav";
 import { PUZZLES } from "../tutorial/puzzles";
 import { OverlapFigure } from "../tutorial/OverlapFigure";
 import {
@@ -37,41 +37,71 @@ function readMuted(): boolean {
 }
 
 /**
- * Loops the tutorial theme while the page is mounted. Browsers may refuse to
- * autoplay before the user has interacted with the page, so a refused start
- * is retried on the first click or key press.
+ * Loops the tutorial theme while the page is mounted. It plays through Web
+ * Audio rather than an <audio> element because only a looping buffer source
+ * wraps back to the start without a gap. Browsers may keep the audio context
+ * suspended until the user has interacted with the page, so a suspended
+ * context is resumed on the first click or key press.
  */
 function useTutorialMusic(muted: boolean) {
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const ctxRef = useRef<AudioContext | null>(null);
+  const gainRef = useRef<GainNode | null>(null);
 
   useEffect(() => {
-    const audio = new Audio(tutorialTheme);
-    audio.loop = true;
-    audio.volume = MUSIC_VOLUME;
-    audio.muted = readMuted();
-    audioRef.current = audio;
+    const ctx = new AudioContext();
+    const gain = ctx.createGain();
+    gain.gain.value = readMuted() ? 0 : MUSIC_VOLUME;
+    gain.connect(ctx.destination);
+    ctxRef.current = ctx;
+    gainRef.current = gain;
+
+    let cancelled = false;
+    fetch(tutorialTheme)
+      .then((res) => res.arrayBuffer())
+      .then((data) => ctx.decodeAudioData(data))
+      .then((buffer) => {
+        if (cancelled) return;
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        source.connect(gain);
+        source.start();
+      })
+      .catch(() => {
+        // The tutorial works fine without music.
+      });
 
     const events = ["pointerdown", "keydown"] as const;
-    function retry() {
-      audio.play().then(stopListening, () => {});
+    function resume() {
+      ctx.resume().then(stopListening, () => {});
     }
     function stopListening() {
-      for (const e of events) window.removeEventListener(e, retry);
+      for (const e of events) window.removeEventListener(e, resume);
     }
-    audio.play().catch(() => {
-      for (const e of events) window.addEventListener(e, retry);
-    });
+    if (ctx.state === "suspended") {
+      for (const e of events) window.addEventListener(e, resume);
+    }
 
     return () => {
+      cancelled = true;
       stopListening();
-      audio.pause();
-      audio.src = "";
-      audioRef.current = null;
+      void ctx.close();
+      ctxRef.current = null;
+      gainRef.current = null;
     };
   }, []);
 
   useEffect(() => {
-    if (audioRef.current) audioRef.current.muted = muted;
+    const ctx = ctxRef.current;
+    const gain = gainRef.current;
+    if (ctx && gain) {
+      // A short ramp instead of a hard cut, so muting doesn't click.
+      gain.gain.setTargetAtTime(
+        muted ? 0 : MUSIC_VOLUME,
+        ctx.currentTime,
+        0.02,
+      );
+    }
     try {
       localStorage.setItem(MUTE_KEY, muted ? "1" : "0");
     } catch {
