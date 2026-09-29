@@ -9,6 +9,7 @@ import {
 type Theme = "light" | "dark" | "high-contrast";
 type AnimationLevel = "full" | "subtle" | "off";
 type ProfileAccent = string;
+type PrimaryClick = "fill" | "cross";
 
 type SettingsContextType = {
   isOpen: boolean;
@@ -29,6 +30,39 @@ type SettingsContextType = {
 
   profileAccent: ProfileAccent;
   setProfileAccent: (accent: ProfileAccent) => void;
+
+  primaryClick: PrimaryClick;
+  setPrimaryClick: (action: PrimaryClick) => void;
+
+  dragToFill: boolean;
+  setDragToFill: (enabled: boolean) => void;
+
+  autoCrossSolvedLines: boolean;
+  setAutoCrossSolvedLines: (enabled: boolean) => void;
+
+  confirmBeforeAbandoning: boolean;
+  setConfirmBeforeAbandoning: (enabled: boolean) => void;
+
+  singleplayerLives: boolean;
+  setSingleplayerLives: (enabled: boolean) => void;
+
+  volume: number;
+  setVolume: (volume: number) => void;
+
+  cellFillSound: boolean;
+  setCellFillSound: (enabled: boolean) => void;
+
+  crossSound: boolean;
+  setCrossSound: (enabled: boolean) => void;
+
+  reducedMotion: boolean;
+  setReducedMotion: (enabled: boolean) => void;
+
+  largerClueNumbers: boolean;
+  setLargerClueNumbers: (enabled: boolean) => void;
+
+  boldGridLines: boolean;
+  setBoldGridLines: (enabled: boolean) => void;
 };
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -40,6 +74,17 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [cellFillPop, setCellFillPop] = useState(true);
   const [showOpponentProgress, setShowOpponentProgress] = useState(true);
   const [profileAccent, setProfileAccent] = useState<ProfileAccent>("#3D5A80");
+  const [primaryClick, setPrimaryClick] = useState<PrimaryClick>("fill");
+  const [dragToFill, setDragToFill] = useState(true);
+  const [autoCrossSolvedLines, setAutoCrossSolvedLines] = useState(true);
+  const [confirmBeforeAbandoning, setConfirmBeforeAbandoning] = useState(true);
+  const [singleplayerLives, setSingleplayerLives] = useState(true);
+  const [volume, setVolume] = useState(60);
+  const [cellFillSound, setCellFillSound] = useState(true);
+  const [crossSound, setCrossSound] = useState(true);
+  const [reducedMotion, setReducedMotion] = useState(false);
+  const [largerClueNumbers, setLargerClueNumbers] = useState(false);
+  const [boldGridLines, setBoldGridLines] = useState(false);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -84,6 +129,28 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setShowOpponentProgress,
         profileAccent,
         setProfileAccent,
+        primaryClick,
+        setPrimaryClick,
+        dragToFill,
+        setDragToFill,
+        autoCrossSolvedLines,
+        setAutoCrossSolvedLines,
+        confirmBeforeAbandoning,
+        setConfirmBeforeAbandoning,
+        singleplayerLives,
+        setSingleplayerLives,
+        volume,
+        setVolume,
+        cellFillSound,
+        setCellFillSound,
+        crossSound,
+        setCrossSound,
+        reducedMotion,
+        setReducedMotion,
+        largerClueNumbers,
+        setLargerClueNumbers,
+        boldGridLines,
+        setBoldGridLines,
       }}
     >
       {children}
