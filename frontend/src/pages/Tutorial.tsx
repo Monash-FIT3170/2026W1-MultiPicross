@@ -344,27 +344,19 @@ export function Tutorial() {
           Main menu
         </button>
         <Logo size={22} />
-        <div className="mp-tut-topbar-right">
-          <button
-            className="mp-tut-exit mp-tut-mute"
-            onClick={() => setMuted((m) => !m)}
-            aria-label={muted ? "Unmute music" : "Mute music"}
-            aria-pressed={muted}
-            title={muted ? "Unmute music" : "Mute music"}
-          >
-            <Icon
-              name={muted ? "volume-x" : "volume"}
-              size={16}
-              color="currentColor"
-            />
-          </button>
-          <button
-            className="mp-tut-exit mp-tut-skip"
-            onClick={() => navigate("/")}
-          >
-            Skip tutorial
-          </button>
-        </div>
+        <button
+          className="mp-tut-exit mp-tut-mute"
+          onClick={() => setMuted((m) => !m)}
+          aria-label={muted ? "Unmute music" : "Mute music"}
+          aria-pressed={muted}
+          title={muted ? "Unmute music" : "Mute music"}
+        >
+          <Icon
+            name={muted ? "volume-x" : "volume"}
+            size={16}
+            color="currentColor"
+          />
+        </button>
       </div>
 
       <div className="mp-tut-layout">

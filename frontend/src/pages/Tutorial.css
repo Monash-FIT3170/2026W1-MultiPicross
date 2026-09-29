@@ -40,11 +40,6 @@
 .mp-tut-exit:hover {
   color: var(--color-ink-muted);
 }
-.mp-tut-topbar-right {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
 .mp-tut-mute {
   padding: 4px;
 }
@@ -408,8 +403,5 @@
   }
   .mp-tut-title {
     font-size: 20px;
-  }
-  .mp-tut-skip {
-    display: none;
   }
 }
