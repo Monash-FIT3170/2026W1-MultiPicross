@@ -735,10 +735,11 @@ function SizeSelectScreen({
 
       <div
         style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 14,
+          display: "grid",
+          gridTemplateColumns: "repeat(2, 260px)",
+          gap: 24,
           justifyContent: "center",
+          margin: "0 auto",
         }}
       >
         {sizes.map((s) => (
@@ -746,7 +747,11 @@ function SizeSelectScreen({
             key={`${s.width}x${s.height}`}
             className="tile"
             onClick={() => onSelectSize(s.width, s.height)}
-            style={{ width: 160, height: 120 }}
+            style={{
+              width: 260,
+              height: 145,
+              padding: 20,
+            }}
           >
             <div
               style={{
@@ -758,7 +763,14 @@ function SizeSelectScreen({
             >
               {s.width} × {s.height}
             </div>
-            <div style={{ fontSize: 12, color: "var(--color-ink-faint)" }}>
+
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 12,
+                color: "var(--color-ink-faint)",
+              }}
+            >
               {s.count} puzzle{s.count !== 1 ? "s" : ""}
             </div>
           </button>
