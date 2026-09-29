@@ -53,7 +53,7 @@ function buildGrid(p: PlayerSnapshot): CellValue[] {
 }
 
 
-const OPPONENT_BOARD_DELAY_MS = 3000;
+const OPPONENT_BOARD_DELAY_MS = 5000;
 
 
 function useLaggedValue<T>(
