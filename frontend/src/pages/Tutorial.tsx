@@ -6,6 +6,7 @@ import TutorialGrid, {
   type GridLit,
 } from "../components/TutorialGrid";
 import { Button, Icon, Logo } from "../components/ui";
+import tutorialTheme from "../assets/sounds/tutorial-theme.mp3";
 import { PUZZLES } from "../tutorial/puzzles";
 import { OverlapFigure } from "../tutorial/OverlapFigure";
 import {
@@ -23,6 +24,61 @@ const ADVANCE_DELAY = 780;
 const SWEEP_DURATION = 1600;
 
 const EMPTY: Set<number> = new Set();
+
+const MUSIC_VOLUME = 0.4;
+const MUTE_KEY = "mp-tutorial-muted";
+
+function readMuted(): boolean {
+  try {
+    return localStorage.getItem(MUTE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Loops the tutorial theme while the page is mounted. Browsers may refuse to
+ * autoplay before the user has interacted with the page, so a refused start
+ * is retried on the first click or key press.
+ */
+function useTutorialMusic(muted: boolean) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio(tutorialTheme);
+    audio.loop = true;
+    audio.volume = MUSIC_VOLUME;
+    audio.muted = readMuted();
+    audioRef.current = audio;
+
+    const events = ["pointerdown", "keydown"] as const;
+    function retry() {
+      audio.play().then(stopListening, () => {});
+    }
+    function stopListening() {
+      for (const e of events) window.removeEventListener(e, retry);
+    }
+    audio.play().catch(() => {
+      for (const e of events) window.addEventListener(e, retry);
+    });
+
+    return () => {
+      stopListening();
+      audio.pause();
+      audio.src = "";
+      audioRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.muted = muted;
+    try {
+      localStorage.setItem(MUTE_KEY, muted ? "1" : "0");
+    } catch {
+      // Storage can be unavailable (private mode); muting still works.
+    }
+  }, [muted]);
+}
 
 function cellSizeFor(dim: number, viewportWidth: number): number {
   const narrow = viewportWidth <= 768;
@@ -96,6 +152,8 @@ export function Tutorial() {
     typeof window === "undefined" ? 1200 : window.innerWidth,
   );
   const nudgeSeq = useRef(0);
+  const [muted, setMuted] = useState(readMuted);
+  useTutorialMusic(muted);
 
   const step = STEPS[index];
   const puzzle = PUZZLES[step.board];
@@ -256,12 +314,27 @@ export function Tutorial() {
           Main menu
         </button>
         <Logo size={22} />
-        <button
-          className="mp-tut-exit mp-tut-skip"
-          onClick={() => navigate("/")}
-        >
-          Skip tutorial
-        </button>
+        <div className="mp-tut-topbar-right">
+          <button
+            className="mp-tut-exit mp-tut-mute"
+            onClick={() => setMuted((m) => !m)}
+            aria-label={muted ? "Unmute music" : "Mute music"}
+            aria-pressed={muted}
+            title={muted ? "Unmute music" : "Mute music"}
+          >
+            <Icon
+              name={muted ? "volume-x" : "volume"}
+              size={16}
+              color="currentColor"
+            />
+          </button>
+          <button
+            className="mp-tut-exit mp-tut-skip"
+            onClick={() => navigate("/")}
+          >
+            Skip tutorial
+          </button>
+        </div>
       </div>
 
       <div className="mp-tut-layout">
