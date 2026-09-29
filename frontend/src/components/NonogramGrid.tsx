@@ -327,7 +327,9 @@ export default function NonogramGrid({
     const isEveryFiveBottom = (row + 1) % 5 === 0 && !isLastRow;
 
     // undefined leaves the `border: "none"` below in force.
-    const innerBorder = hideGridlines ? undefined : "1px solid #d6d2c8";
+    const innerBorder = hideGridlines
+      ? undefined
+      : "1px solid var(--color-line)";
     const groupBorder = hideGridlines
       ? undefined
       : "2px solid var(--color-line-strong)";
@@ -379,12 +381,16 @@ export default function NonogramGrid({
       case 3:
         return {
           ...base,
-          backgroundColor: "#faecea",
+          backgroundColor: "var(--color-coral-50)",
           backgroundImage: "none",
           cursor: "default",
         };
       default:
-        return { ...base, backgroundColor: "#ffffff", backgroundImage: "none" };
+        return {
+          ...base,
+          backgroundColor: "var(--color-surface)",
+          backgroundImage: "none",
+        };
     }
   }
 
