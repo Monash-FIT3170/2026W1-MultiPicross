@@ -768,7 +768,7 @@ function SizeSelectScreen({
               style={{
                 marginTop: 8,
                 fontSize: 12,
-                color: "var(--color-ink-faint)",
+                color: "var(--color-ink-muted)",
               }}
             >
               {s.count} puzzle{s.count !== 1 ? "s" : ""}
