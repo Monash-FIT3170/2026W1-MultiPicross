@@ -144,3 +144,47 @@ export const ratedWaitingList = pgTable("rated_waiting_list", {
     .references(() => accounts.id, { onDelete: "cascade" }),
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
 });
+
+// One row per (account, achievement), holding the running counter that
+// achievement thresholds are compared against. Separate from
+// accountAchievements so progress keeps accumulating after unlock without
+// needing a special case.
+export const accountAchievementProgress = pgTable(
+  "account_achievement_progress",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    achievementKey: text("achievement_key").notNull(),
+    progress: integer("progress").notNull().default(0),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("account_achievement_progress_account_key_idx").on(
+      t.accountId,
+      t.achievementKey,
+    ),
+  ],
+);
+
+// Unique on (account, achievement) so the unlock insert can be an idempotent
+// ON CONFLICT DO NOTHING alongside the progress update, in the same
+// transaction as the game-completion write that triggered it.
+export const accountAchievements = pgTable(
+  "account_achievements",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    achievementKey: text("achievement_key").notNull(),
+    unlockedAt: timestamp("unlocked_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("account_achievements_account_key_idx").on(
+      t.accountId,
+      t.achievementKey,
+    ),
+  ],
+);

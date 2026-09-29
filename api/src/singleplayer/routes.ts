@@ -9,6 +9,7 @@ import { db } from "../db/client.js";
 import { nonograms, spCompletions } from "../db/schema.js";
 import { requireAuth } from "../auth/middleware.js";
 import { csrf } from "../auth/csrf.js";
+import { evaluateSingleplayerCompletion } from "../achievements/evaluate.js";
 
 function schema<T extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(
   s: T,
@@ -524,6 +525,16 @@ sp.post(
                 completedAt: new Date(),
               })
               .where(eq(spCompletions.id, gameRow.id));
+            const unlockedAchievements = await evaluateSingleplayerCompletion(
+              tx,
+              accountId,
+              {
+                livesLeft: newLives,
+                elapsedSeconds: finalElapsed,
+                width: gameRow.width,
+                height: gameRow.height,
+              },
+            );
             return {
               status: 200,
               body: {
@@ -531,6 +542,7 @@ sp.post(
                 livesLeft: newLives,
                 completed: true,
                 colors: gameRow.colors,
+                unlockedAchievements,
               },
             };
           }
@@ -591,6 +603,16 @@ sp.post(
               completedAt: new Date(),
             })
             .where(eq(spCompletions.id, gameRow.id));
+          const unlockedAchievements = await evaluateSingleplayerCompletion(
+            tx,
+            accountId,
+            {
+              livesLeft: gameRow.livesLeft,
+              elapsedSeconds: finalElapsed,
+              width: gameRow.width,
+              height: gameRow.height,
+            },
+          );
           return {
             status: 200,
             body: {
@@ -598,6 +620,7 @@ sp.post(
               livesLeft: gameRow.livesLeft,
               completed: true,
               colors: gameRow.colors,
+              unlockedAchievements,
             },
           };
         }
