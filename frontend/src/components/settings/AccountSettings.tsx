@@ -4,7 +4,6 @@ import { useSettings } from "./SettingsContext";
 import profileIcon from "../../assets/settings/profile.svg";
 
 export function AccountSettings() {
-
   const { status, user, logout } = useAuth();
   const navigate = useNavigate();
   const { closeSettings } = useSettings();
@@ -65,7 +64,8 @@ export function AccountSettings() {
           </h3>
 
           <p className="mt-2 max-w-md text-[14px] text-[var(--color-ink-muted)] font-ui">
-            Sign in to manage your account and keep your settings across devices.
+            Sign in to manage your account and keep your settings across
+            devices.
           </p>
 
           <button
