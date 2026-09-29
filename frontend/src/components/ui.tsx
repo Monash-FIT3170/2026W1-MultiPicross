@@ -25,7 +25,9 @@ export type IconName =
   | "bar-chart"
   | "settings"
   | "home"
-  | "refresh";
+  | "refresh"
+  | "volume"
+  | "volume-x";
 
 interface IconProps {
   name: IconName;
@@ -179,6 +181,22 @@ export function Icon({
           <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
         </svg>
       );
+    case "volume":
+      return (
+        <svg {...p}>
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+        </svg>
+      );
+    case "volume-x":
+      return (
+        <svg {...p}>
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+          <line x1="23" y1="9" x2="17" y2="15" />
+          <line x1="17" y1="9" x2="23" y2="15" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -214,29 +232,91 @@ export function Logo({ size = 28 }: LogoProps) {
           width="27"
           height="27"
           rx="6.5"
-          fill="#fff"
-          stroke="#e7e4dc"
+          style={{ fill: "var(--color-surface)", stroke: "var(--color-line)" }}
         />
-        <rect x="4" y="4" width="6" height="6" rx="1.5" fill="#3d5a80" />
-        <rect x="11" y="4" width="6" height="6" rx="1.5" fill="#b8d0ec" />
-        <rect x="18" y="4" width="6" height="6" rx="1.5" fill="#3d5a80" />
-        <rect x="4" y="11" width="6" height="6" rx="1.5" fill="#b8d0ec" />
-        <rect x="11" y="11" width="6" height="6" rx="1.5" fill="#3d5a80" />
-        <rect x="18" y="11" width="6" height="6" rx="1.5" fill="#b8d0ec" />
-        <rect x="4" y="18" width="6" height="6" rx="1.5" fill="#3d5a80" />
-        <rect x="11" y="18" width="6" height="6" rx="1.5" fill="#b8d0ec" />
-        <rect x="18" y="18" width="6" height="6" rx="1.5" fill="#3d5a80" />
+        <rect
+          x="4"
+          y="4"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-500)" }}
+        />
+        <rect
+          x="11"
+          y="4"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-200)" }}
+        />
+        <rect
+          x="18"
+          y="4"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-500)" }}
+        />
+        <rect
+          x="4"
+          y="11"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-200)" }}
+        />
+        <rect
+          x="11"
+          y="11"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-500)" }}
+        />
+        <rect
+          x="18"
+          y="11"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-200)" }}
+        />
+        <rect
+          x="4"
+          y="18"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-500)" }}
+        />
+        <rect
+          x="11"
+          y="18"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-200)" }}
+        />
+        <rect
+          x="18"
+          y="18"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-500)" }}
+        />
       </svg>
       <span
         style={{
           fontFamily: "Cairo, sans-serif",
           fontWeight: 700,
           fontSize: s - 8,
-          color: "#1c1c1e",
+          color: "var(--color-ink)",
           letterSpacing: "-0.01em",
         }}
       >
-        Multi<span style={{ color: "#3d5a80" }}>Picross</span>
+        Multi<span style={{ color: "var(--color-blue-500)" }}>Picross</span>
       </span>
     </div>
   );
@@ -269,10 +349,13 @@ const BTN_BASE: CSSProperties = {
 };
 
 const VARIANT_STYLES: Record<ButtonVariant, CSSProperties> = {
-  primary: { background: "var(--color-blue-500)", color: "#fff" },
-  dark: { background: "#1c1c1e", color: "#fff" },
+  primary: {
+    background: "var(--color-blue-500)",
+    color: "var(--color-on-accent)",
+  },
+  dark: { background: "var(--color-ink)", color: "var(--color-surface)" },
   ghost: {
-    background: "#fff",
+    background: "var(--color-surface)",
     color: "var(--color-ink)",
     borderColor: "var(--color-line)",
   },
@@ -525,7 +608,7 @@ export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
           alignItems: "center",
           gap: 9,
           padding: "7px 12px 7px 8px",
-          background: "#fff",
+          background: "var(--color-surface)",
           border: "1px solid var(--color-line)",
           borderRadius: 10,
           borderBottomLeftRadius: panelMounted ? 0 : 10,
@@ -613,7 +696,7 @@ export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
         >
           <div
             style={{
-              background: "#fff",
+              background: "var(--color-surface)",
               border: "1px solid var(--color-line)",
               borderTop: "none",
               borderRadius: "0 0 10px 10px",
