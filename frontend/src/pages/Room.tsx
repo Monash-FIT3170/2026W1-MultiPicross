@@ -47,14 +47,11 @@ interface RoomSnapshot {
   colors?: string[];
 }
 
-
 function buildGrid(p: PlayerSnapshot): CellValue[] {
   return cellsToGrid(p.confirmedFilled, p.crosses, p.revealedEmpty);
 }
 
-
 const OPPONENT_BOARD_DELAY_MS = 5000;
-
 
 function useLaggedValue<T>(
   value: T,
