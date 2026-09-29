@@ -12,11 +12,21 @@ The non-team-based Game Modes (`1v1`, `1v1v1`, `1v1v1v1`): every player competes
 
 ## Team (2v2 only)
 
-A grouping of exactly 2 players who share a win/loss outcome but do **not** share board state — each player on a team still solves their own independent board. A team wins the instant either of its members completes the puzzle (match ends immediately for all 4 players). Team assignment is derived from join order at the moment each player joins the room: the 1st and 2nd players to join are Team 1, the 3rd and 4th are Team 2. This is recomputed fresh from current player order any time the room's membership changes pre-match (not locked in once assigned), so a player leaving the waiting room and being replaced can shift who ends up on which team.
+A grouping of exactly 2 players who share a win/loss outcome and a single **Team Board** — both teammates solve the same board together. A team wins the instant its Team Board is completed (match ends immediately for all 4 players). The win belongs to the team as a whole — no individual teammate is credited as "the finisher," regardless of who placed the final cell. Completing the Team Board wins even if the final cell was revealed by a teammate's life-ending mistake. Team assignment is derived from join order at the moment each player joins the room: the 1st and 2nd players to join are Team 1, the 3rd and 4th are Team 2. This is recomputed fresh from current player order any time the room's membership changes pre-match (not locked in once assigned), so a player leaving the waiting room and being replaced can shift who ends up on which team.
+
+## Team Board (2v2 only)
+
+The single puzzle board owned by a **Team**. Every fill and cross made by either teammate lands on it, and both teammates see the same board. Crosses are shared notes: either teammate can place or remove any cross, regardless of who placed it. A cross never blocks a fill. Each team has its own Team Board; the two teams race on separate boards of the same puzzle.
+
+## Teammate Cursor (2v2 only)
+
+Your teammate's live mouse pointer, shown moving freely over your **Team Board** wherever they are pointing on theirs. Only teammates see it; it is never shown to the opposing team.
 
 ## Elimination
 
 A player is eliminated when they run out of lives (3 mistakes) or leave/disconnect (forfeit) before the match ends. An eliminated player cannot win by completing the puzzle, but can still be awarded a win if they are the sole remaining active party (see Sole Survivor / Sole Surviving Team).
+
+In 2v2, lives stay per-player even though the board is shared: each teammate has their own 3 lives, and a mistake costs a life only for the teammate who made it (the revealed cell still appears on the shared **Team Board**). An eliminated teammate can no longer act on the Team Board, but their surviving teammate keeps solving it and can still win for the team.
 
 ## Sole Survivor (FFA) / Sole Surviving Team (2v2)
 
