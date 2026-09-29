@@ -919,23 +919,7 @@ function PlayingScreen({
           zIndex: 200,
         }}
       >
-        <button
-          onClick={onMainMenu}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
-            color: "var(--color-ink-faint)",
-            fontSize: 13,
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <Icon name="arrow-left" size={14} color="var(--color-ink-faint)" />
-          Main menu
-        </button>
+        <BackButton onClick={onMainMenu} label="Main menu" />
         <Logo size={22} />
         <div style={{ width: 100 }} />
       </div>
