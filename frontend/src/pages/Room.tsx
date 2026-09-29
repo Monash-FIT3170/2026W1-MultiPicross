@@ -826,7 +826,12 @@ export function Room() {
               // A done player keeps watching their (Team) Board live, but can't act.
               interactive={!isFinished && !me.done && !reconnecting}
               colors={isFinished ? colors : undefined}
-              completed={isTeamMode ? myTeamWon : me.won}
+              // Picture Reveal: everyone's board turns into the solved
+              // picture when the match ends, whatever their outcome. Keyed
+              // on the match ending (not on winning) also means an FFA
+              // early finisher gets it: their `won` flipped before the
+              // colours arrived, so the reveal never used to fire for them.
+              completed={isFinished}
               mistakeCrossIdx={mistakeCrossIdx}
               mistakeCrossIndices={myMistakeCrossIndices}
               onFill={handleFill}
