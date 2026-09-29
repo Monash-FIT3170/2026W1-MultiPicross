@@ -22,6 +22,10 @@ The single puzzle board owned by a **Team**. Every fill and cross made by either
 
 Your teammate's live mouse pointer, shown moving freely over your **Team Board** wherever they are pointing on theirs. Only teammates see it; it is never shown to the opposing team.
 
+## Picture Reveal
+
+The moment the solved puzzle's full coloured picture is shown. It happens for every player when the match ends, however it ended (a completion, a wipeout, a forfeit, or everyone running out of lives) and whatever their own outcome — winners, losers, eliminated players and non-finishers alike.
+
 ## Elimination
 
 A player is eliminated when they run out of lives (3 mistakes) or leave/disconnect (forfeit) before the match ends. An eliminated player cannot win by completing the puzzle, but can still be awarded a win if they are the sole remaining active party (see Sole Survivor / Sole Surviving Team).
