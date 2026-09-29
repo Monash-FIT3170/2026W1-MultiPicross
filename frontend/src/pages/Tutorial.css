@@ -1,4 +1,13 @@
 .mp-tut-page {
+  /* Board colours, shared by the grid, the legend swatches and the overlap
+     figure. Built from the theme tokens so dark and high contrast carry over. */
+  --tut-cell: var(--color-surface);
+  --tut-cell-line: color-mix(
+    in srgb,
+    var(--color-line),
+    var(--color-line-strong)
+  );
+
   min-height: 100vh;
   box-sizing: border-box;
   padding: 24px 24px 64px;
@@ -90,6 +99,8 @@
   /* How far dimmed things move toward the scrim. Low enough that the board
      underneath is still plainly the same board. */
   --tut-dim: 68%;
+  /* The soft halo pulsing around a highlighted square. */
+  --tut-glow: rgba(255, 255, 255, 0.16);
 
   --tut-lit-bg: var(--color-surface-sunk);
   --tut-stage-dim: color-mix(
@@ -97,8 +108,16 @@
     var(--color-surface-sunk),
     var(--tut-scrim) var(--tut-dim)
   );
-  --tut-dim-cell: color-mix(in srgb, #ffffff, var(--tut-scrim) var(--tut-dim));
-  --tut-dim-line: color-mix(in srgb, #d6d2c8, var(--tut-scrim) var(--tut-dim));
+  --tut-dim-cell: color-mix(
+    in srgb,
+    var(--tut-cell),
+    var(--tut-scrim) var(--tut-dim)
+  );
+  --tut-dim-line: color-mix(
+    in srgb,
+    var(--tut-cell-line),
+    var(--tut-scrim) var(--tut-dim)
+  );
   --tut-dim-frame: color-mix(
     in srgb,
     var(--color-line-strong),
@@ -131,6 +150,21 @@
     background-color 340ms var(--ease-out),
     border-color 340ms var(--ease-out);
 }
+/* On a dark board a warm scrim barely moves anything, so dim toward black. */
+.dark .mp-tut-stage {
+  --tut-scrim: #000000;
+  --tut-dim: 62%;
+}
+/*
+ * High contrast is black on white, and darkening black does nothing. Fade
+ * toward white instead: lit lines and clues stay solid black while everything
+ * else goes grey.
+ */
+.high-contrast .mp-tut-stage {
+  --tut-scrim: #ffffff;
+  --tut-dim: 55%;
+  --tut-glow: rgba(0, 0, 0, 0.2);
+}
 .mp-tut-stage[data-spotlight="on"] {
   background: var(--tut-stage-dim);
   border-color: var(--tut-stage-dim);
@@ -142,12 +176,12 @@
   100% {
     box-shadow:
       inset 0 0 0 2px var(--mp-tut-ring),
-      0 0 0 0 rgba(255, 255, 255, 0);
+      0 0 0 0 transparent;
   }
   50% {
     box-shadow:
       inset 0 0 0 2px var(--mp-tut-ring),
-      0 0 0 4px rgba(255, 255, 255, 0.16);
+      0 0 0 4px var(--tut-glow);
   }
 }
 .mp-tut-target {
@@ -219,7 +253,7 @@
   background: var(--color-blue-500);
 }
 .mp-tut-swatch-cross {
-  background: #ffffff;
+  background: var(--tut-cell);
   border: 1px solid var(--color-line-strong);
   color: var(--color-coral-400);
 }

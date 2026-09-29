@@ -223,7 +223,7 @@ export default function TutorialGrid({
         ? `1px solid ${DIM_LINE}`
         : revealed
           ? "1px solid transparent"
-          : "1px solid #d6d2c8";
+          : "1px solid var(--tut-cell-line)";
       const heavy = dim
         ? `2px solid ${DIM_FRAME}`
         : revealed
@@ -240,7 +240,7 @@ export default function TutorialGrid({
         background = revealed ? accent : "var(--color-blue-500)";
       // Once revealed the empty squares drop out, so the picture reads as one
       // shape against the stage instead of sitting in a white slab.
-      else background = revealed ? "transparent" : "#ffffff";
+      else background = revealed ? "transparent" : "var(--tut-cell)";
 
       const ring =
         targetIntent === "cross"

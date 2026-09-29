@@ -47,7 +47,7 @@ export function OverlapFigure({
               <div
                 key={i}
                 style={{
-                  background: panel.on(i) ? panel.tone : "#ffffff",
+                  background: panel.on(i) ? panel.tone : "var(--tut-cell)",
                   borderTop:
                     i === 0 ? undefined : "1px solid var(--color-line)",
                 }}
