@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: done
 
 # Shared Team Board, end to end
 
@@ -13,7 +13,7 @@ Make `2v2` teams solve a single shared **Team Board** (see `CONTEXT.md`; the rea
 - **Server.** In team-based modes, the room keeps board state (confirmed fills, crosses, revealed empties, mistake crosses) per team instead of per player. The fill and cross handlers pick the board from the acting player: their team's board in 2v2, their own board otherwise. Auto-complete, completion checks and progress then run unchanged on that board. Lives, done, won, connected and team stay per player.
 - **Who can act.** A move is ignored if the acting player is done (eliminated, won or left), even though their teammate can still act on the same board. The existing cell-state checks apply to the shared board, so two concurrent moves on the same cell resolve in the order they arrive: the first applies, the second is a no-op.
 - **Mistakes.** A mistake costs only the acting player a life, but the revealed cell is written to the Team Board. The `mistake` message goes to every member of the acting player's team, and must still arrive before the state update.
-- **Winning.** Completing a Team Board ends the match immediately for all 4 players, with that team winning. The completion check runs before the elimination check, so a move that completes the board *and* uses up the actor's last life is a win. `winnerId` stays the acting player's session internally. Team wipeout and sole surviving team logic are unchanged.
+- **Winning.** Completing a Team Board ends the match immediately for all 4 players, with that team winning. The completion check runs before the elimination check, so a move that completes the board _and_ uses up the actor's last life is a win. `winnerId` stays the acting player's session internally. Team wipeout and sole surviving team logic are unchanged.
 - **State update.** In 2v2, the state update gains a `teamBoards` map keyed by team index. Each entry holds that board's arrays plus its `progress`. In 2v2, player entries drop their board arrays and per-player progress. FFA state updates are unchanged. All boards still go to every client, as today.
 - **Frontend.**
   - Each player's main board renders their Team Board. When the player is done, the board still updates live but ignores clicks, so an eliminated player spectates.
@@ -39,3 +39,7 @@ Make `2v2` teams solve a single shared **Team Board** (see `CONTEXT.md`; the rea
 ## Blocked by
 
 None - can start immediately.
+
+## Comments
+
+- 2026-09-29: Done. Built straight to issue 02's final layout rather than the interim per-player sidebar, since both landed together. Server tests in `PicrossRoom.test.ts`; verified in-browser with 4 guest tabs.

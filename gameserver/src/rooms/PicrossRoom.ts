@@ -34,6 +34,13 @@ const INVITE_CODE_ATTEMPTS = 10;
 // match is forfeited. Room.tsx caps its retries to match this window.
 const RECONNECTION_WINDOW_SECONDS = 20;
 
+// Teammate Cursor positions arriving closer together than this are dropped.
+// Room.tsx sends at most one every 50ms, so this only bites a client that
+// ignores that throttle; the cleared (null) cursor is never dropped.
+const CURSOR_MIN_INTERVAL_MS = 15;
+
+type CursorPosition = { x: number; y: number };
+
 function generateCode(): string {
   return Array.from(
     { length: INVITE_CODE_LENGTH },
@@ -82,13 +89,36 @@ function applyAutoComplete(
   return out;
 }
 
-interface PlayerData {
-  accountId: string | null;
-  username: string;
+interface Board {
   confirmedFilled: boolean[];
   crosses: boolean[];
   revealedEmpty: boolean[];
   mistakeCross: boolean[];
+}
+
+function emptyBoard(cellCount: number): Board {
+  return {
+    confirmedFilled: Array(cellCount).fill(false),
+    crosses: Array(cellCount).fill(false),
+    revealedEmpty: Array(cellCount).fill(false),
+    mistakeCross: Array(cellCount).fill(false),
+  };
+}
+
+function boardArrays(board: Board) {
+  return {
+    confirmedFilled: [...board.confirmedFilled],
+    crosses: [...board.crosses],
+    revealedEmpty: [...board.revealedEmpty],
+    mistakeCross: [...board.mistakeCross],
+  };
+}
+
+interface PlayerData {
+  accountId: string | null;
+  username: string;
+  /** The player's own board in FFA; null in team modes (see teamBoards). */
+  board: Board | null;
   livesLeft: number;
   done: boolean;
   won: boolean;
@@ -96,6 +126,8 @@ interface PlayerData {
   connected: boolean;
   /** Null outside team-based modes. */
   team: number | null;
+  /** When this player's last Teammate Cursor position was forwarded. */
+  lastCursorAt: number;
 }
 
 export class PicrossRoom extends Room {
@@ -117,6 +149,12 @@ export class PicrossRoom extends Room {
   private modeConfig: GameModeConfig = GAME_MODES[DEFAULT_GAME_MODE];
   /** FFA only: sessionIds in completion order. Team modes have no placement. */
   private finishOrder: string[] = [];
+  /**
+   * Team modes only: one shared Team Board per team, indexed by team. Both
+   * teammates' moves land here; lives and elimination stay per-player (see
+   * docs/adr/0001-2v2-shared-team-board.md).
+   */
+  private teamBoards: Board[] = [];
 
   async onCreate(options: {
     width?: number;
@@ -156,6 +194,12 @@ export class PicrossRoom extends Room {
     this.colClues = puzzle.col_clues as number[][];
     this.colors = puzzle.colors as string[];
 
+    if (this.modeConfig.teamBased) {
+      this.teamBoards = Array.from({ length: this.modeConfig.teamCount }, () =>
+        emptyBoard(this.width * this.height),
+      );
+    }
+
     const code = await this.generateUniqueCode();
     this.state.inviteCode = code;
 
@@ -180,6 +224,10 @@ export class PicrossRoom extends Room {
         this.handleCross(client, msg.row, msg.col, msg.markCross);
       },
     );
+
+    this.onMessage<unknown>("cursor", (client, msg) => {
+      this.handleCursor(client.sessionId, msg);
+    });
   }
 
   // Invite codes are the lookup key for /room-by-code, so a duplicate would
@@ -234,19 +282,18 @@ export class PicrossRoom extends Room {
   }
 
   onJoin(client: Client, options: { username?: string }) {
-    const cellCount = this.width * this.height;
     const player: PlayerData = {
       accountId: (client.auth as RoomAuth).accountId,
       username: this.resolveUsername(client, options.username),
-      confirmedFilled: Array(cellCount).fill(false),
-      crosses: Array(cellCount).fill(false),
-      revealedEmpty: Array(cellCount).fill(false),
-      mistakeCross: Array(cellCount).fill(false),
+      board: this.modeConfig.teamBased
+        ? null
+        : emptyBoard(this.width * this.height),
       livesLeft: 3,
       done: false,
       won: false,
       connected: true,
       team: null,
+      lastCursorAt: 0,
     };
     this.players.set(client.sessionId, player);
     this.assignTeams();
@@ -289,6 +336,7 @@ export class PicrossRoom extends Room {
     const player = this.players.get(client.sessionId);
     if (player) {
       player.connected = false;
+      this.clearCursorOf(client.sessionId, player);
       this.broadcastState();
     }
 
@@ -310,6 +358,8 @@ export class PicrossRoom extends Room {
 
   onLeave(client: Client) {
     if (this.state.phase === "playing") {
+      const leaving = this.players.get(client.sessionId);
+      if (leaving) this.clearCursorOf(client.sessionId, leaving);
       this.players.delete(client.sessionId);
       this.forfeit = true;
       this.checkSoleSurvivor();
@@ -338,6 +388,8 @@ export class PicrossRoom extends Room {
   private setPhase(phase: "waiting" | "playing" | "finished") {
     this.state.phase = phase;
     if (phase === "finished") {
+      // Every 2v2 player has a teammate whose pointer should now disappear.
+      if (this.modeConfig.teamBased) this.broadcast("teammateCursor", null);
       this.lock();
       void this.recordRankedResult();
     }
@@ -378,8 +430,11 @@ export class PicrossRoom extends Room {
   // even via elimination alone (see checkTeamWipeout) — a fully eliminated
   // team has nothing left to play for, unlike an eliminated FFA individual
   // whose teammates-of-one-person framing doesn't apply.
-  private handlePlayerElimination(player: PlayerData) {
+  private handlePlayerElimination(sessionId: string, player: PlayerData) {
     player.done = true;
+    // An eliminated 2v2 player spectates; their pointer no longer means
+    // anything to the teammate still solving.
+    this.clearCursorOf(sessionId, player);
     this.checkTeamWipeout();
     // Team modes always have a winnerId by the time anyone could be
     // eliminated (either from an earlier completion, or checkTeamWipeout
@@ -466,38 +521,113 @@ export class PicrossRoom extends Room {
     }
   }
 
+  /** The board a player's moves land on: their Team Board, or their own. */
+  private boardFor(player: PlayerData): Board {
+    if (player.board) return player.board;
+    return this.teamBoards[player.team ?? 0];
+  }
+
+  /** Session ids of the player and, in team modes, their teammate. */
+  private teamOf(sessionId: string, player: PlayerData): string[] {
+    if (!this.modeConfig.teamBased) return [sessionId];
+    return [...this.players.entries()]
+      .filter(([, p]) => p.team === player.team)
+      .map(([id]) => id);
+  }
+
+  /** Sends a message to the player's teammate(s), never to anyone else. */
+  private sendToTeammates(
+    sessionId: string,
+    player: PlayerData,
+    type: string,
+    msg: unknown,
+  ) {
+    const teammates = new Set(this.teamOf(sessionId, player));
+    teammates.delete(sessionId);
+    for (const c of this.clients) {
+      if (teammates.has(c.sessionId)) c.send(type, msg);
+    }
+  }
+
+  // Teammate Cursor: a 2v2 player's live pointer position, in board
+  // coordinates (fractional column/row over the cell area, so it maps onto
+  // any window or cell size). Relayed to the teammate only — never to the
+  // opposing team — and never stored or put in the snapshot.
+  private handleCursor(sessionId: string, msg: unknown) {
+    if (!this.modeConfig.teamBased || this.state.phase !== "playing") return;
+    const player = this.players.get(sessionId);
+    if (!player || player.done) return;
+
+    if (msg === null) {
+      this.sendToTeammates(sessionId, player, "teammateCursor", null);
+      return;
+    }
+    const position = this.parseCursor(msg);
+    if (!position) return;
+
+    const now = Date.now();
+    if (now - player.lastCursorAt < CURSOR_MIN_INTERVAL_MS) return;
+    player.lastCursorAt = now;
+    this.sendToTeammates(sessionId, player, "teammateCursor", position);
+  }
+
+  private parseCursor(msg: unknown): CursorPosition | null {
+    if (typeof msg !== "object" || msg === null) return null;
+    const { x, y } = msg as Record<string, unknown>;
+    if (typeof x !== "number" || typeof y !== "number") return null;
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
+    if (x < 0 || x > this.width || y < 0 || y > this.height) return null;
+    return { x, y };
+  }
+
+  /** Tells the teammate this player's pointer is gone (left/dropped/out). */
+  private clearCursorOf(sessionId: string, player: PlayerData) {
+    if (!this.modeConfig.teamBased) return;
+    this.sendToTeammates(sessionId, player, "teammateCursor", null);
+  }
+
+  private isSolved(board: Board): boolean {
+    return this.solution.every((v, i) => v === 0 || board.confirmedFilled[i]);
+  }
+
+  private autoCross(board: Board) {
+    board.crosses = applyAutoComplete(
+      board.confirmedFilled,
+      board.crosses,
+      this.rowClues,
+      this.colClues,
+      this.width,
+      this.height,
+    );
+  }
+
+  // Lives and the done check are per-player even on a shared Team Board: a
+  // done (eliminated) player can no longer move, but their teammate can, and
+  // a mistake costs only whoever made it. Moves are applied one at a time, so
+  // two teammates acting on the same cell simply resolve in arrival order —
+  // the second finds the cell already confirmed/revealed and is a no-op.
   private handleFill(sessionId: string, row: number, col: number) {
     if (this.state.phase !== "playing") return;
     const player = this.players.get(sessionId);
     if (!player || player.done) return;
     if (row < 0 || row >= this.height || col < 0 || col >= this.width) return;
 
+    const board = this.boardFor(player);
     const idx = row * this.width + col;
-    if (player.confirmedFilled[idx] || player.revealedEmpty[idx]) return;
+    if (board.confirmedFilled[idx] || board.revealedEmpty[idx]) return;
 
     if (this.solution[idx] === 1) {
-      player.confirmedFilled[idx] = true;
-      player.crosses[idx] = false;
-      player.crosses = applyAutoComplete(
-        player.confirmedFilled,
-        player.crosses,
-        this.rowClues,
-        this.colClues,
-        this.width,
-        this.height,
-      );
-
-      const isComplete = this.solution.every(
-        (v, i) => v === 0 || player.confirmedFilled[i],
-      );
-      if (isComplete) {
+      board.confirmedFilled[idx] = true;
+      board.crosses[idx] = false;
+      this.autoCross(board);
+      if (this.isSolved(board)) {
         this.handlePlayerWin(sessionId, player);
       }
     } else {
-      player.revealedEmpty[idx] = true;
+      board.revealedEmpty[idx] = true;
       player.livesLeft = Math.max(0, player.livesLeft - 1);
       if (player.livesLeft === 0) {
-        this.handlePlayerElimination(player);
+        this.handlePlayerElimination(sessionId, player);
       }
     }
 
@@ -516,57 +646,55 @@ export class PicrossRoom extends Room {
     if (!player || player.done) return;
     if (row < 0 || row >= this.height || col < 0 || col >= this.width) return;
 
+    const board = this.boardFor(player);
     const idx = row * this.width + col;
-    if (player.confirmedFilled[idx] || player.revealedEmpty[idx]) return;
+    if (board.confirmedFilled[idx] || board.revealedEmpty[idx]) return;
 
     if (markCross && this.solution[idx] === 1) {
       // Mistaken cross on a filled cell — reveal it and lose a life
-      player.confirmedFilled[idx] = true;
-      player.crosses[idx] = false;
-      player.mistakeCross[idx] = true;
+      board.confirmedFilled[idx] = true;
+      board.crosses[idx] = false;
+      board.mistakeCross[idx] = true;
       player.livesLeft = Math.max(0, player.livesLeft - 1);
-      player.crosses = applyAutoComplete(
-        player.confirmedFilled,
-        player.crosses,
-        this.rowClues,
-        this.colClues,
-        this.width,
-        this.height,
-      );
+      this.autoCross(board);
 
-      const isComplete = this.solution.every(
-        (v, i) => v === 0 || player.confirmedFilled[i],
-      );
-      if (isComplete) {
+      // Solved is checked first: a mistake that reveals the final cell wins,
+      // even when it also costs the player their last life.
+      if (this.isSolved(board)) {
         this.handlePlayerWin(sessionId, player);
       } else if (player.livesLeft === 0) {
-        this.handlePlayerElimination(player);
+        this.handlePlayerElimination(sessionId, player);
       }
 
       // Must precede the broadcast: the client needs the index before the grid
       // changes, or the board plays the success pop instead of the shake.
-      client.send("mistake", { idx });
+      // On a Team Board both teammates are looking at the cell that changed.
+      const recipients = new Set(this.teamOf(sessionId, player));
+      for (const c of this.clients) {
+        if (recipients.has(c.sessionId)) c.send("mistake", { idx });
+      }
     } else {
-      player.crosses[idx] = markCross;
+      board.crosses[idx] = markCross;
     }
 
     this.broadcastState();
   }
 
-  /** Fraction of the puzzle's filled cells this player has correctly filled. */
-  private progressFor(p: PlayerData): number {
+  /** Fraction of the puzzle's filled cells correctly filled on a board. */
+  private progressFor(board: Board): number {
     const totalFilled = this.solution.reduce((sum, v) => sum + v, 0);
     if (totalFilled === 0) return 0;
-    const filled = p.confirmedFilled.reduce(
+    const filled = board.confirmedFilled.reduce(
       (sum, v, i) => sum + (v && this.solution[i] === 1 ? 1 : 0),
       0,
     );
     return filled / totalFilled;
   }
 
-  // Every client receives every player's full board (cells, crosses,
-  // mistakes), plus aggregated progress data. The client is responsible for
-  // blurring other players' boards during play (see Room.tsx).
+  // Every client receives every board (cells, crosses, mistakes), plus
+  // aggregated progress data. The client is responsible for blurring other
+  // players' boards during play (see Room.tsx). In team modes the boards are
+  // per team (`teamBoards`) and player entries carry no board data.
   private buildSnapshot() {
     const players: Record<string, unknown> = {};
 
@@ -578,11 +706,10 @@ export class PicrossRoom extends Room {
         won: p.won,
         connected: p.connected,
         team: p.team,
-        progress: this.progressFor(p),
-        confirmedFilled: [...p.confirmedFilled],
-        crosses: [...p.crosses],
-        revealedEmpty: [...p.revealedEmpty],
-        mistakeCross: [...p.mistakeCross],
+        ...(p.board && {
+          progress: this.progressFor(p.board),
+          ...boardArrays(p.board),
+        }),
       };
     });
 
@@ -599,6 +726,15 @@ export class PicrossRoom extends Room {
       mode: this.mode,
       finishOrder: [...this.finishOrder],
     };
+
+    if (this.modeConfig.teamBased) {
+      snapshot.teamBoards = Object.fromEntries(
+        this.teamBoards.map((board, team) => [
+          team,
+          { ...boardArrays(board), progress: this.progressFor(board) },
+        ]),
+      );
+    }
 
     if (this.state.phase === "finished") {
       snapshot.colors = this.colors;

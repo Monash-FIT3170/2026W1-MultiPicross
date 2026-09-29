@@ -44,6 +44,14 @@ interface PlayerView {
   progress: number;
 }
 
+interface BoardView {
+  confirmedFilled: boolean[];
+  crosses: boolean[];
+  revealedEmpty: boolean[];
+  mistakeCross: boolean[];
+  progress: number;
+}
+
 interface Snapshot {
   phase: "waiting" | "playing" | "finished";
   inviteCode: string;
@@ -57,6 +65,8 @@ interface Snapshot {
   colors?: string[];
   mode: string;
   finishOrder: string[];
+  /** 2v2 only: one shared Team Board per team, keyed by team index. */
+  teamBoards?: Record<string, BoardView>;
 }
 
 const FILLED_CELLS = [
@@ -109,6 +119,49 @@ function track(client: ClientRoom) {
 function fill(client: ClientRoom, [row, col]: number[]) {
   client.send("fill", { row, col });
 }
+
+function cross(client: ClientRoom, [row, col]: number[], markCross = true) {
+  client.send("cross", { row, col, markCross });
+}
+
+/** Collects every `mistake` message a client receives. */
+function collectMistakes(client: ClientRoom): number[] {
+  const seen: number[] = [];
+  client.onMessage("mistake", (msg: { idx: number }) => seen.push(msg.idx));
+  return seen;
+}
+
+type CursorMsg = { x: number; y: number } | null;
+
+/** Collects every `teammateCursor` message a client receives. */
+function collectCursors(client: ClientRoom): CursorMsg[] {
+  const seen: CursorMsg[] = [];
+  client.onMessage("teammateCursor", (msg: CursorMsg) => seen.push(msg));
+  return seen;
+}
+
+/** Resolves once `seen` holds a message matching `predicate`. */
+async function waitForCursor(
+  seen: CursorMsg[],
+  predicate: (msg: CursorMsg) => boolean,
+  what: string,
+  timeout = 3000,
+): Promise<void> {
+  const deadline = Date.now() + timeout;
+  while (!seen.some(predicate)) {
+    if (Date.now() > deadline) throw new Error(`timed out waiting for ${what}`);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+}
+
+/** Board index of a [row, col] cell on the 3x3 fixture. */
+function idxOf([row, col]: number[]): number {
+  return row * 3 + col;
+}
+
+// A message a done player sends produces no broadcast, so there is nothing to
+// wait on; give the server a moment to (not) act on it instead.
+const settle = () => new Promise((resolve) => setTimeout(resolve, 200));
 
 describe("PicrossRoom", () => {
   let colyseus: ColyseusTestServer;
@@ -706,7 +759,12 @@ describe("PicrossRoom", () => {
       (s) => s.players[clientA.sessionId]?.livesLeft === 0,
       "A eliminated",
     );
-    for (const cell of EMPTY_CELLS) fill(clientB, cell);
+    // The Team Board is shared, so A's mistakes already revealed those empty
+    // cells — B has to burn lives elsewhere: the last empty cell, then two
+    // mistaken crosses on filled cells (which leaves the board unsolved).
+    fill(clientB, [2, 1]);
+    cross(clientB, [0, 0]);
+    cross(clientB, [0, 2]);
 
     const final = await seenByD.wait(
       (s) => s.phase === "finished",
@@ -717,6 +775,357 @@ describe("PicrossRoom", () => {
     assert.strictEqual(final.players[final.winnerId].team, 1);
     assert.strictEqual(final.players[final.winnerId].won, true);
     assert.ok(final.winnerId === dId || final.winnerId === clientC.sessionId);
+  });
+
+  // ── 2v2 shared Team Board ───────────────────────────────────────────────
+
+  it("puts a teammate's fill on the shared Team Board without touching the other team's", async () => {
+    const { clientA, seenByB, aId } = await startSquadMatch();
+
+    fill(clientA, FILLED_CELLS[0]);
+    const snapshot = await seenByB.wait(
+      (s) => s.teamBoards?.["0"]?.confirmedFilled[0] === true,
+      "A's fill to reach teammate B on Team 1's board",
+    );
+
+    assert.strictEqual(snapshot.teamBoards?.["1"]?.confirmedFilled[0], false);
+    assert.strictEqual(snapshot.teamBoards?.["0"]?.progress, 1 / 5);
+    assert.strictEqual(snapshot.teamBoards?.["1"]?.progress, 0);
+    // Board state lives on the team in 2v2, not on the player.
+    assert.strictEqual(snapshot.players[aId].confirmedFilled, undefined);
+  });
+
+  it("lets either teammate place or remove any cross, and a cross never blocks a fill", async () => {
+    const { clientA, clientB, seenByA, seenByB } = await startSquadMatch();
+    const target = EMPTY_CELLS[0];
+    const at = idxOf(target);
+
+    cross(clientA, target);
+    await seenByB.wait(
+      (s) => s.teamBoards?.["0"]?.crosses[at] === true,
+      "A's cross to reach B",
+    );
+
+    // B removes the cross A placed.
+    cross(clientB, target, false);
+    await seenByA.wait(
+      (s) => s.teamBoards?.["0"]?.crosses[at] === false,
+      "B's un-cross to reach A",
+    );
+
+    // A cross is only a note: B's cross must not stop A filling that cell
+    // (here it's genuinely empty, so the fill is A's mistake).
+    const noted = EMPTY_CELLS[1];
+    cross(clientB, noted);
+    await seenByA.wait(
+      (s) => s.teamBoards?.["0"]?.crosses[idxOf(noted)] === true,
+      "B's second cross to reach A",
+    );
+    fill(clientA, noted);
+    const after = await seenByB.wait(
+      (s) => s.teamBoards?.["0"]?.revealedEmpty[idxOf(noted)] === true,
+      "A's fill of the crossed cell to be processed",
+    );
+    assert.strictEqual(after.players[clientA.sessionId].livesLeft, 2);
+  });
+
+  it("auto-crosses a satisfied row no matter which teammate filled it", async () => {
+    const { clientA, clientB, seenByA } = await startSquadMatch();
+
+    // Row 0 is `# . #` with clue [1, 1]: A fills one end, B the other.
+    fill(clientA, [0, 0]);
+    fill(clientB, [0, 2]);
+
+    const snapshot = await seenByA.wait(
+      (s) =>
+        s.teamBoards?.["0"]?.confirmedFilled[0] === true &&
+        s.teamBoards?.["0"]?.confirmedFilled[2] === true,
+      "both fills on Team 1's board",
+    );
+    assert.strictEqual(snapshot.teamBoards?.["0"]?.crosses[1], true);
+  });
+
+  it("charges a mistake to the player who made it and reveals it on the Team Board", async () => {
+    const { clientA, seenByB, aId, bId } = await startSquadMatch();
+
+    fill(clientA, EMPTY_CELLS[0]);
+    const snapshot = await seenByB.wait(
+      (s) => s.players[aId]?.livesLeft === 2,
+      "A's mistake to reach B",
+    );
+
+    assert.strictEqual(snapshot.players[bId].livesLeft, 3);
+    assert.strictEqual(
+      snapshot.teamBoards?.["0"]?.revealedEmpty[idxOf(EMPTY_CELLS[0])],
+      true,
+    );
+  });
+
+  it("sends the mistake message to both teammates and neither opponent", async () => {
+    const room: ServerRoom = await colyseus.createRoom("picross_room", {
+      width: 3,
+      height: 3,
+      mode: "2v2",
+    });
+    const clientA = await colyseus.connectTo(room, { username: "A" });
+    const seenByA = track(clientA);
+    const mistakesA = collectMistakes(clientA);
+    const clientB = await colyseus.connectTo(room, { username: "B" });
+    const seenByB = track(clientB);
+    const mistakesB = collectMistakes(clientB);
+    const clientC = await colyseus.connectTo(room, { username: "C" });
+    track(clientC);
+    const mistakesC = collectMistakes(clientC);
+    const clientD = await colyseus.connectTo(room, { username: "D" });
+    track(clientD);
+    const mistakesD = collectMistakes(clientD);
+    await seenByA.wait((s) => s.phase === "playing", "the match to start");
+
+    // A crosses a filled cell: a mistake that also reveals it as filled.
+    cross(clientA, FILLED_CELLS[0]);
+    await seenByB.wait(
+      (s) => s.players[clientA.sessionId]?.livesLeft === 2,
+      "A's mistake to reach B",
+    );
+    await settle();
+
+    assert.deepStrictEqual(mistakesA, [idxOf(FILLED_CELLS[0])]);
+    assert.deepStrictEqual(mistakesB, [idxOf(FILLED_CELLS[0])]);
+    assert.deepStrictEqual(mistakesC, []);
+    assert.deepStrictEqual(mistakesD, []);
+  });
+
+  it("ignores an eliminated player's moves while their teammate solves on and wins", async () => {
+    const { clientA, clientB, seenByA, seenByC, aId, bId } =
+      await startSquadMatch();
+
+    for (const cell of EMPTY_CELLS) fill(clientA, cell);
+    await seenByA.wait(
+      (s) => s.players[aId]?.livesLeft === 0,
+      "A to run out of lives",
+    );
+
+    // A is out: their fill must not land on the Team Board.
+    fill(clientA, FILLED_CELLS[0]);
+    await settle();
+    const afterIgnored = await seenByA.wait(
+      (s) => s.phase === "playing",
+      "the match to still be live",
+    );
+    assert.strictEqual(
+      afterIgnored.teamBoards?.["0"]?.confirmedFilled[idxOf(FILLED_CELLS[0])],
+      false,
+    );
+
+    // B keeps going alone and completes the shared board.
+    for (const cell of FILLED_CELLS) fill(clientB, cell);
+    const final = await seenByC.wait(
+      (s) => s.phase === "finished",
+      "the match to end once B completes Team 1's board",
+    );
+
+    assert.strictEqual(final.winnerId, bId);
+    assert.strictEqual(final.players[final.winnerId].team, 0);
+    assert.strictEqual(final.forfeit, false);
+  });
+
+  it("wins for the team when the final cell is revealed by a life-ending mistake", async () => {
+    const { clientA, clientB, seenByA, seenByD, aId } = await startSquadMatch();
+
+    // A burns two lives.
+    fill(clientA, EMPTY_CELLS[0]);
+    fill(clientA, EMPTY_CELLS[1]);
+    await seenByA.wait((s) => s.players[aId]?.livesLeft === 1, "A on 1 life");
+
+    // B fills every filled cell but the last.
+    for (const cell of FILLED_CELLS.slice(0, -1)) fill(clientB, cell);
+    await seenByA.wait(
+      (s) => s.teamBoards?.["0"]?.progress === 4 / 5,
+      "B to fill 4 of 5",
+    );
+
+    // A wrongly crosses the last filled cell: it costs A's final life, but
+    // it also reveals that cell — which completes the Team Board.
+    cross(clientA, FILLED_CELLS[FILLED_CELLS.length - 1]);
+    const final = await seenByD.wait(
+      (s) => s.phase === "finished",
+      "the match to end",
+    );
+
+    assert.strictEqual(final.players[aId].livesLeft, 0);
+    assert.strictEqual(final.teamBoards?.["0"]?.progress, 1);
+    assert.strictEqual(final.players[final.winnerId].team, 0);
+    assert.strictEqual(final.forfeit, false);
+  });
+
+  it("shows a reconnecting player the moves their teammate made while they were away", async () => {
+    const { clientA, clientB, seenByA } = await startSquadMatch();
+    const token = clientB.reconnectionToken;
+
+    void clientB.leave(false);
+    await seenByA.wait(
+      (s) => s.players[clientB.sessionId]?.connected === false,
+      "B's drop to register",
+    );
+
+    fill(clientA, FILLED_CELLS[0]);
+    await seenByA.wait(
+      (s) => s.teamBoards?.["0"]?.confirmedFilled[0] === true,
+      "A's fill while B is away",
+    );
+
+    const rejoined = await colyseus.sdk.reconnect(token);
+    const seenByRejoined = track(rejoined);
+    const snapshot = await seenByRejoined.wait(
+      (s) => s.players[rejoined.sessionId]?.connected === true,
+      "B to be back",
+    );
+    assert.strictEqual(snapshot.teamBoards?.["0"]?.confirmedFilled[0], true);
+  });
+
+  // ── 2v2 Teammate Cursor ─────────────────────────────────────────────────
+
+  /** A 2v2 match with every client collecting teammateCursor messages. */
+  async function startCursorMatch() {
+    const room: ServerRoom = await colyseus.createRoom("picross_room", {
+      width: 3,
+      height: 3,
+      mode: "2v2",
+    });
+    const connect = async (username: string) => {
+      const client = await colyseus.connectTo(room, { username });
+      return { client, seen: track(client), cursors: collectCursors(client) };
+    };
+    const a = await connect("A");
+    const b = await connect("B");
+    const c = await connect("C");
+    const d = await connect("D");
+    await a.seen.wait((s) => s.phase === "playing", "the match to start");
+    return { room, a, b, c, d };
+  }
+
+  it("forwards a player's cursor to their teammate and never to the opposing team", async () => {
+    const { a, b, c, d } = await startCursorMatch();
+
+    a.client.send("cursor", { x: 1.5, y: 2.25 });
+    await waitForCursor(
+      b.cursors,
+      (m) => m?.x === 1.5 && m?.y === 2.25,
+      "A's cursor to reach B",
+    );
+    await settle();
+
+    assert.deepStrictEqual(b.cursors, [{ x: 1.5, y: 2.25 }]);
+    assert.deepStrictEqual(a.cursors, [], "a player never gets their own");
+    assert.deepStrictEqual(c.cursors, []);
+    assert.deepStrictEqual(d.cursors, []);
+  });
+
+  it("forwards a cleared cursor (null) to the teammate", async () => {
+    const { a, b } = await startCursorMatch();
+
+    a.client.send("cursor", { x: 1, y: 1 });
+    await waitForCursor(b.cursors, (m) => m !== null, "A's cursor");
+    a.client.send("cursor", null);
+    await waitForCursor(b.cursors, (m) => m === null, "A's cleared cursor");
+  });
+
+  it("drops cursor positions that are out of range or not numbers", async () => {
+    const { a, b } = await startCursorMatch();
+
+    a.client.send("cursor", { x: -0.1, y: 1 });
+    a.client.send("cursor", { x: 3.1, y: 1 });
+    a.client.send("cursor", { x: 1, y: 3.1 });
+    a.client.send("cursor", { x: "1", y: 1 });
+    a.client.send("cursor", { x: Infinity, y: 1 });
+    a.client.send("cursor", "garbage");
+    await settle();
+    // The edges themselves (0 and width/height) are on the board.
+    a.client.send("cursor", { x: 3, y: 0 });
+    await waitForCursor(b.cursors, (m) => m?.x === 3, "the valid cursor");
+
+    assert.deepStrictEqual(b.cursors, [{ x: 3, y: 0 }]);
+  });
+
+  it("drops cursor messages sent faster than the rate cap", async () => {
+    const { a, b } = await startCursorMatch();
+
+    for (let i = 0; i < 20; i++) {
+      a.client.send("cursor", { x: 1 + i / 100, y: 1 });
+    }
+    await waitForCursor(b.cursors, (m) => m !== null, "some cursor");
+    await settle();
+
+    assert.ok(
+      b.cursors.length < 20,
+      `expected the burst to be thinned, got all ${b.cursors.length}`,
+    );
+  });
+
+  it("ignores cursor messages outside 2v2", async () => {
+    const { clientA, clientB } = await startMatch();
+    const cursorsB = collectCursors(clientB);
+
+    clientA.send("cursor", { x: 1, y: 1 });
+    await settle();
+
+    assert.deepStrictEqual(cursorsB, []);
+  });
+
+  it("clears a player's cursor for their teammate when they are eliminated, and ignores it after", async () => {
+    const { a, b } = await startCursorMatch();
+
+    a.client.send("cursor", { x: 1, y: 1 });
+    await waitForCursor(b.cursors, (m) => m !== null, "A's cursor");
+
+    for (const cell of EMPTY_CELLS) fill(a.client, cell);
+    await waitForCursor(b.cursors, (m) => m === null, "A's cursor to clear");
+
+    const before = b.cursors.length;
+    a.client.send("cursor", { x: 2, y: 2 });
+    await settle();
+    assert.strictEqual(b.cursors.length, before, "a done player's cursor");
+  });
+
+  it("clears a player's cursor for their teammate when they leave or drop", async () => {
+    const { a, b, c, d } = await startCursorMatch();
+
+    a.client.send("cursor", { x: 1, y: 1 });
+    await waitForCursor(b.cursors, (m) => m !== null, "A's cursor");
+    await a.client.leave();
+    await waitForCursor(b.cursors, (m) => m === null, "A's cursor to clear");
+
+    c.client.send("cursor", { x: 1, y: 1 });
+    await waitForCursor(d.cursors, (m) => m !== null, "C's cursor");
+    void c.client.leave(false);
+    await waitForCursor(d.cursors, (m) => m === null, "C's cursor to clear");
+  });
+
+  it("clears cursors when the match ends", async () => {
+    const { a, b, c } = await startCursorMatch();
+
+    c.client.send("cursor", { x: 1, y: 1 });
+    a.client.send("cursor", { x: 1, y: 1 });
+    await waitForCursor(b.cursors, (m) => m !== null, "A's cursor");
+
+    for (const cell of FILLED_CELLS) fill(a.client, cell);
+    await b.seen.wait((s) => s.phase === "finished", "the match to end");
+    await waitForCursor(b.cursors, (m) => m === null, "B's cursor to clear");
+
+    const before = b.cursors.length;
+    a.client.send("cursor", { x: 2, y: 2 });
+    await settle();
+    assert.strictEqual(b.cursors.length, before, "no cursors after the end");
+  });
+
+  it("does not send teamBoards in FFA modes", async () => {
+    const { seenByA, aId } = await startMatch();
+    const snapshot = await seenByA.wait(
+      (s) => s.phase === "playing",
+      "the match to start",
+    );
+    assert.strictEqual(snapshot.teamBoards, undefined);
+    assert.ok(Array.isArray(snapshot.players[aId].confirmedFilled));
   });
 
   // ── Board visibility (shared snapshot, all players' boards included) ────

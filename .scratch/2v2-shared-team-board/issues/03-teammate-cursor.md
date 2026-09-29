@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: done
 
 # Teammate Cursor, end to end
 
@@ -11,7 +11,7 @@ Status: ready-for-agent
 Show each 2v2 player their teammate's live mouse pointer (the **Teammate Cursor**, see `CONTEXT.md`) over their board, and never show it to the opposing team. This issue delivers the working pointer that jumps straight to each new position. Smooth motion is issue 04.
 
 - **Protocol.**
-  - The client sends a `cursor` message containing either `{ x, y }` in *board coordinates* or `null`. Board coordinates are fractional column and row positions measured over the cell area, not the clues; `x = 2.4` means 40% of the way across column 2. This makes the position independent of window size and cell size.
+  - The client sends a `cursor` message containing either `{ x, y }` in _board coordinates_ or `null`. Board coordinates are fractional column and row positions measured over the cell area, not the clues; `x = 2.4` means 40% of the way across column 2. This makes the position independent of window size and cell size.
   - The server forwards it as `teammateCursor` (`{ x, y }` or `null`) **only** to the sender's teammate. It is never broadcast, never sent to opponents, never part of the state update and never stored.
 - **Server checks.** Ignore `cursor` in these cases:
   - outside 2v2;

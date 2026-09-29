@@ -18,23 +18,35 @@ import {
   StatTile,
   ConfirmDialog,
 } from "../components/ui";
+import {
+  type BoardGeometry,
+  type CursorPosition,
+  TeammateCursorOverlay,
+  createCursorStream,
+  useTeammateCursorSender,
+} from "../components/TeammateCursor";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-interface PlayerSnapshot {
-  username: string;
+interface BoardSnapshot {
   confirmedFilled: boolean[];
   crosses: boolean[];
   revealedEmpty: boolean[];
   mistakeCross: boolean[];
+  /** Fraction (0-1) of the puzzle's filled cells correctly filled on this board. */
+  progress: number;
+}
+
+// In FFA each player carries their own board; in 2v2 the board lives on the
+// team (RoomSnapshot.teamBoards) and player entries carry none of it.
+interface PlayerSnapshot extends Partial<BoardSnapshot> {
+  username: string;
   livesLeft: number;
   done: boolean;
   won: boolean;
   /** False while the player is inside their server-side reconnection window. */
   connected: boolean;
   team: number | null;
-  /** Fraction (0-1) of the puzzle's filled cells this player has correctly filled. */
-  progress: number;
 }
 
 interface RoomSnapshot {
@@ -50,13 +62,47 @@ interface RoomSnapshot {
   colors?: string[];
   mode: string;
   finishOrder: string[];
+  /** 2v2 only: the shared Team Board of each team, keyed by team index. */
+  teamBoards?: Record<string, BoardSnapshot>;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function buildGrid(p: PlayerSnapshot): CellValue[] {
-  return cellsToGrid(p.confirmedFilled, p.crosses, p.revealedEmpty);
+const EMPTY_BOARD: BoardSnapshot = {
+  confirmedFilled: [],
+  crosses: [],
+  revealedEmpty: [],
+  mistakeCross: [],
+  progress: 0,
+};
+
+/** The board a player plays on: their Team Board in 2v2, their own in FFA. */
+function boardOf(snapshot: RoomSnapshot, p: PlayerSnapshot): BoardSnapshot {
+  if (snapshot.teamBoards) {
+    return snapshot.teamBoards[String(p.team ?? 0)] ?? EMPTY_BOARD;
+  }
+  return {
+    confirmedFilled: p.confirmedFilled ?? [],
+    crosses: p.crosses ?? [],
+    revealedEmpty: p.revealedEmpty ?? [],
+    mistakeCross: p.mistakeCross ?? [],
+    progress: p.progress ?? 0,
+  };
 }
+
+function buildGrid(b: BoardSnapshot): CellValue[] {
+  return cellsToGrid(b.confirmedFilled, b.crosses, b.revealedEmpty);
+}
+
+function mistakeCrossIndicesOf(b: BoardSnapshot): number[] {
+  return b.mistakeCross.reduce<number[]>((acc, v, i) => {
+    if (v) acc.push(i);
+    return acc;
+  }, []);
+}
+
+const OWN_TEAM_ACCENT = "var(--color-sage-400)";
+const OTHER_TEAM_ACCENT = "var(--color-coral-400)";
 
 const MODE_MAX_PLAYERS: Record<string, number> = {
   "1v1": 2,
@@ -102,6 +148,11 @@ export function Room() {
   const intentionalLeaveRef = useRef(false);
   const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
   const mistakeCrossTimerRef = useRef<number | undefined>(undefined);
+  // 2v2 Teammate Cursor: fed straight from the socket, never via React state
+  // (see TeammateCursor.tsx), and the board element the local pointer is
+  // measured against.
+  const [cursorStream] = useState(createCursorStream);
+  const boardWrapRef = useRef<HTMLDivElement>(null);
 
   // ── Auth, captured once ────────────────────────────────────────────────────
 
@@ -161,7 +212,8 @@ export function Room() {
           setSnapshot(msg);
         });
 
-        // Sent only to the player who made the mistake.
+        // Sent to the player who made the mistake — and in 2v2 to their
+        // teammate too, since the shared Team Board changed under both.
         room.onMessage<{ idx: number }>("mistake", (msg) => {
           if (cancelled) return;
           setMistakeCrossIdx(msg.idx);
@@ -171,10 +223,18 @@ export function Room() {
           }, 450);
         });
 
+        // 2v2 only, and only ever from the teammate.
+        room.onMessage<CursorPosition | null>("teammateCursor", (msg) => {
+          if (!cancelled) cursorStream.push(msg);
+        });
+
         // A drop is not a leave: the SDK re-establishes the session while the server
         // holds the seat, so show it as transient.
         room.onDrop(() => {
-          if (!cancelled) setReconnecting(true);
+          if (cancelled) return;
+          setReconnecting(true);
+          // Positions from before the drop are stale by the time we're back.
+          cursorStream.push(null);
         });
 
         room.onReconnect(() => {
@@ -211,8 +271,9 @@ export function Room() {
       // A pending index would shake a cell on whatever board renders next.
       window.clearTimeout(mistakeCrossTimerRef.current);
       setMistakeCrossIdx(null);
+      cursorStream.push(null);
     };
-  }, [roomId, authReady, retryNonce]);
+  }, [roomId, authReady, retryNonce, cursorStream]);
 
   // ── Timer ──────────────────────────────────────────────────────────────────
 
@@ -232,6 +293,36 @@ export function Room() {
     );
     return () => clearInterval(id);
   }, [snapshot?.phase]);
+
+  // ── Teammate Cursor (2v2) ──────────────────────────────────────────────────
+
+  // Mirrors NonogramGrid's own layout maths (clue gutters are at least one
+  // cell even when every clue is a single number).
+  const cursorGeometry: BoardGeometry = {
+    width: snapshot?.width ?? 0,
+    height: snapshot?.height ?? 0,
+    rowClueCols: Math.max(
+      1,
+      ...(snapshot?.rowClues ?? []).map((r) => r.length),
+    ),
+    colClueRows: Math.max(
+      1,
+      ...(snapshot?.colClues ?? []).map((c) => c.length),
+    ),
+    cellSize: autoCellSize(snapshot?.width ?? 0, snapshot?.height ?? 0),
+  };
+  const meNow =
+    snapshot && mySessionId ? snapshot.players[mySessionId] : undefined;
+  useTeammateCursorSender(
+    boardWrapRef,
+    cursorGeometry,
+    snapshot?.phase === "playing" &&
+      snapshot.mode === "2v2" &&
+      meNow !== undefined &&
+      !meNow.done &&
+      !reconnecting,
+    (position) => roomRef.current?.send("cursor", position),
+  );
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
@@ -469,8 +560,8 @@ export function Room() {
               // labels — mirrors the in-match progress rows.
               const teamAccent = isTeamMode
                 ? p.team === myTeam
-                  ? "var(--color-sage-400)"
-                  : "var(--color-coral-400)"
+                  ? OWN_TEAM_ACCENT
+                  : OTHER_TEAM_ACCENT
                 : undefined;
               return (
                 <div
@@ -566,25 +657,20 @@ export function Room() {
     );
   }
 
-  const myGrid = buildGrid(me);
-  const myMistakeCrossIndices = me.mistakeCross.reduce<number[]>(
-    (acc, v, i) => {
-      if (v) acc.push(i);
-      return acc;
-    },
-    [],
-  );
-
-  // Every player's board is present in the snapshot now, so any player's
-  // mistake-cross indices can be computed the same way as `me`'s.
-  const mistakeCrossIndicesOf = (p: PlayerSnapshot): number[] =>
-    p.mistakeCross.reduce<number[]>((acc, v, i) => {
-      if (v) acc.push(i);
-      return acc;
-    }, []);
-
   const isTeamMode = mode === "2v2";
+  const myBoard = boardOf(snapshot, me);
+  const myGrid = buildGrid(myBoard);
+  const myMistakeCrossIndices = mistakeCrossIndicesOf(myBoard);
   const winnerPlayer = winnerId ? players[winnerId] : null;
+
+  // 2v2: the teammate shares my Team Board, so they get a status line under
+  // it rather than a sidebar card; the opposing pair share one card.
+  const teammate = isTeamMode
+    ? otherPlayers.find((p) => p.team === me.team)
+    : undefined;
+  const opponents = isTeamMode
+    ? otherPlayers.filter((p) => p.team !== me.team)
+    : otherPlayers;
 
   // onLeave/elimination only crowns a survivor who is not already
   // eliminated, so against an opponent (FFA) or opposing team (2v2) that's
@@ -597,16 +683,22 @@ export function Room() {
     : false;
 
   const isFinished = phase === "finished";
-  const iWon = isFinished && winnerId === myId;
-  // 2v2: a teammate finishing wins the match for the whole team, including me.
+  // 2v2 wins belong to the team as a whole — whoever placed the final cell
+  // is never singled out — so the team outcome replaces the individual one.
   const myTeamWon =
     isFinished &&
-    !iWon &&
     isTeamMode &&
     winnerPlayer !== null &&
     winnerPlayer.team === me.team;
+  const iWon = isFinished && !isTeamMode && winnerId === myId;
   const someoneElseWon = isFinished && !iWon && !myTeamWon && winnerId !== "";
   const noWinner = isFinished && !winnerId;
+  // Whether the winning team actually completed their Team Board, as opposed
+  // to winning because the other team left or ran out of lives.
+  const winningTeamSolved =
+    isTeamMode &&
+    winnerPlayer !== null &&
+    snapshot.teamBoards?.[String(winnerPlayer.team ?? 0)]?.progress === 1;
 
   // Abandon-dialog warning, generalized per mode. 1v1 keeps its original
   // wording verbatim (a single named opponent either wins or can't).
@@ -713,23 +805,51 @@ export function Room() {
             livesLeft={me.livesLeft}
             done={me.done}
             won={me.won}
-            isWinner={iWon}
+            isWinner={iWon || myTeamWon}
             placement={placementOf(myId)}
+            team={isTeamMode ? { index: me.team ?? 0, own: true } : undefined}
           />
-          <NonogramGrid
-            rowClues={rowClues}
-            colClues={colClues}
-            grid={myGrid}
-            width={width}
-            height={height}
-            interactive={!isFinished && !me.done && !reconnecting}
-            colors={isFinished ? colors : undefined}
-            completed={me.won}
-            mistakeCrossIdx={mistakeCrossIdx}
-            mistakeCrossIndices={myMistakeCrossIndices}
-            onFill={handleFill}
-            onCross={handleCross}
-          />
+          <div
+            ref={boardWrapRef}
+            style={{
+              position: "relative",
+              width: "fit-content",
+              alignSelf: "center",
+            }}
+          >
+            <NonogramGrid
+              rowClues={rowClues}
+              colClues={colClues}
+              grid={myGrid}
+              width={width}
+              height={height}
+              // A done player keeps watching their (Team) Board live, but can't act.
+              interactive={!isFinished && !me.done && !reconnecting}
+              colors={isFinished ? colors : undefined}
+              completed={isTeamMode ? myTeamWon : me.won}
+              mistakeCrossIdx={mistakeCrossIdx}
+              mistakeCrossIndices={myMistakeCrossIndices}
+              onFill={handleFill}
+              onCross={handleCross}
+            />
+            {teammate && (
+              <TeammateCursorOverlay
+                stream={cursorStream}
+                geometry={cursorGeometry}
+                visible={!isFinished && !teammate.done && teammate.connected}
+                color={OWN_TEAM_ACCENT}
+              />
+            )}
+          </div>
+          {teammate && (
+            <TeammateLine
+              name={teammate.username}
+              livesLeft={teammate.livesLeft}
+              done={teammate.done}
+              connected={teammate.connected}
+              teamWon={myTeamWon}
+            />
+          )}
         </div>
 
         {/* Sidebar with stats */}
@@ -776,42 +896,46 @@ export function Room() {
         </div>
 
         {/* Other players' progress */}
-        {otherPlayers.length > 0 ? (
+        {opponents.length > 0 ? (
           <div
             className="mp-room-progress-stack"
             style={{ paddingTop: clueOffset, minWidth: 200 }}
           >
-            {otherPlayers.map((p) => {
-              const rowWon = isFinished && p.won;
-              // 2v2 only: color-code by team relative to the viewer, no text
-              // labels — own team gets a sage accent, opposing team coral.
-              const teamAccent = isTeamMode
-                ? p.team === me.team
-                  ? "var(--color-sage-400)"
-                  : "var(--color-coral-400)"
-                : undefined;
-              return (
+            {isTeamMode ? (
+              // The opposing pair share one Team Board, so one card: their
+              // board and progress once, each opponent's lives listed below.
+              <div className="mp-room-progress">
+                <OpponentTeamCard
+                  opponents={opponents}
+                  board={boardOf(snapshot, opponents[0])}
+                  isWinner={isFinished && someoneElseWon}
+                  rowClues={rowClues}
+                  colClues={colClues}
+                  width={width}
+                  height={height}
+                  revealed={isFinished}
+                />
+              </div>
+            ) : (
+              opponents.map((p) => (
                 <div key={p.id} className="mp-room-progress">
                   <PlayerProgressRow
                     name={p.username}
                     livesLeft={p.livesLeft}
                     done={p.done}
                     won={p.won}
-                    isWinner={rowWon}
-                    progress={p.progress}
+                    isWinner={isFinished && p.won}
                     placement={placementOf(p.id)}
-                    accentColor={teamAccent}
                     rowClues={rowClues}
                     colClues={colClues}
                     width={width}
                     height={height}
-                    grid={buildGrid(p)}
-                    mistakeCrossIndices={mistakeCrossIndicesOf(p)}
+                    board={boardOf(snapshot, p)}
                     revealed={isFinished}
                   />
                 </div>
-              );
-            })}
+              ))
+            )}
           </div>
         ) : (
           <div
@@ -894,12 +1018,16 @@ export function Room() {
                   ? "Opponent left — you win!"
                   : "You win!"
                 : myTeamWon
-                  ? forfeit
-                    ? "Opponent left — your team wins!"
-                    : `${winnerPlayer?.username ?? "Your teammate"} finished — your team wins!`
+                  ? winningTeamSolved
+                    ? "Your team solved it!"
+                    : forfeit
+                      ? "Opponent left — your team wins!"
+                      : "Opponents are out of lives — your team wins!"
                   : someoneElseWon
                     ? isTeamMode
-                      ? `Team ${(winnerPlayer?.team ?? 0) + 1} wins`
+                      ? winningTeamSolved
+                        ? `Team ${(winnerPlayer?.team ?? 0) + 1} solved it first`
+                        : `Team ${(winnerPlayer?.team ?? 0) + 1} wins`
                       : `${winnerPlayer?.username ?? "Opponent"} wins`
                     : noWinner
                       ? forfeit
@@ -907,7 +1035,7 @@ export function Room() {
                         : "Everyone's out of lives"
                       : "Game over"}
             </div>
-            {(iWon || myTeamWon) && !forfeit && (
+            {(iWon ? !forfeit : myTeamWon && winningTeamSolved) && (
               <div style={{ fontSize: 12, color: "var(--color-sage-500)" }}>
                 Solved in {fmtSeconds(displaySeconds)}
               </div>
@@ -980,6 +1108,35 @@ function ordinal(n: number): string {
   return `${n}${suffix}`;
 }
 
+interface TeamTag {
+  /** 0-based team index; shown 1-based, matching the "Team N" banners. */
+  index: number;
+  own: boolean;
+}
+
+// 2v2: names the Team Board a player is looking at, in the same own/opposing
+// colours as the board borders, so "Team 2 solved it first" has something
+// on screen to refer to.
+function TeamChip({ index, own }: TeamTag) {
+  return (
+    <span
+      style={{
+        fontSize: 11,
+        fontWeight: 700,
+        letterSpacing: "0.04em",
+        color: own ? "var(--color-sage-500)" : "var(--color-coral-500)",
+        background: own ? "var(--color-sage-50)" : "var(--color-coral-50)",
+        border: `1px solid ${own ? "var(--color-sage-100)" : "var(--color-coral-100)"}`,
+        borderRadius: 999,
+        padding: "2px 8px",
+        whiteSpace: "nowrap",
+      }}
+    >
+      Team {index + 1}
+    </span>
+  );
+}
+
 function PlayerLabel({
   name,
   livesLeft,
@@ -987,6 +1144,7 @@ function PlayerLabel({
   won,
   isWinner,
   placement,
+  team,
 }: {
   name: string;
   livesLeft: number;
@@ -994,6 +1152,8 @@ function PlayerLabel({
   won: boolean;
   isWinner: boolean;
   placement?: number | null;
+  /** 2v2 only: which team this board belongs to. */
+  team?: TeamTag;
 }) {
   return (
     <div
@@ -1005,6 +1165,7 @@ function PlayerLabel({
         minHeight: 32,
       }}
     >
+      {team && <TeamChip {...team} />}
       <span
         style={{ fontSize: 14, fontWeight: 700, color: "var(--color-ink)" }}
       >
@@ -1062,92 +1223,67 @@ function PlayerLabel({
   );
 }
 
-// Represents any player other than the viewer: a progress bar plus lives and
-// status, instead of their actual board — the server no longer sends board
-// data for anyone but the viewer's own player (see PicrossRoom's per-client
-// snapshot scoping), so there is nothing else to render for them.
-//
-// `accentColor`, when set (2v2 only), color-codes the row's left border by
-// team membership relative to the viewer — sage for the viewer's own team,
-// coral for the opposing team. No text label ("Your Team"/"Opponents") is
-// used; color alone is the distinguishing signal, per design.
-function PlayerProgressRow({
-  name,
-  livesLeft,
-  done,
-  won,
-  isWinner,
-  progress,
-  placement,
-  accentColor,
-  rowClues,
-  colClues,
-  width,
-  height,
-  grid,
-  mistakeCrossIndices,
-  revealed,
-}: {
-  name: string;
-  livesLeft: number;
-  done: boolean;
-  won: boolean;
-  isWinner: boolean;
-  progress: number;
-  placement?: number | null;
-  accentColor?: string;
+interface BoardPreviewProps {
   rowClues: number[][];
   colClues: number[][];
   width: number;
   height: number;
-  grid: CellValue[];
-  mistakeCrossIndices: number[];
+  board: BoardSnapshot;
   /** True once the match has ended — un-blurs the board (no color reveal). */
   revealed: boolean;
+  completed: boolean;
+}
+
+// Someone else's board in miniature, blurred until the match ends.
+function BlurredBoard({
+  rowClues,
+  colClues,
+  width,
+  height,
+  board,
+  revealed,
+  completed,
+}: BoardPreviewProps) {
+  return (
+    <div
+      style={{
+        // A blur is the only thing standing between a viewer and this
+        // board — the server sends it in full (see PicrossRoom's
+        // buildSnapshot).
+        filter: revealed ? "none" : "blur(16px)",
+        transition: "filter 0.6s ease",
+        overflow: "hidden",
+        borderRadius: 6,
+        marginBottom: 8,
+      }}
+    >
+      <NonogramGrid
+        rowClues={rowClues}
+        colClues={colClues}
+        grid={buildGrid(board)}
+        width={width}
+        height={height}
+        interactive={false}
+        hideGridlines={!revealed}
+        hideClues={!revealed}
+        completed={completed}
+        mistakeCrossIndices={mistakeCrossIndicesOf(board)}
+        cellSize={12}
+      />
+    </div>
+  );
+}
+
+function ProgressBar({
+  progress,
+  isWinner,
+}: {
+  progress: number;
+  isWinner: boolean;
 }) {
   const pct = Math.round(Math.min(1, Math.max(0, progress)) * 100);
   return (
-    <div
-      className="mp-surface"
-      style={{
-        padding: "16px 20px",
-        borderLeft: accentColor ? `4px solid ${accentColor}` : undefined,
-      }}
-    >
-      <div
-        style={{
-          // A blur is the only thing standing between a viewer and this
-          // player's real board — the server sends it in full (see
-          // PicrossRoom's buildSnapshot).
-          filter: revealed ? "none" : "blur(16px)",
-          transition: "filter 0.6s ease",
-          overflow: "hidden",
-          borderRadius: 6,
-          marginBottom: 8,
-        }}
-      >
-        <NonogramGrid
-          rowClues={rowClues}
-          colClues={colClues}
-          grid={grid}
-          width={width}
-          height={height}
-          interactive={false}
-          hideGridlines={!revealed}
-          hideClues={!revealed}
-          completed={won}
-          mistakeCrossIndices={mistakeCrossIndices}
-          cellSize={12}
-        />
-      </div>
-      <PlayerLabel
-        name={name}
-        livesLeft={livesLeft}
-        done={done}
-        won={won}
-        isWinner={isWinner}
-        placement={placement ?? null}
-      />
+    <>
       <div
         style={{
           height: 8,
@@ -1178,6 +1314,134 @@ function PlayerProgressRow({
       >
         {pct}%
       </div>
+    </>
+  );
+}
+
+// FFA: one card per opponent — their blurred board, lives/status, progress.
+function PlayerProgressRow({
+  name,
+  livesLeft,
+  done,
+  won,
+  isWinner,
+  placement,
+  board,
+  ...preview
+}: Omit<BoardPreviewProps, "completed"> & {
+  name: string;
+  livesLeft: number;
+  done: boolean;
+  won: boolean;
+  isWinner: boolean;
+  placement?: number | null;
+}) {
+  return (
+    <div className="mp-surface" style={{ padding: "16px 20px" }}>
+      <BlurredBoard {...preview} board={board} completed={won} />
+      <PlayerLabel
+        name={name}
+        livesLeft={livesLeft}
+        done={done}
+        won={won}
+        isWinner={isWinner}
+        placement={placement ?? null}
+      />
+      <ProgressBar progress={board.progress} isWinner={isWinner} />
+    </div>
+  );
+}
+
+// 2v2: the opposing team as a single card, since both opponents play the
+// same Team Board. Lives stay per-player, so each opponent is listed with
+// their own. Colour alone (coral border) marks it as the other team — no
+// "Opponents" text label, per design.
+function OpponentTeamCard({
+  opponents,
+  board,
+  isWinner,
+  rowClues,
+  colClues,
+  width,
+  height,
+  revealed,
+}: {
+  opponents: Array<PlayerSnapshot & { id: string }>;
+  board: BoardSnapshot;
+  isWinner: boolean;
+  rowClues: number[][];
+  colClues: number[][];
+  width: number;
+  height: number;
+  revealed: boolean;
+}) {
+  return (
+    <div
+      className="mp-surface"
+      style={{
+        padding: "16px 20px",
+        borderLeft: `4px solid ${OTHER_TEAM_ACCENT}`,
+      }}
+    >
+      <div style={{ marginBottom: 10 }}>
+        <TeamChip index={opponents[0]?.team ?? 0} own={false} />
+      </div>
+      <BlurredBoard
+        rowClues={rowClues}
+        colClues={colClues}
+        width={width}
+        height={height}
+        board={board}
+        revealed={revealed}
+        completed={isWinner && board.progress === 1}
+      />
+      <ProgressBar progress={board.progress} isWinner={isWinner} />
+      <div style={{ marginTop: 8 }}>
+        {opponents.map((p) => (
+          <PlayerLabel
+            key={p.id}
+            name={p.connected ? p.username : `${p.username} (reconnecting…)`}
+            livesLeft={p.livesLeft}
+            done={p.done}
+            won={p.won}
+            isWinner={isWinner}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// 2v2: the teammate shares the board directly above, so no mini-board —
+// just who they are, their own lives, and whether they're still in.
+function TeammateLine({
+  name,
+  livesLeft,
+  done,
+  connected,
+  teamWon,
+}: {
+  name: string;
+  livesLeft: number;
+  done: boolean;
+  connected: boolean;
+  teamWon: boolean;
+}) {
+  return (
+    <div
+      style={{
+        marginTop: 12,
+        paddingLeft: 12,
+        borderLeft: `4px solid ${OWN_TEAM_ACCENT}`,
+      }}
+    >
+      <PlayerLabel
+        name={connected ? name : `${name} (reconnecting…)`}
+        livesLeft={livesLeft}
+        done={done}
+        won={teamWon}
+        isWinner={teamWon}
+      />
     </div>
   );
 }
