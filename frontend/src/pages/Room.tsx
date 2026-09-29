@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { type ComponentProps, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import type { Room as ColyseusRoom } from "@colyseus/sdk";
 import { gameserverClient } from "../colyseus";
@@ -47,10 +47,60 @@ interface RoomSnapshot {
   colors?: string[];
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
 function buildGrid(p: PlayerSnapshot): CellValue[] {
   return cellsToGrid(p.confirmedFilled, p.crosses, p.revealedEmpty);
+}
+
+const OPPONENT_BOARD_DELAY_MS = 5000;
+
+function useLaggedValue<T>(
+  value: T,
+  key: string,
+  delayMs: number,
+  live: boolean,
+): T {
+  const [lagged, setLagged] = useState(value);
+  const timersRef = useRef(new Set<number>());
+
+  useEffect(() => {
+    if (live) return;
+    const timers = timersRef.current;
+    const id = window.setTimeout(() => {
+      timers.delete(id);
+      setLagged(value);
+    }, delayMs);
+    timers.add(id);
+  }, [key, delayMs, live]);
+
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => timers.forEach((id) => window.clearTimeout(id));
+  }, []);
+
+  return live ? value : lagged;
+}
+
+type NonogramGridProps = ComponentProps<typeof NonogramGrid>;
+
+function LaggedOpponentGrid({
+  live,
+  grid,
+  mistakeCrossIndices = [],
+  ...rest
+}: NonogramGridProps & { live: boolean }) {
+  const board = useLaggedValue(
+    { grid, mistakeCrossIndices },
+    `${grid.join("")}|${mistakeCrossIndices.join(",")}`,
+    OPPONENT_BOARD_DELAY_MS,
+    live,
+  );
+  return (
+    <NonogramGrid
+      {...rest}
+      grid={board.grid}
+      mistakeCrossIndices={board.mistakeCrossIndices}
+    />
+  );
 }
 
 // leave() throws while a socket is mid-handshake — an SDK reconnect in
@@ -708,7 +758,8 @@ export function Room() {
                 borderRadius: 6,
               }}
             >
-              <NonogramGrid
+              <LaggedOpponentGrid
+                live={isFinished}
                 rowClues={rowClues}
                 colClues={colClues}
                 grid={opponentGrid}
