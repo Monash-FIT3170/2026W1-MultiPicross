@@ -69,7 +69,11 @@ export function GuestNickname() {
         <form
           onSubmit={handleSubmit}
           noValidate
-          className="mp-auth-form flex w-full max-w-sm flex-col gap-4 rounded-2xl bg-white px-8 py-10 shadow-lg"
+          className="mp-auth-form flex w-full max-w-sm flex-col gap-4 rounded-2xl px-8 py-10 shadow-lg"
+          style={{
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-line)",
+          }}
         >
           <div
             style={{
@@ -80,21 +84,23 @@ export function GuestNickname() {
             }}
           >
             <h1
-              className="text-center text-lg font-semibold text-gray-800"
+              className="text-center text-lg font-semibold"
               style={{
                 margin: 0,
                 letterSpacing: "0",
                 lineHeight: 1.3,
+                color: "var(--color-ink)",
               }}
             >
               Guest Mode
             </h1>
 
             <p
-              className="text-center text-sm text-gray-500"
+              className="text-center text-sm"
               style={{
                 margin: 0,
                 lineHeight: 1.5,
+                color: "var(--color-ink-muted)",
               }}
             >
               Choose a nickname to continue.
@@ -104,7 +110,8 @@ export function GuestNickname() {
           <div className="flex flex-col gap-1">
             <label
               htmlFor="nickname"
-              className="text-sm font-medium text-gray-700"
+              className="text-sm font-medium"
+              style={{ color: "var(--color-ink)" }}
             >
               Nickname
             </label>
@@ -120,15 +127,31 @@ export function GuestNickname() {
               maxLength={20}
               autoFocus
               placeholder="Enter nickname"
-              className="rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-[var(--color-accent-primary)] focus:ring-2 focus:ring-[var(--color-accent-primary)]/20"
+              className="rounded-xl border px-4 py-2 text-sm outline-none focus:border-[var(--color-accent-primary)] focus:ring-2 focus:ring-[var(--color-accent-primary)]/20"
+              style={{
+                background: "var(--color-surface)",
+                color: "var(--color-ink)",
+                borderColor: "var(--color-line-strong)",
+              }}
             />
 
-            {error && <p className="text-xs text-red-600">{error}</p>}
+            {error && (
+              <p
+                className="text-xs"
+                style={{ color: "var(--color-accent-error)" }}
+              >
+                {error}
+              </p>
+            )}
           </div>
 
           <button
             type="submit"
-            className="rounded-xl bg-gray-900 py-2 font-semibold text-white transition hover:bg-black"
+            className="rounded-xl py-2 font-semibold transition"
+            style={{
+              background: "var(--color-blue-500)",
+              color: "var(--color-surface)",
+            }}
           >
             Continue
           </button>

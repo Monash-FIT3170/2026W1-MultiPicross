@@ -272,7 +272,7 @@ const VARIANT_STYLES: Record<ButtonVariant, CSSProperties> = {
   primary: { background: "var(--color-blue-500)", color: "#fff" },
   dark: { background: "#1c1c1e", color: "#fff" },
   ghost: {
-    background: "#fff",
+    background: "var(--color-surface)",
     color: "var(--color-ink)",
     borderColor: "var(--color-line)",
   },
