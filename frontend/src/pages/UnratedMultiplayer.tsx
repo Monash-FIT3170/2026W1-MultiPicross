@@ -215,7 +215,7 @@ export function UnratedMultiplayer() {
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <IconBadge
                 color="var(--color-blue-50)"
-                iconColor="var(--color-blue-500)"
+                iconColor="var(--color-ink)"
                 icon="plus"
               />
               <div
@@ -245,9 +245,13 @@ export function UnratedMultiplayer() {
                     style={{
                       padding: "4px 10px",
                       background:
-                        createSize === s ? "var(--color-blue-500)" : "#fff",
+                        createSize === s
+                          ? "var(--color-blue-500)"
+                          : "var(--color-surface)",
                       color:
-                        createSize === s ? "#fff" : "var(--color-ink-soft)",
+                        createSize === s
+                          ? "var(--color-surface)"
+                          : "var(--color-ink-soft)",
                       border: `1px solid ${createSize === s ? "var(--color-blue-500)" : "var(--color-line)"}`,
                       borderRadius: 999,
                       fontSize: 16,
@@ -284,7 +288,7 @@ export function UnratedMultiplayer() {
                 style={{
                   margin: 0,
                   fontSize: 12,
-                  color: "var(--color-coral-500)",
+                  color: "var(--color-accent-error)",
                 }}
               >
                 {createError}
@@ -317,7 +321,7 @@ export function UnratedMultiplayer() {
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <IconBadge
                 color="var(--color-butter-50)"
-                iconColor="#8a7338"
+                iconColor="var(--color-butter-500)"
                 icon="key"
               />
               <div
@@ -338,11 +342,11 @@ export function UnratedMultiplayer() {
               maxLength={6}
               style={{
                 padding: "10px 14px",
-                border: "1px solid var(--color-line)",
+                border: "1px solid var(--color-line-strong)",
                 borderRadius: 10,
                 fontSize: 16,
                 fontFamily: "var(--font-ui)",
-                background: "#fff",
+                background: "var(--color-surface)",
                 color: "var(--color-ink)",
                 outline: "none",
                 textAlign: "center",
@@ -358,7 +362,7 @@ export function UnratedMultiplayer() {
                 style={{
                   margin: 0,
                   fontSize: 12,
-                  color: "var(--color-coral-500)",
+                  color: "var(--color-accent-error)",
                 }}
               >
                 {joinError}
@@ -493,6 +497,7 @@ function IconBadge({
         height: 36,
         borderRadius: 10,
         background: color,
+        border: "1px solid var(--color-line)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

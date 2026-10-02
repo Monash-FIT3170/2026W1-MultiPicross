@@ -64,6 +64,7 @@
   --color-butter-50: #fbf6e8;
   --color-butter-100: #f6ecc8;
   --color-butter-300: #d8b977;
+  --color-butter-500: #a98538;
 
   --color-lavender-50: #f1eef8;
   --color-lavender-100: #ddd5ed;
@@ -105,6 +106,12 @@
   --color-blue-200: #55779d;
   --color-blue-500: #8eadd0;
   --color-blue-600: #aac2dc;
+
+  --color-butter-50: #332f24;
+  --color-butter-500: #e0c276;
+
+  --color-sage-50: #22332a;
+  --color-sage-500: #6fc493;
 }
 .dark .settings-icon {
   filter: invert(1);
@@ -124,7 +131,14 @@
   --color-line: #000000;
   --color-line-strong: #000000;
 
+  --color-blue-50: #ffffff;
   --color-blue-500: var(--color-contrast-accent-primary);
+
+  --color-butter-50: #ffffff;
+  --color-butter-500: #000000;
+
+  --color-sage-50: #ffffff;
+  --color-sage-500: #000000;
 
   --color-cell-filled: var(--color-contrast-cell-filled);
   --color-accent-primary: var(--color-contrast-accent-primary);
