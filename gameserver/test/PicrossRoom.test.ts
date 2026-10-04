@@ -64,7 +64,6 @@ interface Snapshot {
   forfeit: boolean;
   colors?: string[];
   mode: string;
-  finishOrder: string[];
   /** 2v2 only: one shared Team Board per team, keyed by team index. */
   teamBoards?: Record<string, BoardView>;
 }
@@ -486,45 +485,69 @@ describe("PicrossRoom", () => {
     };
   }
 
-  it("does not end a 1v1v1 match when the first player finishes", async () => {
-    const { clientA, seenByA, seenByB, aId } = await startTriMatch();
+  it("ends a 1v1v1 match immediately once the first player completes the puzzle", async () => {
+    const { clientA, seenByB, seenByC, aId, bId, cId } = await startTriMatch();
 
     for (const cell of FILLED_CELLS) fill(clientA, cell);
 
-    const snapshot = await seenByB.wait(
-      (s) => s.players[aId]?.won === true,
-      "A to finish",
-    );
-
-    assert.strictEqual(snapshot.phase, "playing");
-    assert.strictEqual(snapshot.winnerId, aId);
-    assert.deepStrictEqual(snapshot.finishOrder, [aId]);
-
-    // Sanity: A's own stream agrees the match is still live.
-    await seenByA.wait((s) => s.phase === "playing", "match still playing");
-  });
-
-  it("ends a 1v1v1 match once every player has won or been eliminated, tracking finish order", async () => {
-    const { clientA, clientB, clientC, seenByA, seenByC, aId, bId, cId } =
-      await startTriMatch();
-
-    // A finishes first, B finishes second.
-    for (const cell of FILLED_CELLS) fill(clientA, cell);
-    await seenByA.wait((s) => s.players[aId]?.won === true, "A to finish");
-    for (const cell of FILLED_CELLS) fill(clientB, cell);
-    await seenByA.wait((s) => s.players[bId]?.won === true, "B to finish");
-
-    // C burns all three lives instead of finishing.
-    for (const cell of EMPTY_CELLS) fill(clientC, cell);
-    const final = await seenByC.wait(
+    const final = await seenByB.wait(
       (s) => s.phase === "finished",
-      "the match to end once C is eliminated",
+      "the match to end once A finishes",
     );
 
-    assert.strictEqual(final.winnerId, aId, "first finisher stays the winner");
-    assert.deepStrictEqual(final.finishOrder, [aId, bId]);
+    assert.strictEqual(final.winnerId, aId);
+    assert.strictEqual(final.players[aId].won, true);
+    assert.strictEqual(final.players[bId].won, false);
     assert.strictEqual(final.players[cId].won, false);
     assert.strictEqual(final.forfeit, false);
+
+    await seenByC.wait((s) => s.phase === "finished", "C to see the match end");
+  });
+
+  it("ignores moves from the other players once someone has won a 1v1v1 match", async () => {
+    const { clientA, clientB, seenByA, seenByB, aId, bId } =
+      await startTriMatch();
+
+    for (const cell of FILLED_CELLS) fill(clientA, cell);
+    await seenByB.wait((s) => s.phase === "finished", "the match to end");
+
+    for (const cell of FILLED_CELLS) fill(clientB, cell);
+    await settle();
+
+    const final = await seenByA.wait(
+      (s) => s.phase === "finished",
+      "A's final view of the match",
+    );
+    assert.strictEqual(final.winnerId, aId);
+    assert.strictEqual(final.players[bId].won, false);
+    assert.strictEqual(final.players[bId].progress, 0);
+  });
+
+  it("ends a 1v1v1v1 match immediately once the first player completes the puzzle", async () => {
+    const room: ServerRoom = await colyseus.createRoom("picross_room", {
+      width: 3,
+      height: 3,
+      mode: "1v1v1v1",
+    });
+    const clients = [];
+    for (const username of ["A", "B", "C", "D"]) {
+      clients.push(await colyseus.connectTo(room, { username }));
+    }
+    const seenByD = track(clients[3]);
+    await seenByD.wait((s) => s.phase === "playing", "the match to start");
+
+    for (const cell of FILLED_CELLS) fill(clients[1], cell);
+
+    const final = await seenByD.wait(
+      (s) => s.phase === "finished",
+      "the match to end once B finishes",
+    );
+
+    assert.strictEqual(final.winnerId, clients[1].sessionId);
+    assert.strictEqual(
+      Object.values(final.players).filter((p) => p.won).length,
+      1,
+    );
   });
 
   it("continues a 1v1v1 match when one player leaves and two remain active", async () => {

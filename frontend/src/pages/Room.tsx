@@ -61,7 +61,6 @@ interface RoomSnapshot {
   forfeit: boolean;
   colors?: string[];
   mode: string;
-  finishOrder: string[];
   /** 2v2 only: the shared Team Board of each team, keyed by team index. */
   teamBoards?: Record<string, BoardSnapshot>;
 }
@@ -718,14 +717,6 @@ export function Room() {
   const clueOffset =
     Math.max(1, ...(colClues ?? [[]]).map((c) => c.length)) * cs;
 
-  // FFA only: 1st/2nd/3rd/... place for whoever's actually finished, in
-  // completion order. Team modes and non-finishers have no placement.
-  const placementOf = (sessionId: string): number | null => {
-    if (isTeamMode) return null;
-    const idx = snapshot.finishOrder.indexOf(sessionId);
-    return idx === -1 ? null : idx + 1;
-  };
-
   return (
     <div
       className="mp-room-page"
@@ -806,7 +797,6 @@ export function Room() {
             done={me.done}
             won={me.won}
             isWinner={iWon || myTeamWon}
-            placement={placementOf(myId)}
             team={isTeamMode ? { index: me.team ?? 0, own: true } : undefined}
           />
           <div
@@ -930,7 +920,6 @@ export function Room() {
                     done={p.done}
                     won={p.won}
                     isWinner={isFinished && p.won}
-                    placement={placementOf(p.id)}
                     rowClues={rowClues}
                     colClues={colClues}
                     width={width}
@@ -1106,13 +1095,6 @@ function CenteredMessage({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ordinal(n: number): string {
-  const suffixes: Record<number, string> = { 1: "st", 2: "nd", 3: "rd" };
-  const suffix =
-    n % 100 >= 11 && n % 100 <= 13 ? "th" : (suffixes[n % 10] ?? "th");
-  return `${n}${suffix}`;
-}
-
 interface TeamTag {
   /** 0-based team index; shown 1-based, matching the "Team N" banners. */
   index: number;
@@ -1148,7 +1130,6 @@ function PlayerLabel({
   done,
   won,
   isWinner,
-  placement,
   team,
 }: {
   name: string;
@@ -1156,7 +1137,6 @@ function PlayerLabel({
   done: boolean;
   won: boolean;
   isWinner: boolean;
-  placement?: number | null;
   /** 2v2 only: which team this board belongs to. */
   team?: TeamTag;
 }) {
@@ -1191,22 +1171,7 @@ function PlayerLabel({
           Winner
         </span>
       )}
-      {!isWinner && placement != null && (
-        <span
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: "var(--color-blue-500)",
-            background: "var(--color-blue-50)",
-            border: "1px solid var(--color-blue-100)",
-            borderRadius: 999,
-            padding: "2px 8px",
-          }}
-        >
-          {ordinal(placement)}
-        </span>
-      )}
-      {done && !won && !isWinner && placement == null && (
+      {done && !won && !isWinner && (
         <span
           style={{
             fontSize: 11,
@@ -1330,7 +1295,6 @@ function PlayerProgressRow({
   done,
   won,
   isWinner,
-  placement,
   board,
   ...preview
 }: Omit<BoardPreviewProps, "completed"> & {
@@ -1339,7 +1303,6 @@ function PlayerProgressRow({
   done: boolean;
   won: boolean;
   isWinner: boolean;
-  placement?: number | null;
 }) {
   return (
     <div className="mp-surface" style={{ padding: "16px 20px" }}>
@@ -1350,7 +1313,6 @@ function PlayerProgressRow({
         done={done}
         won={won}
         isWinner={isWinner}
-        placement={placement ?? null}
       />
       <ProgressBar progress={board.progress} isWinner={isWinner} />
     </div>

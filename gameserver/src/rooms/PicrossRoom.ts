@@ -147,8 +147,6 @@ export class PicrossRoom extends Room {
   private rankedResultRecorded = false;
   private mode: GameMode = DEFAULT_GAME_MODE;
   private modeConfig: GameModeConfig = GAME_MODES[DEFAULT_GAME_MODE];
-  /** FFA only: sessionIds in completion order. Team modes have no placement. */
-  private finishOrder: string[] = [];
   /**
    * Team modes only: one shared Team Board per team, indexed by team. Both
    * teammates' moves land here; lives and elimination stay per-player (see
@@ -400,26 +398,14 @@ export class PicrossRoom extends Room {
     return [...this.players.values()].every((p) => p.done);
   }
 
-  // Called once a player's board is fully solved. Team modes end the match
-  // immediately — the team just won, so nothing else to play for. 1v1 also
-  // ends immediately: it's always been "first (and only other) player to
-  // finish wins," and with exactly 2 players that's indistinguishable from
-  // "the other player has nothing left to race for." 3+ player FFA modes
-  // (1v1v1, 1v1v1v1) are the only ones that keep racing: the first finisher
-  // takes 1st place, but the match only ends once every player has won or
-  // been eliminated.
+  // Called once a player's board is fully solved. Every mode ends the match
+  // right here: the first player (FFA) or team (2v2) to complete the puzzle
+  // wins, and nobody keeps racing for a lower place.
   private handlePlayerWin(sessionId: string, player: PlayerData) {
     player.done = true;
     player.won = true;
-    if (!this.winnerId) this.winnerId = sessionId;
-
-    if (this.modeConfig.teamBased || this.modeConfig.maxPlayers === 2) {
-      this.setPhase("finished");
-      return;
-    }
-
-    this.finishOrder.push(sessionId);
-    if (this.allPlayersDone()) this.setPhase("finished");
+    this.winnerId = sessionId;
+    this.setPhase("finished");
   }
 
   // Called once a player runs out of lives. In FFA, running out of lives
@@ -436,11 +422,9 @@ export class PicrossRoom extends Room {
     // anything to the teammate still solving.
     this.clearCursorOf(sessionId, player);
     this.checkTeamWipeout();
-    // Team modes always have a winnerId by the time anyone could be
-    // eliminated (either from an earlier completion, or checkTeamWipeout
-    // just above) and the match is already finished in that case — so this
-    // only ever fires the FFA "everyone's done" ending, whether or not
-    // someone has already won.
+    // A team mode that reaches all-players-done was just ended by
+    // checkTeamWipeout above — so this only ever fires the FFA "everyone's
+    // out of lives" ending, which has no winner.
     if (this.state.phase === "playing" && this.allPlayersDone()) {
       this.setPhase("finished");
     }
@@ -453,12 +437,6 @@ export class PicrossRoom extends Room {
   // of lives does not trigger it (see handlePlayerElimination) — the last
   // remaining player must actually finish unless someone leaves. Not used in
   // team-based modes (see checkTeamWipeout instead).
-  //
-  // An FFA match can already have a winnerId here (the 1st-place finisher)
-  // while still "playing", since remaining players keep racing for
-  // placement — that recorded 1st place is never overwritten, but the sole
-  // survivor still has nothing left to race against, so the match ends for
-  // them too.
   private checkSoleSurvivor() {
     if (this.modeConfig.teamBased) return;
 
@@ -466,7 +444,7 @@ export class PicrossRoom extends Room {
     if (survivors.length !== 1) return;
 
     const [winnerId, winner] = survivors[0];
-    if (!this.winnerId) this.winnerId = winnerId;
+    this.winnerId = winnerId;
     winner.won = true;
     this.setPhase("finished");
   }
@@ -724,7 +702,6 @@ export class PicrossRoom extends Room {
       winnerId: this.winnerId,
       forfeit: this.forfeit,
       mode: this.mode,
-      finishOrder: [...this.finishOrder],
     };
 
     if (this.modeConfig.teamBased) {
