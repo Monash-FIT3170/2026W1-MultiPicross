@@ -824,10 +824,11 @@ function SizeSelectScreen({
 
       <div
         style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 14,
+          display: "grid",
+          gridTemplateColumns: "repeat(2, 260px)",
+          gap: 24,
           justifyContent: "center",
+          margin: "0 auto",
         }}
       >
         {sizes.map((s) => (
@@ -835,7 +836,11 @@ function SizeSelectScreen({
             key={`${s.width}x${s.height}`}
             className="tile"
             onClick={() => onSelectSize(s.width, s.height)}
-            style={{ width: 160, height: 120 }}
+            style={{
+              width: 260,
+              height: 145,
+              padding: 20,
+            }}
           >
             <div
               style={{
@@ -847,7 +852,14 @@ function SizeSelectScreen({
             >
               {s.width} × {s.height}
             </div>
-            <div style={{ fontSize: 12, color: "var(--color-ink-faint)" }}>
+
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 12,
+                color: "var(--color-ink-muted)",
+              }}
+            >
               {s.count} puzzle{s.count !== 1 ? "s" : ""}
             </div>
           </button>
@@ -996,23 +1008,7 @@ function PlayingScreen({
           zIndex: 200,
         }}
       >
-        <button
-          onClick={onMainMenu}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
-            color: "var(--color-ink-faint)",
-            fontSize: 13,
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <Icon name="arrow-left" size={14} color="var(--color-ink-faint)" />
-          Main menu
-        </button>
+        <BackButton onClick={onMainMenu} label="Main menu" />
         <Logo size={22} />
         <div style={{ width: 100 }} />
       </div>
