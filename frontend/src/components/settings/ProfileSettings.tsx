@@ -174,9 +174,10 @@ export function ProfileSettings() {
                   <span
                     className={`
                       h-6 w-6 rounded-full
-                      ${selected
-                        ? "ring-2 ring-[var(--color-blue-500)] ring-offset-2 ring-offset-[var(--color-surface)]"
-                        : ""
+                      ${
+                        selected
+                          ? "ring-2 ring-[var(--color-blue-500)] ring-offset-2 ring-offset-[var(--color-surface)]"
+                          : ""
                       }
                     `}
                     style={{ backgroundColor: color }}

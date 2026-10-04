@@ -269,7 +269,10 @@ const BTN_BASE: CSSProperties = {
 };
 
 const VARIANT_STYLES: Record<ButtonVariant, CSSProperties> = {
-  primary: { background: "var(--color-blue-500)", color: "var(--color-blue-50)" },
+  primary: {
+    background: "var(--color-blue-500)",
+    color: "var(--color-blue-50)",
+  },
   dark: { background: "var(--color-paper)", color: "var(--color-ink)" },
   ghost: {
     background: "var(--color-surface)",
@@ -468,7 +471,7 @@ export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   // always-current reference so the outside-click effect never goes stale
-  const closeRef = useRef<() => void>(() => { });
+  const closeRef = useRef<() => void>(() => {});
 
   function openDropdown() {
     setOpen(true);

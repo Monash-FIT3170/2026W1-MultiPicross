@@ -202,7 +202,8 @@ export function RankedMultiplayer() {
               padding: 20,
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-sunk) 100%)",
+              background:
+                "linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-sunk) 100%)",
               border: "1px solid var(--color-line)",
             }}
           >
@@ -355,7 +356,8 @@ export function RankedMultiplayer() {
               padding: 20,
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-sunk) 100%)",
+              background:
+                "linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-sunk) 100%)",
               border: "1px solid var(--color-line)",
             }}
           >
