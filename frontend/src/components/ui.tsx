@@ -396,18 +396,21 @@ export function LivesPips({ lives, max = 3 }: LivesPipsProps) {
   return (
     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
       {Array.from({ length: max }, (_, i) => (
-        <div
+        <svg
           key={i}
+          width={18}
+          height={18}
+          viewBox="0 0 24 24"
+          aria-hidden="true"
           style={{
-            width: 18,
-            height: 18,
-            borderRadius: "50%",
-            background:
+            fill:
               i < lives ? "var(--color-coral-400)" : "var(--color-line-strong)",
-            transition: "background 200ms ease",
+            transition: "fill 200ms ease",
             flexShrink: 0,
           }}
-        />
+        >
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+        </svg>
       ))}
     </div>
   );
