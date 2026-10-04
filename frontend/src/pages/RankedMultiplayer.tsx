@@ -562,6 +562,9 @@ export function RankedMultiplayer() {
                 style={{
                   margin: 0,
                   fontSize: 24,
+                  color: "var(--color-ink-muted)",
+                  font: "var(--font-heading)",
+                  fontWeight: 700,
                 }}
               >
                 No match found
