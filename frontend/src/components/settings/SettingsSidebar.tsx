@@ -22,10 +22,9 @@ const sections: { id: SettingsSection; label: string; icon: string }[] = [
 ];
 
 const getButtonClass = (isActive: boolean) =>
-  `rounded-lg border px-3 py-3 text-left text-sm font-ui transition ${
-    isActive
-      ? "border-[var(--color-blue-200)] bg-[var(--color-blue-50)] text-[var(--color-blue-500)] font-bold hover:-translate-y-px"
-      : "border-transparent text-[var(--color-ink-muted)] font-semibold hover:-translate-y-px hover:border-[var(--color-blue-200)] hover:bg-[var(--color-surface-sunk)]"
+  `rounded-lg border px-3 py-3 text-left text-sm font-ui transition ${isActive
+    ? "border-[var(--color-blue-200)] bg-[var(--color-blue-50)] text-[var(--color-blue-500)] font-bold hover:-translate-y-px"
+    : "border-transparent text-[var(--color-ink-muted)] font-semibold hover:-translate-y-px hover:border-[var(--color-blue-200)] hover:bg-[var(--color-surface-sunk)]"
   }`;
 
 export function SettingsSidebar({
@@ -47,7 +46,7 @@ export function SettingsSidebar({
                 src={section.icon}
                 alt=""
                 aria-hidden="true"
-                className="settings-icon h-4 w-4 shrink-0 opacity-60"
+                className="icons   h-4 w-4 shrink-0 opacity-60"
               />
               <span>{section.label}</span>
             </span>
@@ -65,7 +64,7 @@ export function SettingsSidebar({
             src={accountIcon}
             alt=""
             aria-hidden="true"
-            className="settings-icon h-4 w-4 shrink-0 opacity-60"
+            className="icons h-4 w-4 shrink-0 opacity-60"
           />
           <span>Account</span>
         </span>

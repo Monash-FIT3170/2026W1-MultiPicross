@@ -55,7 +55,7 @@ export function AccountSettings() {
               src={profileIcon}
               alt=""
               aria-hidden="true"
-              className="settings-icon h-5 w-5 opacity-60"
+              className="icons h-5 w-5 opacity-60"
             />
           </div>
 
