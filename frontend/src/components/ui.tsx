@@ -269,10 +269,10 @@ const BTN_BASE: CSSProperties = {
 };
 
 const VARIANT_STYLES: Record<ButtonVariant, CSSProperties> = {
-  primary: { background: "var(--color-blue-500)", color: "#fff" },
-  dark: { background: "#1c1c1e", color: "#fff" },
+  primary: { background: "var(--color-blue-500)", color: "var(--color-blue-50)" },
+  dark: { background: "var(--color-paper)", color: "var(--color-ink)" },
   ghost: {
-    background: "#fff",
+    background: "var(--color-surface)",
     color: "var(--color-ink)",
     borderColor: "var(--color-line)",
   },
@@ -468,7 +468,7 @@ export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   // always-current reference so the outside-click effect never goes stale
-  const closeRef = useRef<() => void>(() => {});
+  const closeRef = useRef<() => void>(() => { });
 
   function openDropdown() {
     setOpen(true);
@@ -525,7 +525,7 @@ export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
           alignItems: "center",
           gap: 9,
           padding: "7px 12px 7px 8px",
-          background: "#fff",
+          background: "var(--color-paper)",
           border: "1px solid var(--color-line)",
           borderRadius: 10,
           borderBottomLeftRadius: panelMounted ? 0 : 10,
@@ -613,7 +613,7 @@ export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
         >
           <div
             style={{
-              background: "#fff",
+              background: "var(--color-paper)",
               border: "1px solid var(--color-line)",
               borderTop: "none",
               borderRadius: "0 0 10px 10px",
