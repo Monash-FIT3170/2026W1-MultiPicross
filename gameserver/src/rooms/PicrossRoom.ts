@@ -419,21 +419,9 @@ export class PicrossRoom extends Room {
   private handlePlayerWin(sessionId: string, player: PlayerData) {
     player.done = true;
     player.won = true;
-<<<<<<< HEAD
     player.finishedAt = Date.now();
-    if (!this.winnerId) this.winnerId = sessionId;
-
-    if (this.modeConfig.teamBased || this.modeConfig.maxPlayers === 2) {
-      this.setPhase("finished");
-      return;
-    }
-
-    this.finishOrder.push(sessionId);
-    if (this.allPlayersDone()) this.setPhase("finished");
-=======
     this.winnerId = sessionId;
     this.setPhase("finished");
->>>>>>> 5c98b45 (-remvoed the fixed colours)
   }
 
   // Called once a player runs out of lives. In FFA, running out of lives
