@@ -236,7 +236,7 @@ export function Logo({ size = 28 }: LogoProps) {
           letterSpacing: "-0.01em",
         }}
       >
-        Multi<span style={{ color: "var(--color-blue-500)" }}>Picross</span>
+        Multi<span style={{ color: "var(--color-logo)" }}>Picross</span>
       </span>
     </div>
   );

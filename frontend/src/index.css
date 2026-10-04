@@ -49,6 +49,7 @@
   --color-blue-200: #b8d0ec;
   --color-blue-500: #3d5a80;
   --color-blue-600: #2f4868;
+  --color-logo: var(--color-blue-500);
 
   --color-coral-50: #fdf0eb;
   --color-coral-100: #fadbcf;
@@ -105,6 +106,7 @@
   --color-blue-200: #55779d;
   --color-blue-500: #2e4055;
   --color-blue-600: #252f3d;
+  --color-logo: var(--color-blue-100);
 }
 .dark .icons {
   filter: invert(1);
@@ -124,6 +126,7 @@
   --color-line: #000000;
   --color-line-strong: #000000;
 
+  --color-logo: var(--color-contrast-accent-primary);
   --color-blue-500: var(--color-contrast-accent-primary);
 
   --color-cell-filled: var(--color-contrast-cell-filled);
