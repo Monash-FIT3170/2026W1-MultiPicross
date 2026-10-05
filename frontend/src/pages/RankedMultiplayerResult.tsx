@@ -9,13 +9,10 @@ export function RankedMultiplayerResults() {
   const {
     winnerId,
     mySessionId,
-    opponentId,
     me,
     opponent,
     width,
     height,
-    colors,
-    forfeit,
     displaySeconds,
     rankedResult,
     solution,
@@ -101,7 +98,7 @@ export function RankedMultiplayerResults() {
   };
 
   const graphPoints = ratingHistory
-    .map((value, index) => {
+    .map((value: number, index: number) => {
       const point = getPoint(value, index);
       return `${point.x},${point.y}`;
     })
@@ -279,7 +276,7 @@ export function RankedMultiplayerResults() {
               }}
             >
               {completedPuzzle.flatMap((row, rowIndex) =>
-                row.map((cell, columnIndex) => (
+                row.map((cell: any, columnIndex: number) => (
                   <div
                     key={`${rowIndex}-${columnIndex}`}
                     style={{
