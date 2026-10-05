@@ -35,7 +35,7 @@
 :root {
   --color-paper: #f7f6f2;
   --color-surface: #ffffff;
-  --color-surface-sunk: #f0eee9;
+  --color-surface-sunk: #f0f3f5;
   --color-ink: #1c1c1e;
   --color-ink-soft: #4a4a52;
   --color-ink-muted: #6b6b6b;
@@ -49,6 +49,7 @@
   --color-blue-200: #b8d0ec;
   --color-blue-500: #3d5a80;
   --color-blue-600: #2f4868;
+  --color-logo: var(--color-blue-500);
 
   --color-coral-50: #fdf0eb;
   --color-coral-100: #fadbcf;
@@ -100,13 +101,14 @@
   --color-line: #383a40;
   --color-line-strong: #55575e;
 
-  --color-blue-50: #252f3d;
-  --color-blue-100: #2e4055;
+  --color-blue-50: #aac2dc;
+  --color-blue-100: #8eadd0;
   --color-blue-200: #55779d;
-  --color-blue-500: #8eadd0;
-  --color-blue-600: #aac2dc;
+  --color-blue-500: #2e4055;
+  --color-blue-600: #252f3d;
+  --color-logo: var(--color-blue-100);
 }
-.dark .settings-icon {
+.dark .icons {
   filter: invert(1);
 }
 /* High contrast colours */
@@ -124,6 +126,7 @@
   --color-line: #000000;
   --color-line-strong: #000000;
 
+  --color-logo: var(--color-contrast-accent-primary);
   --color-blue-500: var(--color-contrast-accent-primary);
 
   --color-cell-filled: var(--color-contrast-cell-filled);
@@ -131,7 +134,7 @@
   --color-accent-error: var(--color-contrast-accent-error);
   --color-accent-win: var(--color-contrast-accent-win);
 }
-.high-contrast .settings-icon {
+.high-contrast .icons {
   filter: brightness(0);
 }
 
