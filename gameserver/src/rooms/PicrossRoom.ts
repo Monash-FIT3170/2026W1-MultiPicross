@@ -3,7 +3,7 @@ import { PicrossRoomState } from "./schema/PicrossRoomState.js";
 import { sql } from "../db/client.js";
 import { verifyRoomToken } from "../auth/roomToken.js";
 import { requireEnv } from "../env.js";
-import { recordRankedResult } from "../elo/ratedResults.js";
+import { recordRankedResult, type RankedResult } from "../elo/ratedResults.js";
 
 interface RoomAuth {
   username: string | null;
@@ -104,6 +104,7 @@ export class PicrossRoom extends Room {
   private forfeit = false;
   private isRanked = false;
   private rankedResultRecorded = false;
+  private rankedResult: RankedResult | null = null;
 
   async onCreate(options: {
     width?: number;
@@ -305,23 +306,34 @@ export class PicrossRoom extends Room {
   }
 
   private async recordRankedResult(): Promise<void> {
-    if (!this.isRanked || this.rankedResultRecorded || !this.winnerId) return;
+    if (!this.isRanked || this.rankedResultRecorded || !this.winnerId) {
+      return;
+    }
 
     const winner = this.players.get(this.winnerId);
+
     const loser = [...this.players.entries()].find(
       ([sessionId]) => sessionId !== this.winnerId,
     )?.[1];
 
-    if (!winner?.accountId || !loser?.accountId) return;
+    if (!winner?.accountId || !loser?.accountId) {
+      return;
+    }
 
     this.rankedResultRecorded = true;
+
     try {
-      await recordRankedResult({
+      this.rankedResult = await recordRankedResult({
         winnerAccountId: winner.accountId,
         loserAccountId: loser.accountId,
         winnerMistakes: 3 - winner.livesLeft,
         loserMistakes: 3 - loser.livesLeft,
       });
+
+      // The first "finished" snapshot may have been sent before
+      // the Elo calculation completed. Broadcast another snapshot
+      // now that the real ranked result is available.
+      this.broadcast("state", this.buildSnapshot());
     } catch (error) {
       this.rankedResultRecorded = false;
       console.error("ranked result error", error);
@@ -465,6 +477,10 @@ export class PicrossRoom extends Room {
       players,
       winnerId: this.winnerId,
       forfeit: this.forfeit,
+
+      rankedResult: this.isRanked
+        ? this.rankedResult
+        : undefined,
     };
 
     if (this.state.phase === "finished") {

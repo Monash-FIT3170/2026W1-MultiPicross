@@ -10,12 +10,25 @@ export type RankedResultInput = {
   loserMistakes: number;
 };
 
+export type RankedResult = {
+  winnerAccountId: string;
+  loserAccountId: string;
+
+  winnerEloBefore: number;
+  winnerEloAfter: number;
+  winnerEloChange: number;
+
+  loserEloBefore: number;
+  loserEloAfter: number;
+  loserEloChange: number;
+};
+
 export async function recordRankedResult({
   winnerAccountId,
   loserAccountId,
   winnerMistakes,
   loserMistakes,
-}: RankedResultInput): Promise<void> {
+}: RankedResultInput): Promise<RankedResult> {
   const [winnerElo, loserElo] = await Promise.all([
     getPlayerElo(winnerAccountId),
     getPlayerElo(loserAccountId),
@@ -27,6 +40,7 @@ export async function recordRankedResult({
     winnerMistakes,
     opponentMistakes: loserMistakes,
   });
+
   const loserLoss = calculateLoosingEloGain({
     loosingElo: loserElo,
     opponentElo: winnerElo,
@@ -34,14 +48,31 @@ export async function recordRankedResult({
     opponentMistakes: winnerMistakes,
   });
 
+  const winnerEloAfter = winnerElo + winnerGain;
+  const loserEloAfter = Math.max(0, loserElo - loserLoss);
+
   await sql.begin(async (transaction) => {
     await transaction`
       INSERT INTO player_elo_history (account_id, elo)
-      VALUES (${winnerAccountId}, ${winnerElo + winnerGain})
+      VALUES (${winnerAccountId}, ${winnerEloAfter})
     `;
+
     await transaction`
       INSERT INTO player_elo_history (account_id, elo)
-      VALUES (${loserAccountId}, ${Math.max(0, loserElo - loserLoss)})
+      VALUES (${loserAccountId}, ${loserEloAfter})
     `;
   });
+
+  return {
+    winnerAccountId,
+    loserAccountId,
+
+    winnerEloBefore: winnerElo,
+    winnerEloAfter,
+    winnerEloChange: winnerGain,
+
+    loserEloBefore: loserElo,
+    loserEloAfter: loserEloAfter,
+    loserEloChange: -loserLoss,
+  };
 }

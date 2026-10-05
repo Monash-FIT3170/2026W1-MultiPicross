@@ -1,38 +1,63 @@
-import { useNavigate } from "react-router-dom";
+//import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { fmtSeconds } from "../components/NonogramGrid";
 
 export function RankedMultiplayerResults() {
-  const navigate = useNavigate();
+  const location = useLocation();
+    const navigate = useNavigate();
 
-  /*
-   * ============================================================
-   * DUMMY MATCH DATA
-   * ============================================================
-   *
-   * Change didWin to false to preview the defeat screen.
-   */
+    const {
+    winnerId,
+    mySessionId,
+    opponentId,
+    me,
+    opponent,
+    width,
+    height,
+    colors,
+    forfeit,
+    displaySeconds,
+    rankedResult,
+    } = location.state;
 
-  const didWin = true;
+    const didWin = winnerId === mySessionId;
 
-  const player = {
-    username: "You",
-    eloBefore: 1310,
-    eloAfter: 1334,
-    eloChange: 24,
-    mistakes: 2,
-  };
+    const player = didWin
+  ? {
+      username: me.username,
+      eloBefore: rankedResult.winnerEloBefore,
+      eloAfter: rankedResult.winnerEloAfter,
+      eloChange: rankedResult.winnerEloChange,
+      mistakes: 3 - me.livesLeft,
+    }
+  : {
+      username: me.username,
+      eloBefore: rankedResult.loserEloBefore,
+      eloAfter: rankedResult.loserEloAfter,
+      eloChange: rankedResult.loserEloChange,
+      mistakes: 3 - me.livesLeft,
+    };
 
-  const opponent = {
-    username: "ShadowGrid",
-    eloBefore: 1290,
-    eloAfter: 1266,
-    eloChange: -24,
-    mistakes: 3,
-  };
+const opponentResult = didWin
+  ? {
+      username: opponent.username,
+      eloBefore: rankedResult.loserEloBefore,
+      eloAfter: rankedResult.loserEloAfter,
+      eloChange: rankedResult.loserEloChange,
+      mistakes: 3 - opponent.livesLeft,
+    }
+  : {
+      username: opponent.username,
+      eloBefore: rankedResult.winnerEloBefore,
+      eloAfter: rankedResult.winnerEloAfter,
+      eloChange: rankedResult.winnerEloChange,
+      mistakes: 3 - opponent.livesLeft,
+    };
 
-  const match = {
-    time: "2:47",
-    boardSize: "10×10",
-  };
+const match = {
+  time: fmtSeconds(displaySeconds),
+  boardSize: `${width}x${height}`,
+};
 
   /*
    * ============================================================

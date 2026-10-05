@@ -34,6 +34,19 @@ interface PlayerSnapshot {
   connected: boolean;
 }
 
+interface RankedResult {
+  winnerAccountId: string;
+  loserAccountId: string;
+
+  winnerEloBefore: number;
+  winnerEloAfter: number;
+  winnerEloChange: number;
+
+  loserEloBefore: number;
+  loserEloAfter: number;
+  loserEloChange: number;
+}
+
 interface RoomSnapshot {
   phase: "waiting" | "playing" | "finished";
   inviteCode: string;
@@ -45,6 +58,7 @@ interface RoomSnapshot {
   winnerId: string;
   forfeit: boolean;
   colors?: string[];
+  rankedResult?: RankedResult;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -85,6 +99,7 @@ export function Room() {
   const intentionalLeaveRef = useRef(false);
   const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
   const mistakeCrossTimerRef = useRef<number | undefined>(undefined);
+  const resultsNavigatedRef = useRef(false);
 
   // ── Auth, captured once ────────────────────────────────────────────────────
 
@@ -219,6 +234,100 @@ export function Room() {
   // ── Ranked results navigation ───────────────────────────────────────────────
 
   useEffect(() => {
+    if (!isRanked) return;
+    if (snapshot?.phase !== "finished") return;
+    if (!snapshot.rankedResult) return;
+    if (resultsNavigatedRef.current) return;
+
+    const sessionIds = Object.keys(snapshot.players);
+    const myId = mySessionId ?? sessionIds[0];
+    const opponentId = sessionIds.find((id) => id !== myId) ?? null;
+
+    const me = snapshot.players[myId];
+    const opponent = opponentId
+      ? snapshot.players[opponentId]
+      : null;
+
+    if (!me || !opponent) return;
+
+    resultsNavigatedRef.current = true;
+
+    navigate("/multiplayer/ranked/results", {
+      state: {
+        winnerId: snapshot.winnerId,
+        mySessionId: myId,
+        opponentId,
+        me,
+        opponent,
+        width: snapshot.width,
+        height: snapshot.height,
+        colors: snapshot.colors,
+        forfeit: snapshot.forfeit,
+        displaySeconds,
+        rankedResult: snapshot.rankedResult,
+      },
+      replace: true,
+    });
+  }, [
+    isRanked,
+    snapshot,
+    mySessionId,
+    displaySeconds,
+    navigate,
+  ]);
+
+  /* useEffect(() => {
+    if (!isRanked) return;
+    if (snapshot?.phase !== "finished") return;
+    if (resultsNavigatedRef.current) return;
+
+    const sessionIds = Object.keys(snapshot.players);
+    const myId = mySessionId ?? sessionIds[0];
+    const opponentId = sessionIds.find((id) => id !== myId) ?? null;
+
+    const me = snapshot.players[myId];
+    const opponent = opponentId
+      ? snapshot.players[opponentId]
+      : null;
+
+    if (!me || !opponent) return;
+
+    resultsNavigatedRef.current = true;
+
+    const dummyRankedResult: RankedResult = {
+      winnerEloBefore: 1310,
+      winnerEloAfter: 1334,
+      winnerEloChange: 24,
+      loserEloBefore: 1290,
+      loserEloAfter: 1266,
+      loserEloChange: -24,
+    };
+
+    navigate("/multiplayer/ranked/results", {
+      state: {
+        winnerId: snapshot.winnerId,
+        mySessionId: myId,
+        opponentId,
+        me,
+        opponent,
+        width: snapshot.width,
+        height: snapshot.height,
+        colors: snapshot.colors,
+        forfeit: snapshot.forfeit,
+        displaySeconds,
+        rankedResult: dummyRankedResult,
+      },
+      replace: true,
+    });
+  }, [
+    isRanked,
+    snapshot,
+    mySessionId,
+    displaySeconds,
+    navigate,
+  ]); */
+
+/*   useEffect(() => {
     if (!snapshot || snapshot.phase !== "finished" || !isRanked) {
       return;
     }
@@ -253,7 +362,7 @@ export function Room() {
         displaySeconds,
       },
     });
-  }, [snapshot, mySessionId, isRanked, navigate, displaySeconds]);
+  }, [snapshot, mySessionId, isRanked, navigate, displaySeconds]); */
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
@@ -867,7 +976,7 @@ export function Room() {
               size="sm"
               onClick={() =>
                 navigate(
-                  isRanked ? "/multiplayer/ranked/results" : "/multiplayer/ranked/results", // remove /results
+                  isRanked ? "/multiplayer/ranked" : "/multiplayer/unrated", 
                 )
               }
             >
