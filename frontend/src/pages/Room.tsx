@@ -216,6 +216,45 @@ export function Room() {
     return () => clearInterval(id);
   }, [snapshot?.phase]);
 
+  // ── Ranked results navigation ───────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!snapshot || snapshot.phase !== "finished" || !isRanked) {
+      return;
+    }
+
+    const sessionIds = Object.keys(snapshot.players);
+    const myId = mySessionId ?? sessionIds[0];
+    const opponentId = sessionIds.find((id) => id !== myId) ?? null;
+
+    const me = snapshot.players[myId];
+    const opponent = opponentId
+      ? snapshot.players[opponentId]
+      : null;
+
+    if (!me) {
+      return;
+    }
+
+    navigate("/multiplayer/ranked/results", {
+      replace: true,
+      state: {
+        winnerId: snapshot.winnerId,
+        mySessionId: myId,
+        opponentId,
+        me,
+        opponent,
+        rowClues: snapshot.rowClues,
+        colClues: snapshot.colClues,
+        width: snapshot.width,
+        height: snapshot.height,
+        colors: snapshot.colors,
+        forfeit: snapshot.forfeit,
+        displaySeconds,
+      },
+    });
+  }, [snapshot, mySessionId, isRanked, navigate, displaySeconds]);
+
   // ── Actions ────────────────────────────────────────────────────────────────
 
   function handleFill(row: number, col: number) {
@@ -756,8 +795,8 @@ export function Room() {
         </div>
       )}
 
-      {/* Outcome banner */}
-      {isFinished && (
+      {/* Outcome banner - only used for unranked games*/}
+      {isFinished && !isRanked &&(
         <div
           style={{
             position: "fixed",
@@ -828,7 +867,7 @@ export function Room() {
               size="sm"
               onClick={() =>
                 navigate(
-                  isRanked ? "/multiplayer/ranked" : "/multiplayer/unrated",
+                  isRanked ? "/multiplayer/ranked/results" : "/multiplayer/ranked/results", // remove /results
                 )
               }
             >
