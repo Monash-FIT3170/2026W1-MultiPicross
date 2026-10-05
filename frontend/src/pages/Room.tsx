@@ -314,7 +314,7 @@ export function Room() {
     if (snapshot?.phase === "playing") {
       setConfirmingAbandon(true);
     } else {
-      navigate("/multiplayer/unrated");
+      navigate(isRanked ? "/multiplayer/ranked" : "/multiplayer/unrated");
     }
   }
 
@@ -335,7 +335,7 @@ export function Room() {
       /* ignore — navigating away regardless */
     }
     roomRef.current = null;
-    navigate("/multiplayer/unrated");
+    navigate(isRanked ? "/multiplayer/ranked" : "/multiplayer/unrated");
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────

@@ -70,9 +70,6 @@ const ratingHistory = didWin
   ? rankedResult.winnerRatingHistory
   : rankedResult.loserRatingHistory;
 
-console.log("RANKED RESULT:", rankedResult);
-console.log("RATING HISTORY:", ratingHistory);
-
   /*
    * ============================================================
    * GRAPH HELPERS
