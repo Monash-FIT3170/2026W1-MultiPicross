@@ -199,7 +199,7 @@ const match = {
             cursor: "pointer",
           }}
         >
-          ← Lobby
+          ← Main Menu
         </button>
 
       </div>
@@ -512,7 +512,7 @@ const match = {
                     color: "var(--color-ink-muted)",
                   }}
                 >
-                  {player.mistakes} errors
+                  {player.mistakes} error
                 </div>
 
                 {/* Progress bar */}
@@ -837,7 +837,7 @@ const match = {
                 ================================================== */}
 
             <button
-              onClick={() => navigate("/picrossranked")}
+              onClick={() => navigate("/multiplayer/ranked")}
               style={{
                 width: "100%",
                 height: 46,
