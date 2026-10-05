@@ -584,7 +584,7 @@ const match = {
                         color: "var(--color-ink)",
                       }}
                     >
-                      {opponent.username}
+                      {opponentResult.username}
                     </span>
                   </div>
 
@@ -621,7 +621,7 @@ const match = {
                       color: "var(--color-ink)",
                     }}
                   >
-                    {opponent.eloAfter}
+                    {opponentResult.eloAfter}
                   </span>
 
                   <span
@@ -631,8 +631,8 @@ const match = {
                       color: didWin ? "#E11D48" : "#059669",
                     }}
                   >
-                    {opponent.eloChange > 0 ? "+" : ""}
-                    {opponent.eloChange}
+                    {opponentResult.eloChange > 0 ? "+" : ""}
+                    {opponentResult.eloChange}
                   </span>
                 </div>
 
@@ -645,7 +645,7 @@ const match = {
                     color: "var(--color-ink-muted)",
                   }}
                 >
-                  {opponent.eloBefore} → {opponent.eloAfter}
+                  {opponentResult.eloBefore} → {opponentResult.eloAfter}
                 </div>
 
                 {/* Mistakes */}
@@ -660,7 +660,7 @@ const match = {
                     color: "var(--color-ink-muted)",
                   }}
                 >
-                  {opponent.mistakes} errors
+                  {opponentResult.mistakes} errors
                 </div>
 
                 {/* Progress bar */}
