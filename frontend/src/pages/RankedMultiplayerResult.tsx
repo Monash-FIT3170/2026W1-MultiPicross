@@ -9,13 +9,10 @@ export function RankedMultiplayerResults() {
     const {
     winnerId,
     mySessionId,
-    opponentId,
     me,
     opponent,
     width,
     height,
-    colors,
-    forfeit,
     displaySeconds,
     rankedResult,
     solution,
