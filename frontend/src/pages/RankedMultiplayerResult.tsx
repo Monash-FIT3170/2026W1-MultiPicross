@@ -4,9 +4,9 @@ import { fmtSeconds } from "../components/NonogramGrid";
 
 export function RankedMultiplayerResults() {
   const location = useLocation();
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    const {
+  const {
     winnerId,
     mySessionId,
     opponentId,
@@ -19,56 +19,56 @@ export function RankedMultiplayerResults() {
     displaySeconds,
     rankedResult,
     solution,
-    } = location.state;
+  } = location.state;
 
-    const didWin = winnerId === mySessionId;
+  const didWin = winnerId === mySessionId;
 
-    const player = didWin
-  ? {
-      username: me.username,
-      eloBefore: rankedResult.winnerEloBefore,
-      eloAfter: rankedResult.winnerEloAfter,
-      eloChange: rankedResult.winnerEloChange,
-      mistakes: 3 - me.livesLeft,
-    }
-  : {
-      username: me.username,
-      eloBefore: rankedResult.loserEloBefore,
-      eloAfter: rankedResult.loserEloAfter,
-      eloChange: rankedResult.loserEloChange,
-      mistakes: 3 - me.livesLeft,
-    };
+  const player = didWin
+    ? {
+        username: me.username,
+        eloBefore: rankedResult.winnerEloBefore,
+        eloAfter: rankedResult.winnerEloAfter,
+        eloChange: rankedResult.winnerEloChange,
+        mistakes: 3 - me.livesLeft,
+      }
+    : {
+        username: me.username,
+        eloBefore: rankedResult.loserEloBefore,
+        eloAfter: rankedResult.loserEloAfter,
+        eloChange: rankedResult.loserEloChange,
+        mistakes: 3 - me.livesLeft,
+      };
 
-const opponentResult = didWin
-  ? {
-      username: opponent.username,
-      eloBefore: rankedResult.loserEloBefore,
-      eloAfter: rankedResult.loserEloAfter,
-      eloChange: rankedResult.loserEloChange,
-      mistakes: 3 - opponent.livesLeft,
-    }
-  : {
-      username: opponent.username,
-      eloBefore: rankedResult.winnerEloBefore,
-      eloAfter: rankedResult.winnerEloAfter,
-      eloChange: rankedResult.winnerEloChange,
-      mistakes: 3 - opponent.livesLeft,
-    };
+  const opponentResult = didWin
+    ? {
+        username: opponent.username,
+        eloBefore: rankedResult.loserEloBefore,
+        eloAfter: rankedResult.loserEloAfter,
+        eloChange: rankedResult.loserEloChange,
+        mistakes: 3 - opponent.livesLeft,
+      }
+    : {
+        username: opponent.username,
+        eloBefore: rankedResult.winnerEloBefore,
+        eloAfter: rankedResult.winnerEloAfter,
+        eloChange: rankedResult.winnerEloChange,
+        mistakes: 3 - opponent.livesLeft,
+      };
 
-const completedPuzzle = solution
-  ? Array.from({ length: height }, (_, row) =>
-      solution.slice(row * width, (row + 1) * width),
-    )
-  : [];
+  const completedPuzzle = solution
+    ? Array.from({ length: height }, (_, row) =>
+        solution.slice(row * width, (row + 1) * width),
+      )
+    : [];
 
-    const match = {
-  time: fmtSeconds(displaySeconds),
-  boardSize: `${width}x${height}`,
-};
+  const match = {
+    time: fmtSeconds(displaySeconds),
+    boardSize: `${width}x${height}`,
+  };
 
-const ratingHistory = didWin
-  ? rankedResult.winnerRatingHistory
-  : rankedResult.loserRatingHistory;
+  const ratingHistory = didWin
+    ? rankedResult.winnerRatingHistory
+    : rankedResult.loserRatingHistory;
 
   /*
    * ============================================================
@@ -85,11 +85,11 @@ const ratingHistory = didWin
 
   const getPoint = (value: number, index: number) => {
     const x =
-        ratingHistory.length === 1
-            ? graphWidth / 2
-            : graphPadding +
-            (index / (ratingHistory.length - 1)) *
-                (graphWidth - graphPadding * 2);
+      ratingHistory.length === 1
+        ? graphWidth / 2
+        : graphPadding +
+          (index / (ratingHistory.length - 1)) *
+            (graphWidth - graphPadding * 2);
 
     const y =
       graphHeight -
@@ -123,12 +123,12 @@ const ratingHistory = didWin
 
   return (
     <div
-    style={{
+      style={{
         minHeight: "100vh",
         position: "relative",
         display: "flex",
         flexDirection: "column",
-    }}
+      }}
     >
       {/* ======================================================
           TOP BAR
@@ -136,19 +136,19 @@ const ratingHistory = didWin
 
       <div
         style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 64,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            padding: "0 24px",
-            background: "transparent",
-            zIndex: 10,
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 64,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "0 24px",
+          background: "transparent",
+          zIndex: 10,
         }}
-        >
+      >
         {/* Lobby button */}
 
         <button
@@ -166,7 +166,6 @@ const ratingHistory = didWin
         >
           ← Main Menu
         </button>
-
       </div>
 
       {/* ======================================================
@@ -175,10 +174,10 @@ const ratingHistory = didWin
 
       <div
         style={{
-            flex: 1,
-            display: "grid",
-            gridTemplateColumns: "minmax(360px, 1fr) minmax(500px, 1.7fr)",
-            minHeight: "100vh",
+          flex: 1,
+          display: "grid",
+          gridTemplateColumns: "minmax(360px, 1fr) minmax(500px, 1.7fr)",
+          minHeight: "100vh",
         }}
       >
         {/* ====================================================
@@ -284,9 +283,7 @@ const ratingHistory = didWin
                   <div
                     key={`${rowIndex}-${columnIndex}`}
                     style={{
-                      background: cell
-                        ? resultColour
-                        : "#F3F4F6",
+                      background: cell ? resultColour : "#F3F4F6",
                       borderRight:
                         columnIndex === row.length - 1
                           ? "none"
@@ -353,9 +350,7 @@ const ratingHistory = didWin
                 style={{
                   padding: 16,
                   borderRadius: 12,
-                  border: `2px solid ${
-                    didWin ? "#10B981" : "#FB7185"
-                  }`,
+                  border: `2px solid ${didWin ? "#10B981" : "#FB7185"}`,
                   background: didWin ? "#F0FDF4" : "#FFF1F2",
                 }}
               >
@@ -381,9 +376,7 @@ const ratingHistory = didWin
                         width: 30,
                         height: 30,
                         borderRadius: "50%",
-                        background: didWin
-                          ? "#A7F3D0"
-                          : "#FECDD3",
+                        background: didWin ? "#A7F3D0" : "#FECDD3",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -411,9 +404,7 @@ const ratingHistory = didWin
                       fontWeight: 700,
                       padding: "4px 8px",
                       borderRadius: 20,
-                      background: didWin
-                        ? "#10B981"
-                        : "#FB7185",
+                      background: didWin ? "#10B981" : "#FB7185",
                       color: "white",
                     }}
                   >
@@ -487,9 +478,7 @@ const ratingHistory = didWin
                     height: 4,
                     marginTop: 10,
                     borderRadius: 10,
-                    background: didWin
-                      ? "#10B981"
-                      : "#FB7185",
+                    background: didWin ? "#10B981" : "#FB7185",
                     width: "100%",
                   }}
                 />
@@ -501,9 +490,7 @@ const ratingHistory = didWin
                 style={{
                   padding: 16,
                   borderRadius: 12,
-                  border: `2px solid ${
-                    didWin ? "#FB7185" : "#10B981"
-                  }`,
+                  border: `2px solid ${didWin ? "#FB7185" : "#10B981"}`,
                   background: didWin ? "#FFF1F2" : "#F0FDF4",
                 }}
               >
@@ -529,9 +516,7 @@ const ratingHistory = didWin
                         width: 30,
                         height: 30,
                         borderRadius: "50%",
-                        background: didWin
-                          ? "#FECDD3"
-                          : "#A7F3D0",
+                        background: didWin ? "#FECDD3" : "#A7F3D0",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -559,9 +544,7 @@ const ratingHistory = didWin
                       fontWeight: 700,
                       padding: "4px 8px",
                       borderRadius: 20,
-                      background: didWin
-                        ? "#FB7185"
-                        : "#10B981",
+                      background: didWin ? "#FB7185" : "#10B981",
                       color: "white",
                     }}
                   >
@@ -635,9 +618,7 @@ const ratingHistory = didWin
                     height: 4,
                     marginTop: 10,
                     borderRadius: 10,
-                    background: didWin
-                      ? "#FB7185"
-                      : "#10B981",
+                    background: didWin ? "#FB7185" : "#10B981",
                     width: "100%",
                   }}
                 />
@@ -732,8 +713,7 @@ const ratingHistory = didWin
                 {[0, 1, 2].map((line) => {
                   const y =
                     graphPadding +
-                    (line / 2) *
-                      (graphHeight - graphPadding * 2);
+                    (line / 2) * (graphHeight - graphPadding * 2);
 
                   return (
                     <line
@@ -817,16 +797,13 @@ const ratingHistory = didWin
                 transition: "transform 0.15s ease",
               }}
               onMouseDown={(event) => {
-                event.currentTarget.style.transform =
-                  "scale(0.98)";
+                event.currentTarget.style.transform = "scale(0.98)";
               }}
               onMouseUp={(event) => {
-                event.currentTarget.style.transform =
-                  "scale(1)";
+                event.currentTarget.style.transform = "scale(1)";
               }}
               onMouseLeave={(event) => {
-                event.currentTarget.style.transform =
-                  "scale(1)";
+                event.currentTarget.style.transform = "scale(1)";
               }}
             >
               ↻ &nbsp; Play Again

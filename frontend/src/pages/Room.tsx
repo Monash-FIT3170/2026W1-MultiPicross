@@ -245,9 +245,7 @@ export function Room() {
     const opponentId = sessionIds.find((id) => id !== myId) ?? null;
 
     const me = snapshot.players[myId];
-    const opponent = opponentId
-      ? snapshot.players[opponentId]
-      : null;
+    const opponent = opponentId ? snapshot.players[opponentId] : null;
 
     if (!me || !opponent) return;
 
@@ -270,13 +268,7 @@ export function Room() {
       },
       replace: true,
     });
-  }, [
-    isRanked,
-    snapshot,
-    mySessionId,
-    displaySeconds,
-    navigate,
-  ]);
+  }, [isRanked, snapshot, mySessionId, displaySeconds, navigate]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
@@ -819,7 +811,7 @@ export function Room() {
       )}
 
       {/* Outcome banner - only used for unranked games*/}
-      {isFinished && !isRanked &&(
+      {isFinished && !isRanked && (
         <div
           style={{
             position: "fixed",
@@ -890,7 +882,7 @@ export function Room() {
               size="sm"
               onClick={() =>
                 navigate(
-                  isRanked ? "/multiplayer/ranked" : "/multiplayer/unrated", 
+                  isRanked ? "/multiplayer/ranked" : "/multiplayer/unrated",
                 )
               }
             >

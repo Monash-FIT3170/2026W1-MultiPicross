@@ -49,7 +49,10 @@ export default function App() {
           {/* Guests arriving on an invite link are bounced to /nickname, which
               navigates back here once a name is set. */}
           <Route path="/room/:roomId" element={<Room />} />
-          <Route path="/multiplayer/ranked/results" element={<RankedMultiplayerResults />} />
+          <Route
+            path="/multiplayer/ranked/results"
+            element={<RankedMultiplayerResults />}
+          />
         </Route>
         {/* Bare /multiplayer has no page of its own; without this it would hit the
             catch-all below and silently land on the main menu. */}

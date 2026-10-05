@@ -478,9 +478,7 @@ export class PicrossRoom extends Room {
       winnerId: this.winnerId,
       forfeit: this.forfeit,
 
-      rankedResult: this.isRanked
-        ? this.rankedResult
-        : undefined,
+      rankedResult: this.isRanked ? this.rankedResult : undefined,
     };
 
     if (this.state.phase === "finished") {

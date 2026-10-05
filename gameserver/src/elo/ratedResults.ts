@@ -22,9 +22,7 @@ export async function getRankedRatingHistory(
     LIMIT ${limit}
   `;
 
-  return rows
-    .map((row) => Number(row.elo))
-    .reverse();
+  return rows.map((row) => Number(row.elo)).reverse();
 }
 
 export type RankedResult = {
@@ -84,9 +82,9 @@ export async function recordRankedResult({
   });
 
   const [winnerRatingHistory, loserRatingHistory] = await Promise.all([
-  getRankedRatingHistory(winnerAccountId),
-  getRankedRatingHistory(loserAccountId),
-  ]); 
+    getRankedRatingHistory(winnerAccountId),
+    getRankedRatingHistory(loserAccountId),
+  ]);
 
   return {
     winnerAccountId,
@@ -99,7 +97,7 @@ export async function recordRankedResult({
     loserEloBefore: loserElo,
     loserEloAfter: loserEloAfter,
     loserEloChange: -loserLoss,
-    
+
     winnerRatingHistory,
     loserRatingHistory,
   };
