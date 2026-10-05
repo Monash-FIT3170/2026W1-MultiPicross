@@ -33,15 +33,39 @@ export async function recordRankedResult({
     loosingMistakes: loserMistakes,
     opponentMistakes: winnerMistakes,
   });
+  const winnerEloAfter = winnerElo + winnerGain;
+  const loserEloAfter = Math.max(0, loserElo - loserLoss);
 
   await sql.begin(async (transaction) => {
     await transaction`
       INSERT INTO player_elo_history (account_id, elo)
-      VALUES (${winnerAccountId}, ${winnerElo + winnerGain})
+      VALUES (${winnerAccountId}, ${winnerEloAfter})
     `;
     await transaction`
       INSERT INTO player_elo_history (account_id, elo)
-      VALUES (${loserAccountId}, ${Math.max(0, loserElo - loserLoss)})
+      VALUES (${loserAccountId}, ${loserEloAfter})
+    `;
+    await transaction`
+      INSERT INTO ranked_match_results (
+        winner_account_id,
+        loser_account_id,
+        winner_elo_before,
+        winner_elo_after,
+        loser_elo_before,
+        loser_elo_after,
+        winner_mistakes,
+        loser_mistakes
+      )
+      VALUES (
+        ${winnerAccountId},
+        ${loserAccountId},
+        ${winnerElo},
+        ${winnerEloAfter},
+        ${loserElo},
+        ${loserEloAfter},
+        ${winnerMistakes},
+        ${loserMistakes}
+      )
     `;
   });
 }

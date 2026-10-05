@@ -4,21 +4,33 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Room } from "@colyseus/sdk";
 import { gameserverClient } from "../colyseus";
 import { apiFetch } from "../api/client";
-import { useElo } from "../api/elo";
+import {
+  useMyRankedStats,
+  useRankedLeaderboard,
+  type RankedStats,
+} from "../api/rankedStats";
+import { useAuth } from "../auth/AuthContext";
 import statsIcon from "../assets/stats.svg";
-import trohpyIcon from "../assets/trophy.svg";
+import trophyIcon from "../assets/trophy.svg";
 import shieldIcon from "../assets/shield.svg";
 
 export function RankedMultiplayer() {
   const navigate = useNavigate();
+  const { status } = useAuth();
+  const isAuth = status === "authenticated";
   const [searching, setSearching] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
   const [requiresLogin, setRequiresLogin] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<RankedStats | null>(
+    null,
+  );
   const [queueMessage, setQueueMessage] = useState(
     "We've been unable to find an opponent.",
   );
   const queueRoomRef = useRef<Room | null>(null);
-  const { playerElo } = useElo(true);
+  const { entries: leaderboard, loading: leaderboardLoading } =
+    useRankedLeaderboard();
+  const { stats: myStats, loading: myStatsLoading } = useMyRankedStats(isAuth);
 
   const leaveQueueRoom = useCallback(() => {
     const room = queueRoomRef.current;
@@ -32,7 +44,6 @@ export function RankedMultiplayer() {
   useEffect(() => leaveQueueRoom, [leaveQueueRoom]);
 
   const startSearching = async () => {
-    // Already queued, so the timers and handlers below are already running.
     if (queueRoomRef.current) return;
 
     setSearching(true);
@@ -64,8 +75,6 @@ export function RankedMultiplayer() {
       });
 
       room.onMessage("matched", ({ roomId }: { roomId: string }) => {
-        // Cleared first so unmounting does not send leaveQueue for a player
-        // who has already been matched out of the waiting list.
         queueRoomRef.current = null;
         setSearching(false);
         setTimedOut(false);
@@ -73,8 +82,6 @@ export function RankedMultiplayer() {
         navigate(`/room/${roomId}?mode=ranked`);
       });
 
-      // The server keeps us queued past the timeout, so this asks whether to
-      // keep waiting rather than reporting that the search has stopped.
       room.onMessage("queueTimeoutEmpty", () => {
         setSearching(false);
         setRequiresLogin(false);
@@ -109,8 +116,6 @@ export function RankedMultiplayer() {
   const keepSearching = () => {
     const room = queueRoomRef.current;
 
-    // Still connected and still queued, so ask for another wait rather than
-    // tearing the room down and rejoining.
     if (!room) {
       void startSearching();
       return;
@@ -138,7 +143,6 @@ export function RankedMultiplayer() {
         padding: "24px",
       }}
     >
-      {/* Top bar */}
       <div
         className="mp-topbar"
         style={{
@@ -149,11 +153,7 @@ export function RankedMultiplayer() {
           position: "relative",
         }}
       >
-        <div
-          style={{
-            position: "relative",
-          }}
-        >
+        <div style={{ position: "relative" }}>
           <BackButton onClick={() => navigate("/")} label="Main Menu" />
         </div>
 
@@ -162,7 +162,6 @@ export function RankedMultiplayer() {
         <div style={{ width: 100 }} />
       </div>
 
-      {/* Body */}
       <div style={{ maxWidth: 960, margin: "0 auto" }}>
         <h1
           style={{
@@ -195,7 +194,6 @@ export function RankedMultiplayer() {
             marginBottom: 40,
           }}
         >
-          {/* Your Stats - Left column  */}
           <div
             className="mp-surface mp-ranked-stats"
             style={{
@@ -207,149 +205,66 @@ export function RankedMultiplayer() {
               border: "1px solid var(--color-line)",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div
-                style={{
-                  fontSize: 18,
-                  fontWeight: 700,
-                  color: "var(--color-ink)",
-                }}
-              >
-                Your Statistics
-              </div>
-            </div>
-
-            {/* Rating */}
             <div
               style={{
-                display: "flex",
-                alignItems: "center",
-                paddingTop: 6,
+                fontSize: 18,
+                fontWeight: 700,
+                color: "var(--color-ink)",
               }}
             >
-              <img
-                src={statsIcon}
-                alt=""
-                style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
-                className="icons"
-              />
-
-              <div
-                style={{
-                  padding: 20,
-                  display: "flex",
-                  flexDirection: "column",
-                  color: "var(--color-ink-faint)",
-                }}
-              >
-                <p
-                  style={{
-                    marginLeft: 4,
-                  }}
-                >
-                  Rating
-                </p>
-
-                <p
-                  style={{
-                    marginTop: 4,
-                    fontSize: 40,
-                    fontWeight: 700,
-                  }}
-                >
-                  {playerElo ?? 100}
-                </p>
-              </div>
+              Your Statistics
             </div>
 
-            {/* Wins */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                paddingTop: 6,
-              }}
-            >
-              <img
-                src={trohpyIcon}
-                alt=""
-                style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
-                className="icons"
-              />
-
-              <div
-                style={{
-                  padding: 20,
-                  display: "flex",
-                  flexDirection: "column",
-                  color: "var(--color-ink-faint)",
-                }}
-              >
-                <p
-                  style={{
-                    marginLeft: 4,
-                  }}
+            {isAuth ? (
+              myStatsLoading ? (
+                <PanelMessage>Loading your ranked stats...</PanelMessage>
+              ) : (
+                <>
+                  <MetricRow
+                    icon={statsIcon}
+                    label="Rating"
+                    value={myStats?.elo ?? 100}
+                  />
+                  <MetricRow
+                    icon={trophyIcon}
+                    label="Rank"
+                    value={myStats ? `#${myStats.rank}` : "-"}
+                  />
+                  <MetricRow
+                    icon={shieldIcon}
+                    label="Record"
+                    value={`${myStats?.wins ?? 0}-${myStats?.losses ?? 0}`}
+                  />
+                  <div
+                    style={{
+                      marginTop: "auto",
+                      paddingTop: 12,
+                      color: "var(--color-ink-muted)",
+                      fontSize: 13,
+                    }}
+                  >
+                    {myStats?.totalGames ?? 0} games, {myStats?.winRate ?? 0}%
+                    win rate
+                  </div>
+                </>
+              )
+            ) : (
+              <div style={{ marginTop: 26 }}>
+                <PanelMessage>
+                  Sign in to track your rank, rating, and ranked record.
+                </PanelMessage>
+                <Button
+                  variant="ghost"
+                  size="md"
+                  onClick={() => navigate("/login")}
+                  style={{ width: "100%", marginTop: 18 }}
                 >
-                  Wins
-                </p>
-
-                <p
-                  style={{
-                    marginTop: 4,
-                    fontSize: 40,
-                    fontWeight: 700,
-                  }}
-                >
-                  54
-                </p>
+                  Sign In
+                </Button>
               </div>
-            </div>
-
-            {/* Losses */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                paddingTop: 6,
-              }}
-            >
-              <img
-                src={shieldIcon}
-                alt=""
-                style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
-                className="icons"
-              />
-
-              <div
-                style={{
-                  padding: 20,
-                  display: "flex",
-                  flexDirection: "column",
-                  color: "var(--color-ink-faint)",
-                }}
-              >
-                <p
-                  style={{
-                    marginLeft: 4,
-                  }}
-                >
-                  Losses
-                </p>
-
-                <p
-                  style={{
-                    marginTop: 4,
-                    fontSize: 40,
-                    fontWeight: 700,
-                  }}
-                >
-                  54
-                </p>
-              </div>
-            </div>
+            )}
           </div>
 
-          {/* Leaderboard - Right column */}
           <div
             className="mp-surface mp-ranked-leaderboard"
             style={{
@@ -361,8 +276,15 @@ export function RankedMultiplayer() {
               border: "1px solid var(--color-line)",
             }}
           >
-            {/* Leaderboard Heading */}
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 10,
+                marginBottom: 12,
+              }}
+            >
               <div
                 style={{
                   fontSize: 18,
@@ -372,41 +294,73 @@ export function RankedMultiplayer() {
               >
                 Leaderboard
               </div>
+              <span style={{ color: "var(--color-ink-faint)", fontSize: 12 }}>
+                Top 10
+              </span>
             </div>
 
-            {/* Not Implemented Leaderboard */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                paddingTop: 6,
-              }}
-            >
-              <div
-                style={{
-                  marginTop: 100,
-                  marginLeft: 210,
-                  alignItems: "center",
-                  flexDirection: "column",
-                  fontWeight: 700,
-                  fontSize: 20,
-                  color: "var(--color-ink-muted)",
-                }}
-              >
-                Not Implemented
+            {leaderboardLoading ? (
+              <PanelMessage>Loading leaderboard...</PanelMessage>
+            ) : leaderboard.length === 0 ? (
+              <PanelMessage>No ranked players yet.</PanelMessage>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {leaderboard.map((entry) => (
+                  <button
+                    key={entry.rank}
+                    onClick={() => setSelectedPlayer(entry)}
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "46px 1fr 72px 72px",
+                      alignItems: "center",
+                      gap: 10,
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: "1px solid var(--color-line)",
+                      borderRadius: 10,
+                      background: "var(--color-paper)",
+                      color: "var(--color-ink)",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      fontFamily: "var(--font-ui)",
+                    }}
+                  >
+                    <span style={{ fontWeight: 700 }}>#{entry.rank}</span>
+                    <span
+                      style={{
+                        minWidth: 0,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                        fontWeight: 650,
+                      }}
+                    >
+                      {entry.displayName}
+                    </span>
+                    <span
+                      style={{
+                        color: "var(--color-ink-muted)",
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {entry.elo}
+                    </span>
+                    <span
+                      style={{
+                        color: "var(--color-ink-muted)",
+                        fontVariantNumeric: "tabular-nums",
+                      }}
+                    >
+                      {entry.wins}-{entry.losses}
+                    </span>
+                  </button>
+                ))}
               </div>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Play Game Button */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "center",
-          }}
-        >
-          {" "}
+        <div style={{ display: "flex", justifyContent: "center" }}>
           <Button
             variant="primary"
             size="md"
@@ -421,191 +375,85 @@ export function RankedMultiplayer() {
           </Button>
         </div>
 
-        {/* Searching Modal */}
         {searching && (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "var(--color-surface)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
+          <QueueModal onCancel={cancelSearching}>
             <div
               style={{
-                position: "relative",
-                width: "100%",
-                maxWidth: 420,
-                height: 200,
-                padding: 32,
-                background: "var(--color-paper)",
-                borderRadius: 20,
-                boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
-                textAlign: "center",
+                width: 40,
+                height: 40,
+                border: "4px solid var(--color-blue-100)",
+                borderTop: "4px solid var(--color-blue-500)",
+                borderRadius: "50%",
+                margin: "0 auto 10px",
+                animation: "spin 1s linear infinite",
+              }}
+            />
+            <div
+              style={{
+                fontSize: 20,
+                fontWeight: 700,
+                color: "var(--color-ink)",
               }}
             >
-              {/* Cancel button */}
-              <div
-                onClick={cancelSearching}
-                style={{
-                  position: "absolute",
-                  top: 16,
-                  right: 16,
-                  width: 32,
-                  height: 32,
-                  border: "none",
-                  borderRadius: 8,
-                  color: "var(--color-ink)",
-                  fontSize: 20,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transition: "background 0.15s ease",
-                }}
-              >
-                <IconBadge iconColor="var(--color-ink)" icon="x" color={""} />
-              </div>
-
-              {/* Loading spinner */}
-              <div
-                style={{
-                  width: 40,
-                  height: 40,
-                  border: "4px solid var(--color-blue-100)",
-                  borderTop: "4px solid var(--color-blue-500)",
-                  borderRadius: "50%",
-                  margin: "0 auto 10px",
-                  animation: "spin 1s linear infinite",
-                }}
-              />
-
-              {/* Loading spinner */}
-              <div
-                style={{
-                  fontSize: 20,
-                  fontWeight: 700,
-                  color: "var(--color-ink)",
-                }}
-              >
-                Please wait...
-              </div>
-
-              {/* Finding matches */}
-              <div
-                style={{
-                  marginTop: 8,
-                  fontSize: 15,
-                  color: "var(--color-ink-muted)",
-                }}
-              >
-                Finding matches
-              </div>
+              Please wait...
             </div>
-          </div>
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 15,
+                color: "var(--color-ink-muted)",
+              }}
+            >
+              Finding matches
+            </div>
+          </QueueModal>
         )}
 
-        {/* No Match Modal */}
         {timedOut && (
-          <div
-            style={{
-              position: "fixed",
-              inset: 0,
-              background: "var(--color-surface)",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <div
+          <QueueModal onCancel={cancelSearching}>
+            <h2
               style={{
-                position: "relative",
-                width: "100%",
-                maxWidth: 420,
-                height: 200,
-                padding: 32,
-                background: "var(--color-paper)",
-                borderRadius: 20,
-                textAlign: "center",
-                boxShadow: "0 12px 40px var(--color-line)",
+                margin: 0,
+                fontSize: 24,
+                color: "var(--color-ink-muted)",
+                font: "var(--font-heading)",
+                fontWeight: 700,
               }}
             >
-              {/* Cancel button */}
-              <div
-                onClick={cancelSearching}
-                style={{
-                  position: "absolute",
-                  top: 16,
-                  right: 16,
-                  width: 32,
-                  height: 32,
-                  border: "none",
-                  borderRadius: 8,
-                  background: "var(--color-paper)",
-                  color: "var(--color-ink)",
-                  fontSize: 20,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transition: "background 0.15s ease",
-                }}
+              No match found
+            </h2>
+            <p style={{ marginTop: 12, color: "var(--color-ink-muted)" }}>
+              {queueMessage}
+            </p>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: 14,
+                marginTop: 28,
+              }}
+            >
+              <Button
+                variant="ghost"
+                onClick={
+                  requiresLogin ? () => navigate("/login") : keepSearching
+                }
+                style={{ fontSize: 16, fontWeight: 620 }}
               >
-                <IconBadge iconColor="var(--color-ink)" icon="x" color={""} />
-              </div>
-
-              <h2
-                style={{
-                  margin: 0,
-                  fontSize: 24,
-                  color: "var(--color-ink-muted)",
-                  font: "var(--font-heading)",
-                  fontWeight: 700,
-                }}
-              >
-                No match found
-              </h2>
-
-              <p
-                style={{
-                  marginTop: 12,
-                  color: "var(--color-ink-muted)",
-                }}
-              >
-                {queueMessage}
-              </p>
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "center",
-                  gap: 14,
-                  marginTop: 28,
-                }}
-              >
-                <Button
-                  variant="ghost"
-                  onClick={
-                    requiresLogin ? () => navigate("/login") : keepSearching
-                  }
-                  style={{
-                    fontSize: 16,
-                    fontWeight: 620,
-                  }}
-                >
-                  {requiresLogin ? "Login/Sign Up" : "Keep Searching"}
-                </Button>
-              </div>
+                {requiresLogin ? "Login/Sign Up" : "Keep Searching"}
+              </Button>
             </div>
-          </div>
+          </QueueModal>
+        )}
+
+        {selectedPlayer && (
+          <PlayerStatsDialog
+            player={selectedPlayer}
+            onClose={() => setSelectedPlayer(null)}
+          />
         )}
       </div>
 
-      {/* Spinner animation */}
       <style>
         {`
           @keyframes spin {
@@ -622,29 +470,242 @@ export function RankedMultiplayer() {
   );
 }
 
-function IconBadge({
-  color,
-  iconColor,
+function MetricRow({
   icon,
+  label,
+  value,
 }: {
-  color: string;
-  iconColor: string;
-  icon: import("../components/ui").IconName;
+  icon: string;
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", paddingTop: 6 }}>
+      <img
+        src={icon}
+        alt=""
+        style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
+        className="icons"
+      />
+
+      <div
+        style={{
+          padding: 20,
+          display: "flex",
+          flexDirection: "column",
+          color: "var(--color-ink-faint)",
+        }}
+      >
+        <p style={{ marginLeft: 4 }}>{label}</p>
+        <p style={{ marginTop: 4, fontSize: 40, fontWeight: 700 }}>{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function PanelMessage({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      style={{
+        margin: "auto 0",
+        minHeight: 150,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center",
+        color: "var(--color-ink-muted)",
+        fontWeight: 650,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function QueueModal({
+  children,
+  onCancel,
+}: {
+  children: React.ReactNode;
+  onCancel: () => void;
 }) {
   return (
     <div
       style={{
-        width: 36,
-        height: 36,
-        borderRadius: 10,
-        background: color,
+        position: "fixed",
+        inset: 0,
+        background: "var(--color-surface)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        flexShrink: 0,
+        zIndex: 250,
       }}
     >
-      <Icon name={icon} size={18} color={iconColor} />
+      <div
+        style={{
+          position: "relative",
+          width: "100%",
+          maxWidth: 420,
+          minHeight: 200,
+          padding: 32,
+          background: "var(--color-paper)",
+          borderRadius: 20,
+          boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
+          textAlign: "center",
+        }}
+      >
+        <button
+          onClick={onCancel}
+          aria-label="Close"
+          style={{
+            position: "absolute",
+            top: 16,
+            right: 16,
+            width: 32,
+            height: 32,
+            border: "none",
+            borderRadius: 8,
+            background: "transparent",
+            color: "var(--color-ink)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Icon name="x" size={18} color="var(--color-ink)" />
+        </button>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function PlayerStatsDialog({
+  player,
+  onClose,
+}: {
+  player: RankedStats;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(0,0,0,0.4)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 300,
+        padding: 24,
+      }}
+    >
+      <div
+        className="mp-surface"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ranked-player-stats-title"
+        onClick={(event) => event.stopPropagation()}
+        style={{ maxWidth: 420, width: "100%", padding: 26 }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 16,
+            alignItems: "flex-start",
+            marginBottom: 18,
+          }}
+        >
+          <div>
+            <div
+              id="ranked-player-stats-title"
+              style={{
+                fontSize: 22,
+                fontWeight: 750,
+                color: "var(--color-ink)",
+              }}
+            >
+              {player.displayName}
+            </div>
+            <div style={{ color: "var(--color-ink-muted)", marginTop: 4 }}>
+              Rank #{player.rank}
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close player stats"
+            style={{
+              width: 34,
+              height: 34,
+              border: "1px solid var(--color-line)",
+              borderRadius: 8,
+              background: "var(--color-paper)",
+              color: "var(--color-ink)",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Icon name="x" size={16} />
+          </button>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 10,
+          }}
+        >
+          <ProfileStat label="Rating" value={player.elo} />
+          <ProfileStat label="Win Rate" value={`${player.winRate}%`} />
+          <ProfileStat label="Wins" value={player.wins} />
+          <ProfileStat label="Losses" value={player.losses} />
+          <ProfileStat label="Games" value={player.totalGames} />
+          <ProfileStat
+            label="Record"
+            value={`${player.wins}-${player.losses}`}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfileStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div
+      style={{
+        padding: 14,
+        border: "1px solid var(--color-line)",
+        borderRadius: 10,
+        background: "var(--color-paper)",
+      }}
+    >
+      <div style={{ color: "var(--color-ink-muted)", fontSize: 12 }}>
+        {label}
+      </div>
+      <div
+        style={{
+          marginTop: 6,
+          fontSize: 22,
+          fontWeight: 750,
+          color: "var(--color-ink)",
+          fontVariantNumeric: "tabular-nums",
+        }}
+      >
+        {value}
+      </div>
     </div>
   );
 }

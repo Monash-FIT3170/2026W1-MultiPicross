@@ -304,6 +304,21 @@ export class PicrossRoom extends Room {
     }
   }
 
+  private finishByElimination(eliminatedSessionId: string) {
+    const survivors = [...this.players.entries()].filter(
+      ([sessionId, player]) =>
+        sessionId !== eliminatedSessionId &&
+        !player.done &&
+        player.livesLeft > 0,
+    );
+
+    if (survivors.length === 1) {
+      this.winnerId = survivors[0][0];
+    }
+
+    this.setPhase("finished");
+  }
+
   private async recordRankedResult(): Promise<void> {
     if (!this.isRanked || this.rankedResultRecorded || !this.winnerId) return;
 
@@ -363,8 +378,7 @@ export class PicrossRoom extends Room {
       player.livesLeft = Math.max(0, player.livesLeft - 1);
       if (player.livesLeft === 0) {
         player.done = true;
-        const allDone = [...this.players.values()].every((p) => p.done);
-        if (allDone) this.setPhase("finished");
+        this.finishByElimination(sessionId);
       }
     }
 
@@ -411,8 +425,7 @@ export class PicrossRoom extends Room {
         this.setPhase("finished");
       } else if (player.livesLeft === 0) {
         player.done = true;
-        const allDone = [...this.players.values()].every((p) => p.done);
-        if (allDone) this.setPhase("finished");
+        this.finishByElimination(sessionId);
       }
 
       // Must precede the broadcast: the client needs the index before the grid

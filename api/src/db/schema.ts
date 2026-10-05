@@ -144,3 +144,28 @@ export const ratedWaitingList = pgTable("rated_waiting_list", {
     .references(() => accounts.id, { onDelete: "cascade" }),
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
 });
+
+export const rankedMatchResults = pgTable(
+  "ranked_match_results",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    winnerAccountId: uuid("winner_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    loserAccountId: uuid("loser_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    winnerEloBefore: integer("winner_elo_before").notNull(),
+    winnerEloAfter: integer("winner_elo_after").notNull(),
+    loserEloBefore: integer("loser_elo_before").notNull(),
+    loserEloAfter: integer("loser_elo_after").notNull(),
+    winnerMistakes: smallint("winner_mistakes").notNull(),
+    loserMistakes: smallint("loser_mistakes").notNull(),
+    completedAt: timestamp("completed_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("ranked_match_results_winner_idx").on(t.winnerAccountId),
+    index("ranked_match_results_loser_idx").on(t.loserAccountId),
+    index("ranked_match_results_completed_idx").on(t.completedAt.desc()),
+  ],
+);
