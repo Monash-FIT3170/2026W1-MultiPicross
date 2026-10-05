@@ -66,32 +66,12 @@ const completedPuzzle = solution
   boardSize: `${width}x${height}`,
 };
 
-  /*
-   * ============================================================
-   * DUMMY RATING HISTORY
-   * ============================================================
-   *
-   * Used to draw the rating graph.
-   */
+const ratingHistory = didWin
+  ? rankedResult.winnerRatingHistory
+  : rankedResult.loserRatingHistory;
 
-  const ratingHistory = [
-    1180,
-    1200,
-    1190,
-    1215,
-    1205,
-    1230,
-    1220,
-    1245,
-    1255,
-    1248,
-    1270,
-    1265,
-    1290,
-    1310,
-    1334,
-  ];
-
+console.log("RANKED RESULT:", rankedResult);
+console.log("RATING HISTORY:", ratingHistory);
 
   /*
    * ============================================================
@@ -108,9 +88,11 @@ const completedPuzzle = solution
 
   const getPoint = (value: number, index: number) => {
     const x =
-      graphPadding +
-      (index / (ratingHistory.length - 1)) *
-        (graphWidth - graphPadding * 2);
+        ratingHistory.length === 1
+            ? graphWidth / 2
+            : graphPadding +
+            (index / (ratingHistory.length - 1)) *
+                (graphWidth - graphPadding * 2);
 
     const y =
       graphHeight -
@@ -707,7 +689,7 @@ const completedPuzzle = solution
                       color: "var(--color-ink-muted)",
                     }}
                   >
-                    Last 15 games
+                    Last {ratingHistory.length} games
                   </div>
                 </div>
 

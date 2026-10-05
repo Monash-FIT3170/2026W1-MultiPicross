@@ -10,6 +10,23 @@ export type RankedResultInput = {
   loserMistakes: number;
 };
 
+export async function getRankedRatingHistory(
+  accountId: string,
+  limit = 15,
+): Promise<number[]> {
+  const rows = await sql`
+    SELECT elo
+    FROM player_elo_history
+    WHERE account_id = ${accountId}
+    ORDER BY recorded_at DESC
+    LIMIT ${limit}
+  `;
+
+  return rows
+    .map((row) => Number(row.elo))
+    .reverse();
+}
+
 export type RankedResult = {
   winnerAccountId: string;
   loserAccountId: string;
@@ -21,6 +38,9 @@ export type RankedResult = {
   loserEloBefore: number;
   loserEloAfter: number;
   loserEloChange: number;
+
+  winnerRatingHistory: number[];
+  loserRatingHistory: number[];
 };
 
 export async function recordRankedResult({
@@ -63,6 +83,11 @@ export async function recordRankedResult({
     `;
   });
 
+  const [winnerRatingHistory, loserRatingHistory] = await Promise.all([
+  getRankedRatingHistory(winnerAccountId),
+  getRankedRatingHistory(loserAccountId),
+  ]); 
+
   return {
     winnerAccountId,
     loserAccountId,
@@ -74,5 +99,8 @@ export async function recordRankedResult({
     loserEloBefore: loserElo,
     loserEloAfter: loserEloAfter,
     loserEloChange: -loserLoss,
+    
+    winnerRatingHistory,
+    loserRatingHistory,
   };
 }

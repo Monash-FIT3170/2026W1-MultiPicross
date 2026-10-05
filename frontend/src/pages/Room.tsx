@@ -282,7 +282,6 @@ export function Room() {
     if (!isRanked) return;
     if (snapshot?.phase !== "finished") return;
     if (resultsNavigatedRef.current) return;
-
     const sessionIds = Object.keys(snapshot.players);
     const myId = mySessionId ?? sessionIds[0];
     const opponentId = sessionIds.find((id) => id !== myId) ?? null;
