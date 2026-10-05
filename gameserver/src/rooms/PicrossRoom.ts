@@ -336,6 +336,7 @@ export class PicrossRoom extends Room {
         loserAccountId: loser.accountId,
         winnerMistakes: 3 - winner.livesLeft,
         loserMistakes: 3 - loser.livesLeft,
+        boardSize: this.width,
       });
     } catch (error) {
       this.rankedResultRecorded = false;

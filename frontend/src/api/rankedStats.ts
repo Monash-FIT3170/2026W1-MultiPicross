@@ -24,6 +24,8 @@ export interface RankedMatchDetail {
   eloChange: number;
   mistakes: number;
   opponentMistakes: number;
+  boardSize: number;
+  eloMultiplierPercent: number;
   completedAt: string;
 }
 

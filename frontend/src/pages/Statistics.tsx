@@ -277,7 +277,7 @@ function MatchRow({ match }: { match: RankedMatchDetail }) {
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "76px 1fr 96px 118px 108px 120px",
+        gridTemplateColumns: "76px 1fr 86px 96px 118px 108px 120px",
         alignItems: "center",
         gap: 12,
         padding: "12px 14px",
@@ -305,6 +305,9 @@ function MatchRow({ match }: { match: RankedMatchDetail }) {
         }}
       >
         vs {match.opponentName}
+      </span>
+      <span style={mutedNumberStyle}>
+        {match.boardSize} × {match.boardSize}
       </span>
       <span style={mutedNumberStyle}>{formatEloChange(match.eloChange)}</span>
       <span style={mutedNumberStyle}>

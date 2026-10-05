@@ -14,10 +14,15 @@ import statsIcon from "../assets/stats.svg";
 import trophyIcon from "../assets/trophy.svg";
 import shieldIcon from "../assets/shield.svg";
 
+const RANKED_BOARD_SIZES = [5, 10, 15, 20] as const;
+type RankedBoardSize = (typeof RANKED_BOARD_SIZES)[number];
+
 export function RankedMultiplayer() {
   const navigate = useNavigate();
   const { status } = useAuth();
   const isAuth = status === "authenticated";
+  const [selectedBoardSize, setSelectedBoardSize] =
+    useState<RankedBoardSize>(15);
   const [searching, setSearching] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
   const [requiresLogin, setRequiresLogin] = useState(false);
@@ -74,13 +79,18 @@ export function RankedMultiplayer() {
         }
       });
 
-      room.onMessage("matched", ({ roomId }: { roomId: string }) => {
-        queueRoomRef.current = null;
-        setSearching(false);
-        setTimedOut(false);
-        void room.leave();
-        navigate(`/room/${roomId}?mode=ranked`);
-      });
+      room.onMessage(
+        "matched",
+        ({ roomId, boardSize }: { roomId: string; boardSize?: number }) => {
+          queueRoomRef.current = null;
+          setSearching(false);
+          setTimedOut(false);
+          void room.leave();
+          navigate(
+            `/room/${roomId}?mode=ranked${boardSize ? `&size=${boardSize}` : ""}`,
+          );
+        },
+      );
 
       room.onMessage("queueTimeoutEmpty", () => {
         setSearching(false);
@@ -89,11 +99,18 @@ export function RankedMultiplayer() {
         setTimedOut(true);
       });
 
+      room.onMessage("queueError", (message: { error?: string }) => {
+        setSearching(false);
+        setRequiresLogin(false);
+        setQueueMessage(message.error ?? "Unable to join ranked queue.");
+        setTimedOut(true);
+      });
+
       room.onLeave(() => {
         if (queueRoomRef.current === room) queueRoomRef.current = null;
       });
 
-      room.send("joinQueue");
+      room.send("joinQueue", { boardSize: selectedBoardSize });
     } catch (error) {
       console.error("Failed to join ranked matchmaking:", error);
       queueRoomRef.current = null;
@@ -125,7 +142,7 @@ export function RankedMultiplayer() {
     setTimedOut(false);
     setRequiresLogin(false);
     setQueueMessage("We've been unable to find an opponent.");
-    room.send("stayInQueue");
+    room.send("stayInQueue", { boardSize: selectedBoardSize });
   };
 
   const cancelSearching = () => {
@@ -360,6 +377,77 @@ export function RankedMultiplayer() {
           </div>
         </div>
 
+        <div
+          className="mp-surface"
+          style={{
+            padding: 18,
+            marginBottom: 16,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+            background:
+              "linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-sunk) 100%)",
+            border: "1px solid var(--color-line)",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: 16,
+                fontWeight: 750,
+                color: "var(--color-ink)",
+              }}
+            >
+              Board Size
+            </div>
+            <div
+              style={{
+                marginTop: 4,
+                fontSize: 13,
+                color: "var(--color-ink-muted)",
+              }}
+            >
+              Each size has its own queue. Elo remains shared.
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {RANKED_BOARD_SIZES.map((size) => {
+              const selected = selectedBoardSize === size;
+              return (
+                <button
+                  key={size}
+                  disabled={searching}
+                  onClick={() => setSelectedBoardSize(size)}
+                  style={{
+                    minWidth: 76,
+                    padding: "9px 12px",
+                    border: selected
+                      ? "1px solid var(--color-blue-500)"
+                      : "1px solid var(--color-line)",
+                    borderRadius: 10,
+                    background: selected
+                      ? "var(--color-blue-100)"
+                      : "var(--color-paper)",
+                    color: selected
+                      ? "var(--color-blue-600)"
+                      : "var(--color-ink)",
+                    cursor: searching ? "not-allowed" : "pointer",
+                    opacity: searching ? 0.65 : 1,
+                    fontFamily: "var(--font-ui)",
+                    fontSize: 14,
+                    fontWeight: 750,
+                    fontVariantNumeric: "tabular-nums",
+                  }}
+                >
+                  {size} × {size}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div style={{ display: "flex", justifyContent: "center" }}>
           <Button
             variant="primary"
@@ -371,7 +459,7 @@ export function RankedMultiplayer() {
               fontWeight: 700,
             }}
           >
-            Play Game
+            Play {selectedBoardSize} × {selectedBoardSize}
           </Button>
         </div>
 
@@ -405,6 +493,9 @@ export function RankedMultiplayer() {
               }}
             >
               Finding matches
+              <span style={{ display: "block", marginTop: 4 }}>
+                {selectedBoardSize} × {selectedBoardSize}
+              </span>
             </div>
           </QueueModal>
         )}

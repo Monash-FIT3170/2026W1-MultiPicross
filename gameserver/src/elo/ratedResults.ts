@@ -8,31 +8,48 @@ export type RankedResultInput = {
   loserAccountId: string;
   winnerMistakes: number;
   loserMistakes: number;
+  boardSize: number;
 };
+
+const ELO_MULTIPLIER_BY_BOARD_SIZE = new Map<number, number>([
+  [5, 0.5],
+  [10, 0.8],
+  [15, 1],
+  [20, 1.5],
+]);
+
+export function eloMultiplierForBoardSize(boardSize: number): number {
+  return ELO_MULTIPLIER_BY_BOARD_SIZE.get(boardSize) ?? 1;
+}
 
 export async function recordRankedResult({
   winnerAccountId,
   loserAccountId,
   winnerMistakes,
   loserMistakes,
+  boardSize,
 }: RankedResultInput): Promise<void> {
   const [winnerElo, loserElo] = await Promise.all([
     getPlayerElo(winnerAccountId),
     getPlayerElo(loserAccountId),
   ]);
 
-  const winnerGain = calculateWinningEloGain({
+  const baseWinnerGain = calculateWinningEloGain({
     winnerElo,
     opponentElo: loserElo,
     winnerMistakes,
     opponentMistakes: loserMistakes,
   });
-  const loserLoss = calculateLoosingEloGain({
+  const baseLoserLoss = calculateLoosingEloGain({
     loosingElo: loserElo,
     opponentElo: winnerElo,
     loosingMistakes: loserMistakes,
     opponentMistakes: winnerMistakes,
   });
+  const eloMultiplier = eloMultiplierForBoardSize(boardSize);
+  const eloMultiplierPercent = Math.round(eloMultiplier * 100);
+  const winnerGain = Math.round(baseWinnerGain * eloMultiplier);
+  const loserLoss = Math.round(baseLoserLoss * eloMultiplier);
   const winnerEloAfter = winnerElo + winnerGain;
   const loserEloAfter = Math.max(0, loserElo - loserLoss);
 
@@ -54,7 +71,9 @@ export async function recordRankedResult({
         loser_elo_before,
         loser_elo_after,
         winner_mistakes,
-        loser_mistakes
+        loser_mistakes,
+        board_size,
+        elo_multiplier_percent
       )
       VALUES (
         ${winnerAccountId},
@@ -64,7 +83,9 @@ export async function recordRankedResult({
         ${loserElo},
         ${loserEloAfter},
         ${winnerMistakes},
-        ${loserMistakes}
+        ${loserMistakes},
+        ${boardSize},
+        ${eloMultiplierPercent}
       )
     `;
   });

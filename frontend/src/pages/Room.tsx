@@ -71,6 +71,7 @@ export function Room() {
   const [searchParams] = useSearchParams();
   const { status, playerName } = useAuth();
   const isRanked = searchParams.get("mode") === "ranked";
+  const lobbyPath = isRanked ? "/multiplayer/ranked" : "/multiplayer/unrated";
 
   const roomRef = useRef<ColyseusRoom | null>(null);
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
@@ -252,7 +253,7 @@ export function Room() {
     if (snapshot?.phase === "playing") {
       setConfirmingAbandon(true);
     } else {
-      navigate("/multiplayer/unrated");
+      navigate(lobbyPath);
     }
   }
 
@@ -273,7 +274,7 @@ export function Room() {
       /* ignore — navigating away regardless */
     }
     roomRef.current = null;
-    navigate("/multiplayer/unrated");
+    navigate(lobbyPath);
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -289,11 +290,7 @@ export function Room() {
           <Button variant="primary" size="sm" onClick={retryConnection}>
             Try again
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/multiplayer/unrated")}
-          >
+          <Button variant="ghost" size="sm" onClick={() => navigate(lobbyPath)}>
             Back to lobby
           </Button>
         </div>

@@ -134,16 +134,23 @@ export const playerEloHistory = pgTable(
   ],
 );
 
-export const ratedWaitingList = pgTable("rated_waiting_list", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  // Unique so queueing can be a single ON CONFLICT DO NOTHING insert rather
-  // than a racy select-then-insert.
-  accountId: uuid("account_id")
-    .notNull()
-    .unique()
-    .references(() => accounts.id, { onDelete: "cascade" }),
-  joinedAt: timestamp("joined_at").defaultNow().notNull(),
-});
+export const ratedWaitingList = pgTable(
+  "rated_waiting_list",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    boardSize: smallint("board_size").notNull().default(15),
+    joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("rated_waiting_list_account_board_size_unique").on(
+      t.accountId,
+      t.boardSize,
+    ),
+  ],
+);
 
 export const rankedMatchResults = pgTable(
   "ranked_match_results",
@@ -161,6 +168,10 @@ export const rankedMatchResults = pgTable(
     loserEloAfter: integer("loser_elo_after").notNull(),
     winnerMistakes: smallint("winner_mistakes").notNull(),
     loserMistakes: smallint("loser_mistakes").notNull(),
+    boardSize: smallint("board_size").notNull().default(15),
+    eloMultiplierPercent: smallint("elo_multiplier_percent")
+      .notNull()
+      .default(100),
     completedAt: timestamp("completed_at").defaultNow().notNull(),
   },
   (t) => [

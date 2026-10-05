@@ -16,8 +16,14 @@ export type AuthenticatedPlayer = {
 /** How long a player waits before the Elo limit is dropped. */
 const QUEUE_WAIT_TIME_MS = 30_000;
 
-/** Ranked games are always played on the standard board. */
-const RANKED_BOARD_SIZE = 15;
+const RANKED_BOARD_SIZES = [5, 10, 15, 20] as const;
+type RankedBoardSize = (typeof RANKED_BOARD_SIZES)[number];
+
+function parseRankedBoardSize(value: unknown): RankedBoardSize | null {
+  if (typeof value !== "number" || !Number.isInteger(value)) return null;
+  if (!RANKED_BOARD_SIZES.includes(value as RankedBoardSize)) return null;
+  return value as RankedBoardSize;
+}
 
 export class RatedMatchmakingRoom extends Room {
   maxClients = 1000;
@@ -26,6 +32,7 @@ export class RatedMatchmakingRoom extends Room {
     string,
     ReturnType<typeof setTimeout>
   >();
+  private readonly queuedBoardSizes = new Map<string, RankedBoardSize>();
 
   // Ranked is account-only, so unlike PicrossRoom there is no guest path.
   async onAuth(
@@ -48,12 +55,12 @@ export class RatedMatchmakingRoom extends Room {
   }
 
   onCreate(): void {
-    this.onMessage("joinQueue", (client) => {
-      void this.handleJoinQueue(client);
+    this.onMessage<{ boardSize?: number }>("joinQueue", (client, message) => {
+      void this.handleJoinQueue(client, message?.boardSize);
     });
 
-    this.onMessage("stayInQueue", (client) => {
-      void this.handleStayInQueue(client);
+    this.onMessage<{ boardSize?: number }>("stayInQueue", (client, message) => {
+      void this.handleStayInQueue(client, message?.boardSize);
     });
 
     this.onMessage("leaveQueue", (client) => {
@@ -65,6 +72,7 @@ export class RatedMatchmakingRoom extends Room {
     const player = client.auth as AuthenticatedPlayer;
 
     this.clearQueueTimer(player.accountId);
+    this.queuedBoardSizes.delete(player.accountId);
     await removeFromRatedWaitingList(player.accountId);
   }
 
@@ -85,9 +93,23 @@ export class RatedMatchmakingRoom extends Room {
     return this.findClientByAccountId(accountId) !== undefined;
   };
 
-  private async handleJoinQueue(client: Client): Promise<void> {
+  private async handleJoinQueue(
+    client: Client,
+    rawBoardSize: unknown,
+  ): Promise<void> {
     const player = client.auth as AuthenticatedPlayer;
-    const result = await joinRatedQueue(player.accountId, this.isConnected);
+    const boardSize = parseRankedBoardSize(rawBoardSize);
+    if (!boardSize) {
+      client.send("queueError", { error: "Invalid ranked board size" });
+      return;
+    }
+
+    this.queuedBoardSizes.set(player.accountId, boardSize);
+    const result = await joinRatedQueue(
+      player.accountId,
+      boardSize,
+      this.isConnected,
+    );
 
     if (result.status === "queued") {
       this.sendQueued(client);
@@ -103,38 +125,54 @@ export class RatedMatchmakingRoom extends Room {
     Their row is already claimed, so re-queue both rather than dropping them.
     */
     if (!opponentClient) {
-      await addToRatedWaitingList(result.opponent.accountId);
-      await addToRatedWaitingList(player.accountId);
+      await addToRatedWaitingList(result.opponent.accountId, boardSize);
+      await addToRatedWaitingList(player.accountId, boardSize);
       this.sendQueued(client);
       return;
     }
 
-    await this.createGameForPlayers(client, opponentClient);
+    await this.createGameForPlayers(client, opponentClient, boardSize);
   }
 
-  private async handleStayInQueue(client: Client): Promise<void> {
+  private async handleStayInQueue(
+    client: Client,
+    rawBoardSize: unknown,
+  ): Promise<void> {
     const player = client.auth as AuthenticatedPlayer;
+    const boardSize =
+      parseRankedBoardSize(rawBoardSize) ??
+      this.queuedBoardSizes.get(player.accountId);
+    if (!boardSize) {
+      client.send("queueError", { error: "Invalid ranked board size" });
+      return;
+    }
 
-    await addToRatedWaitingList(player.accountId);
+    this.queuedBoardSizes.set(player.accountId, boardSize);
+    await addToRatedWaitingList(player.accountId, boardSize);
     this.sendQueued(client);
   }
 
   private async handleLeaveQueue(client: Client): Promise<void> {
     const player = client.auth as AuthenticatedPlayer;
+    const boardSize = this.queuedBoardSizes.get(player.accountId);
 
     this.clearQueueTimer(player.accountId);
-    await removeFromRatedWaitingList(player.accountId);
+    this.queuedBoardSizes.delete(player.accountId);
+    await removeFromRatedWaitingList(player.accountId, boardSize);
 
     client.send("queueStatus", { status: "left" });
   }
 
   private async handleQueueTimeout(client: Client): Promise<void> {
     const player = client.auth as AuthenticatedPlayer;
+    const boardSize = this.queuedBoardSizes.get(player.accountId);
+    if (!boardSize) return;
 
     this.queueTimers.delete(player.accountId);
 
     const result = await handleRatedQueueTimeout(
       player.accountId,
+      boardSize,
       this.isConnected,
     );
 
@@ -152,13 +190,13 @@ export class RatedMatchmakingRoom extends Room {
     );
 
     if (!opponentClient) {
-      await addToRatedWaitingList(result.opponent.accountId);
-      await addToRatedWaitingList(player.accountId);
+      await addToRatedWaitingList(result.opponent.accountId, boardSize);
+      await addToRatedWaitingList(player.accountId, boardSize);
       this.sendQueueTimeoutEmpty(client);
       return;
     }
 
-    await this.createGameForPlayers(client, opponentClient);
+    await this.createGameForPlayers(client, opponentClient, boardSize);
   }
 
   private findClientByAccountId(accountId: string): Client | undefined {
@@ -188,19 +226,22 @@ export class RatedMatchmakingRoom extends Room {
   private async createGameForPlayers(
     firstClient: Client,
     secondClient: Client,
+    boardSize: RankedBoardSize,
   ): Promise<void> {
     const firstPlayer = firstClient.auth as AuthenticatedPlayer;
     const secondPlayer = secondClient.auth as AuthenticatedPlayer;
 
     this.clearQueueTimer(firstPlayer.accountId);
     this.clearQueueTimer(secondPlayer.accountId);
+    this.queuedBoardSizes.delete(firstPlayer.accountId);
+    this.queuedBoardSizes.delete(secondPlayer.accountId);
 
     let gameRoom;
     try {
       // Private so the pair's room never surfaces in the public lobby.
       gameRoom = await matchMaker.createRoom("picross_room", {
-        width: RANKED_BOARD_SIZE,
-        height: RANKED_BOARD_SIZE,
+        width: boardSize,
+        height: boardSize,
         isRanked: true,
         isPublic: false,
       });
@@ -208,14 +249,16 @@ export class RatedMatchmakingRoom extends Room {
       console.error("ranked create-room error", err);
 
       // Both rows are already claimed, so put them back and let the pair wait.
-      await addToRatedWaitingList(firstPlayer.accountId);
-      await addToRatedWaitingList(secondPlayer.accountId);
+      this.queuedBoardSizes.set(firstPlayer.accountId, boardSize);
+      this.queuedBoardSizes.set(secondPlayer.accountId, boardSize);
+      await addToRatedWaitingList(firstPlayer.accountId, boardSize);
+      await addToRatedWaitingList(secondPlayer.accountId, boardSize);
       this.sendQueued(firstClient);
       this.sendQueued(secondClient);
       return;
     }
 
-    const matchMessage = { roomId: gameRoom.roomId };
+    const matchMessage = { roomId: gameRoom.roomId, boardSize };
 
     firstClient.send("matched", matchMessage);
     secondClient.send("matched", matchMessage);

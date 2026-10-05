@@ -145,6 +145,8 @@ const rankedStatsDetailSchema: OpenAPIV3.SchemaObject = {
           eloChange: { type: "integer" },
           mistakes: { type: "integer" },
           opponentMistakes: { type: "integer" },
+          boardSize: { type: "integer" },
+          eloMultiplierPercent: { type: "integer" },
           completedAt: { type: "string" },
         },
       },
@@ -171,6 +173,8 @@ type RankedMatchDetailRow = {
   eloChange: number;
   mistakes: number;
   opponentMistakes: number;
+  boardSize: number;
+  eloMultiplierPercent: number;
   completedAt: Date | string;
 };
 
@@ -199,11 +203,22 @@ function rankedMatchDetailPayload(row: RankedMatchDetailRow) {
     eloChange: Number(row.eloChange),
     mistakes: Number(row.mistakes),
     opponentMistakes: Number(row.opponentMistakes),
-    completedAt:
-      row.completedAt instanceof Date
-        ? row.completedAt.toISOString()
-        : row.completedAt,
+    boardSize: Number(row.boardSize),
+    eloMultiplierPercent: Number(row.eloMultiplierPercent),
+    completedAt: toUtcIsoString(row.completedAt),
   };
+}
+
+function toUtcIsoString(value: Date | string) {
+  if (value instanceof Date) return value.toISOString();
+
+  // postgres.js can return `timestamp without time zone` as a plain string.
+  // The database stores these ranked completion times as UTC values, so attach
+  // a timezone marker before sending them to browsers. Otherwise `new Date()`
+  // treats the string as the user's local time and displays UTC as-is.
+  const hasTimezone = /(?:z|[+-]\d{2}:?\d{2})$/i.test(value);
+  const isoLike = value.includes("T") ? value : value.replace(" ", "T");
+  return hasTimezone ? isoLike : `${isoLike}Z`;
 }
 
 async function issueSession(
@@ -877,6 +892,8 @@ auth.get(
             THEN ranked_match_results.loser_mistakes
           ELSE ranked_match_results.winner_mistakes
         END AS "opponentMistakes",
+        ranked_match_results.board_size AS "boardSize",
+        ranked_match_results.elo_multiplier_percent AS "eloMultiplierPercent",
         ranked_match_results.completed_at AS "completedAt"
       FROM ranked_match_results
       JOIN accounts opponent ON opponent.id = CASE
