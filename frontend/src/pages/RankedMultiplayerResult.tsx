@@ -18,6 +18,7 @@ export function RankedMultiplayerResults() {
     forfeit,
     displaySeconds,
     rankedResult,
+    solution,
     } = location.state;
 
     const didWin = winnerId === mySessionId;
@@ -54,7 +55,13 @@ const opponentResult = didWin
       mistakes: 3 - opponent.livesLeft,
     };
 
-const match = {
+const completedPuzzle = solution
+  ? Array.from({ length: height }, (_, row) =>
+      solution.slice(row * width, (row + 1) * width),
+    )
+  : [];
+
+    const match = {
   time: fmtSeconds(displaySeconds),
   boardSize: `${width}x${height}`,
 };
@@ -85,27 +92,6 @@ const match = {
     1334,
   ];
 
-  /*
-   * ============================================================
-   * DUMMY COMPLETED PICROSS
-   * ============================================================
-   *
-   * 1 = filled square
-   * 0 = empty square
-   */
-
-  const completedPuzzle = [
-    [0, 0, 0, 1, 1, 0, 0, 1, 1, 0],
-    [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
-    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-    [0, 0, 1, 1, 1, 1, 1, 1, 0, 0],
-    [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-    [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
-  ];
 
   /*
    * ============================================================

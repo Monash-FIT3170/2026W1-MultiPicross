@@ -485,6 +485,7 @@ export class PicrossRoom extends Room {
 
     if (this.state.phase === "finished") {
       snapshot.colors = this.colors;
+      snapshot.solution = [...this.solution];
     }
 
     return snapshot;

@@ -59,6 +59,7 @@ interface RoomSnapshot {
   forfeit: boolean;
   colors?: string[];
   rankedResult?: RankedResult;
+  solution?: number[];
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -265,6 +266,7 @@ export function Room() {
         forfeit: snapshot.forfeit,
         displaySeconds,
         rankedResult: snapshot.rankedResult,
+        solution: snapshot.solution,
       },
       replace: true,
     });
