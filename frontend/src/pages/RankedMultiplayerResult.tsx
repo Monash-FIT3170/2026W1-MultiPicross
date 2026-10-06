@@ -276,7 +276,7 @@ export function RankedMultiplayerResults() {
               }}
             >
               {completedPuzzle.flatMap((row, rowIndex) =>
-                row.map((cell: Boolean, columnIndex: number) => (
+                row.map((cell: boolean, columnIndex: number) => (
                   <div
                     key={`${rowIndex}-${columnIndex}`}
                     style={{
