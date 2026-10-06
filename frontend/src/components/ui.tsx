@@ -537,12 +537,13 @@ export function StatTile({ icon, label, children }: StatTileProps) {
 
 interface UserDropdownProps {
   handle: string | null;
+  accent: string;
   onSignOut: () => void;
 }
 
 // Every account is now routed to /welcome until it has a handle, so this
 // fallback is defensive and should not appear.
-export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
+export function UserDropdown({ handle, accent, onSignOut }: UserDropdownProps) {
   const displayName = handle ?? "Account";
   const [open, setOpen] = useState(false);
   const [panelMounted, setPanelMounted] = useState(false);
@@ -627,8 +628,8 @@ export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
             height: 30,
             borderRadius: "50%",
             flexShrink: 0,
-            background: "var(--color-blue-100)",
-            color: "var(--color-blue-600)",
+            background: accent,
+            color: "var(--color-ink)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
