@@ -4,6 +4,7 @@ import {
   useRef,
   type CSSProperties,
   type ReactNode,
+  type RefObject,
   type ButtonHTMLAttributes,
 } from "react";
 
@@ -27,7 +28,9 @@ export type IconName =
   | "home"
   | "refresh"
   | "volume"
-  | "volume-x";
+  | "volume-x"
+  | "arrow-down"
+  | "filter";
 
 interface IconProps {
   name: IconName;
@@ -125,6 +128,21 @@ export function Icon({
           <line x1="15" y1="8" x2="21" y2="2" />
           <line x1="17" y1="6" x2="20" y2="9" />
           <polyline points="15 8 15 12 11 12" />
+        </svg>
+      );
+    case "arrow-down":
+      return (
+        <svg {...p}>
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <polyline points="19 12 12 19 5 12" />
+        </svg>
+      );
+    case "filter":
+      return (
+        <svg {...p}>
+          <line x1="4" y1="6" x2="20" y2="6" />
+          <line x1="7" y1="12" x2="17" y2="12" />
+          <line x1="10" y1="18" x2="14" y2="18" />
         </svg>
       );
     case "x":
@@ -468,6 +486,38 @@ export function Chip({ tone = "blue", children, style }: ChipProps) {
   );
 }
 
+interface ToggleChipProps {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}
+
+export function ToggleChip({ active, onClick, children }: ToggleChipProps) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      style={{
+        padding: "6px 12px",
+        borderRadius: 999,
+        fontFamily: "var(--font-ui)",
+        fontSize: 12,
+        fontWeight: 600,
+        fontVariantNumeric: "tabular-nums",
+        cursor: "pointer",
+        background: active ? "var(--color-blue-500)" : "var(--color-paper)",
+        color: active ? "var(--color-on-accent)" : "var(--color-ink-soft)",
+        border: `1px solid ${active ? "var(--color-blue-500)" : "var(--color-line)"}`,
+        transition:
+          "background 120ms ease, border-color 120ms ease, color 120ms ease",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
 // ──── LivesPips ───────────────────────────────────────────────────────────────
 
 const HEART_PATH =
@@ -477,11 +527,19 @@ const HEART_PATH =
 // mp-heart-break-* animations in index.css.
 const HEART_BREAK_MS = 700;
 
-function HeartShape({ fill, className }: { fill: string; className?: string }) {
+function HeartShape({
+  fill,
+  className,
+  size,
+}: {
+  fill: string;
+  className?: string;
+  size: number;
+}) {
   return (
     <svg
-      width={18}
-      height={18}
+      width={size}
+      height={size}
       viewBox="0 0 24 24"
       aria-hidden="true"
       className={className}
@@ -495,9 +553,10 @@ function HeartShape({ fill, className }: { fill: string; className?: string }) {
 interface LivesPipsProps {
   lives: number;
   max?: number;
+  size?: number;
 }
 
-export function LivesPips({ lives, max = 3 }: LivesPipsProps) {
+export function LivesPips({ lives, max = 3, size = 18 }: LivesPipsProps) {
   // Indices of hearts currently playing the break animation.
   const [breaking, setBreaking] = useState<number[]>([]);
   const [prevLives, setPrevLives] = useState(lives);
@@ -540,14 +599,15 @@ export function LivesPips({ lives, max = 3 }: LivesPipsProps) {
             className={isBreaking ? "mp-heart-breaking" : undefined}
             style={{
               position: "relative",
-              width: 18,
-              height: 18,
+              width: size,
+              height: size,
               flexShrink: 0,
             }}
           >
             {/* The heart that stays behind: coral while alive, grey once lost */}
             <HeartShape
               className={isBreaking ? "mp-heart-break-base" : undefined}
+              size={size}
               fill={
                 alive ? "var(--color-coral-400)" : "var(--color-line-strong)"
               }
@@ -556,10 +616,10 @@ export function LivesPips({ lives, max = 3 }: LivesPipsProps) {
             {isBreaking && (
               <>
                 <span className="mp-heart-half mp-heart-half--left">
-                  <HeartShape fill="var(--color-coral-400)" />
+                  <HeartShape fill="var(--color-coral-400)" size={size} />
                 </span>
                 <span className="mp-heart-half mp-heart-half--right">
-                  <HeartShape fill="var(--color-coral-400)" />
+                  <HeartShape fill="var(--color-coral-400)" size={size} />
                 </span>
               </>
             )}
@@ -841,32 +901,22 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(",");
 
-// Modal confirmation with a destructive right-hand action.
-//
-// Mount it only while it should be open — unmounting is what hands focus
-// back. aria-modal claims the rest of the page is inert, so this makes that
-// true for the keyboard too: focus opens on the safe action, Tab cycles
-// within the dialog, and Escape or a backdrop click cancels.
-export function ConfirmDialog({
-  titleId,
-  title,
-  body,
-  confirmLabel,
-  cancelLabel = "Keep playing",
-  onConfirm,
-  onCancel,
-}: ConfirmDialogProps) {
-  const dialogRef = useRef<HTMLDivElement>(null);
+// Focus management for a modal that is mounted only while open: focuses the
+// first control, traps Tab inside `ref`, closes on Escape, restores focus on unmount.
+export function useDialogFocus(
+  ref: RefObject<HTMLElement | null>,
+  onClose: () => void,
+) {
   // Kept in a ref so the key handler stays mount-scoped: callers pass inline
   // arrows, and re-running the effect would steal focus mid-interaction.
-  const cancelRef = useRef(onCancel);
+  const closeRef = useRef(onClose);
   useEffect(() => {
-    cancelRef.current = onCancel;
+    closeRef.current = onClose;
   });
 
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
-    const root = dialogRef.current;
+    const root = ref.current;
 
     function focusable(): HTMLElement[] {
       return [
@@ -874,12 +924,11 @@ export function ConfirmDialog({
       ];
     }
 
-    // "Keep playing" is first in the markup, so this lands on the safe action.
     (focusable()[0] ?? root)?.focus();
 
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
-        cancelRef.current();
+        closeRef.current();
         return;
       }
       if (e.key !== "Tab" || !root) return;
@@ -911,7 +960,26 @@ export function ConfirmDialog({
       // browser just ignores focusing a detached node.
       previouslyFocused?.focus();
     };
-  }, []);
+  }, [ref]);
+}
+
+// Modal confirmation with a destructive right-hand action.
+//
+// Mount it only while it should be open — unmounting is what hands focus
+// back. aria-modal claims the rest of the page is inert, so this makes that
+// true for the keyboard too: focus opens on the safe action, Tab cycles
+// within the dialog, and Escape or a backdrop click cancels.
+export function ConfirmDialog({
+  titleId,
+  title,
+  body,
+  confirmLabel,
+  cancelLabel = "Keep playing",
+  onConfirm,
+  onCancel,
+}: ConfirmDialogProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(dialogRef, onCancel);
 
   return (
     <div
