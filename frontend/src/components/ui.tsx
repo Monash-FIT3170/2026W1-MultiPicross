@@ -470,28 +470,102 @@ export function Chip({ tone = "blue", children, style }: ChipProps) {
 
 // ──── LivesPips ───────────────────────────────────────────────────────────────
 
+const HEART_PATH =
+  "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z";
+
+// How long a heart takes to break. Keep in sync with the
+// mp-heart-break-* animations in index.css.
+const HEART_BREAK_MS = 700;
+
+function HeartShape({ fill, className }: { fill: string; className?: string }) {
+  return (
+    <svg
+      width={18}
+      height={18}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+      style={{ fill, transition: "fill 200ms ease", display: "block" }}
+    >
+      <path d={HEART_PATH} />
+    </svg>
+  );
+}
+
 interface LivesPipsProps {
   lives: number;
   max?: number;
 }
 
 export function LivesPips({ lives, max = 3 }: LivesPipsProps) {
+  // Indices of hearts currently playing the break animation.
+  const [breaking, setBreaking] = useState<number[]>([]);
+  const [prevLives, setPrevLives] = useState(lives);
+
+  // When lives drops, mark the newly lost hearts as breaking. Done during
+  // render (rather than in an effect) so the animation starts on the same
+  // frame the heart turns grey.
+  if (lives !== prevLives) {
+    setPrevLives(lives);
+    if (lives < prevLives) {
+      const lost: number[] = [];
+      for (let i = Math.max(0, lives); i < Math.min(prevLives, max); i++) {
+        lost.push(i);
+      }
+      setBreaking((b) => [...new Set([...b, ...lost])]);
+    } else {
+      // Lives went up (e.g. a new game started), so cancel any breaks.
+      setBreaking([]);
+    }
+  }
+
+  useEffect(() => {
+    if (breaking.length === 0) return;
+    const t = setTimeout(() => setBreaking([]), HEART_BREAK_MS);
+    return () => clearTimeout(t);
+  }, [breaking]);
+
   return (
-    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-      {Array.from({ length: max }, (_, i) => (
-        <div
-          key={i}
-          style={{
-            width: 18,
-            height: 18,
-            borderRadius: "50%",
-            background:
-              i < lives ? "var(--color-coral-400)" : "var(--color-line-strong)",
-            transition: "background 200ms ease",
-            flexShrink: 0,
-          }}
-        />
-      ))}
+    <div
+      role="img"
+      aria-label={`${Math.max(0, lives)} of ${max} lives left`}
+      style={{ display: "flex", gap: 8, alignItems: "center" }}
+    >
+      {Array.from({ length: max }, (_, i) => {
+        const alive = i < lives;
+        const isBreaking = !alive && breaking.includes(i);
+        return (
+          <span
+            key={i}
+            className={isBreaking ? "mp-heart-breaking" : undefined}
+            style={{
+              position: "relative",
+              width: 18,
+              height: 18,
+              flexShrink: 0,
+            }}
+          >
+            {/* The heart that stays behind: coral while alive, grey once lost */}
+            <HeartShape
+              className={isBreaking ? "mp-heart-break-base" : undefined}
+              fill={
+                alive ? "var(--color-coral-400)" : "var(--color-line-strong)"
+              }
+            />
+            {/* Two coral halves that crack apart and fall away */}
+            {isBreaking && (
+              <>
+                <span className="mp-heart-half mp-heart-half--left">
+                  <HeartShape fill="var(--color-coral-400)" />
+                </span>
+                <span className="mp-heart-half mp-heart-half--right">
+                  <HeartShape fill="var(--color-coral-400)" />
+                </span>
+              </>
+            )}
+          </span>
+        );
+      })}
     </div>
   );
 }
