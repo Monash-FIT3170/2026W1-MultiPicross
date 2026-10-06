@@ -149,7 +149,7 @@ export function AccountSettings() {
                     </p>
 
                     {passwordSaved && (
-                      <p className="mt-2 text-sm text-green-700 font-ui">
+                      <p className="mt-2 text-xs text-green-700 font-ui">
                         Password updated.
                       </p>
                     )}
