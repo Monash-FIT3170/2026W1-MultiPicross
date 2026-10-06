@@ -145,7 +145,7 @@ export default function MainMenu() {
             marginBottom: 8,
           }}
         >
-          Multi<span style={{ color: "var(--color-blue-500)" }}>Picross</span>
+          Multi<span style={{ color: "var(--color-logo)" }}>Picross</span>
         </div>
         <p
           ref={taglineRef}
@@ -169,8 +169,8 @@ export default function MainMenu() {
             alignItems: "center",
             width: 640,
             height: 220,
-            background: "linear-gradient(135deg, #EAF3FF 0%, #F7FBFF 100%)",
-            border: "1px solid #D6E6FF",
+            background: "var(--color-surface)",
+            border: "1px solid var(--color-line)",
             borderRadius: 20,
           }}
         >
@@ -312,6 +312,7 @@ export default function MainMenu() {
                   src={singleplayerIcon}
                   alt=""
                   style={{ width: 40, height: 40, opacity: 0.85 }}
+                  className="icons"
                 />
                 <span
                   style={{
@@ -371,6 +372,7 @@ export default function MainMenu() {
                     src={multiIcon}
                     alt=""
                     style={{ width: 40, height: 40, opacity: 0.85 }}
+                    className="icons"
                   />
                   <span
                     style={{
@@ -412,6 +414,7 @@ export default function MainMenu() {
                   src={statsIcon}
                   alt=""
                   style={{ width: 20, height: 20, opacity: 0.8 }}
+                  className="icons"
                 />
               }
               label="Statistics"
@@ -426,6 +429,7 @@ export default function MainMenu() {
                   src={tutorialIcon}
                   alt=""
                   style={{ width: 20, height: 20, opacity: 0.8 }}
+                  className="icons"
                 />
               }
               label="Tutorial"
@@ -439,6 +443,7 @@ export default function MainMenu() {
                   src={settingsIcon}
                   alt=""
                   style={{ width: 20, height: 20, opacity: 0.8 }}
+                  className="icons"
                 />
               }
               label="Settings"
@@ -542,8 +547,8 @@ function ModeButton({
         width: "100%",
         height: 56,
         padding: "10px 8px",
-        background: "var(--color-white)",
-        border: "1px solid #D6E6FF",
+        background: "var(--color-surface)",
+        border: "1px solid var(--color-line)",
         borderRadius: 10,
         cursor: "pointer",
         textAlign: "center",
