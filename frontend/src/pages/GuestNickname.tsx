@@ -150,7 +150,7 @@ export function GuestNickname() {
             className="rounded-xl py-2 font-semibold transition"
             style={{
               background: "var(--color-blue-500)",
-              color: "var(--color-surface)",
+              color: "#ffffff",
             }}
           >
             Continue
