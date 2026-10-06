@@ -974,7 +974,7 @@ body {
 .mp-heart-break-base {
   animation: mp-heart-break-base 700ms ease forwards;
 }
- 
+
 @keyframes mp-heart-break-jolt {
   0% {
     transform: scale(1);
@@ -1032,7 +1032,6 @@ body {
     opacity: 1;
   }
 }
- 
 
 /* Dropdown spring — expands outward in both axes then oscillates back (entry) */
 @keyframes mp-dropdown-spring {
