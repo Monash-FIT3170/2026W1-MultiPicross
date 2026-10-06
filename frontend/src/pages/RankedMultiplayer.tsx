@@ -202,8 +202,9 @@ export function RankedMultiplayer() {
               padding: 20,
               display: "flex",
               flexDirection: "column",
-              background: "linear-gradient(135deg, #EAF3FF 0%, #F7FBFF 100%)",
-              border: "1px solid #D6E6FF",
+              background:
+                "linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-sunk) 100%)",
+              border: "1px solid var(--color-line)",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -230,6 +231,7 @@ export function RankedMultiplayer() {
                 src={statsIcon}
                 alt=""
                 style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
+                className="icons"
               />
 
               <div
@@ -237,6 +239,7 @@ export function RankedMultiplayer() {
                   padding: 20,
                   display: "flex",
                   flexDirection: "column",
+                  color: "var(--color-ink-faint)",
                 }}
               >
                 <p
@@ -271,6 +274,7 @@ export function RankedMultiplayer() {
                 src={trohpyIcon}
                 alt=""
                 style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
+                className="icons"
               />
 
               <div
@@ -278,6 +282,7 @@ export function RankedMultiplayer() {
                   padding: 20,
                   display: "flex",
                   flexDirection: "column",
+                  color: "var(--color-ink-faint)",
                 }}
               >
                 <p
@@ -312,6 +317,7 @@ export function RankedMultiplayer() {
                 src={shieldIcon}
                 alt=""
                 style={{ width: 40, height: 40, opacity: 0.8, marginTop: 8 }}
+                className="icons"
               />
 
               <div
@@ -319,6 +325,7 @@ export function RankedMultiplayer() {
                   padding: 20,
                   display: "flex",
                   flexDirection: "column",
+                  color: "var(--color-ink-faint)",
                 }}
               >
                 <p
@@ -349,6 +356,9 @@ export function RankedMultiplayer() {
               padding: 20,
               display: "flex",
               flexDirection: "column",
+              background:
+                "linear-gradient(135deg, var(--color-surface) 0%, var(--color-surface-sunk) 100%)",
+              border: "1px solid var(--color-line)",
             }}
           >
             {/* Leaderboard Heading */}
@@ -417,7 +427,7 @@ export function RankedMultiplayer() {
             style={{
               position: "fixed",
               inset: 0,
-              background: "rgba(0,0,0,0.25)",
+              background: "var(--color-surface)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -447,8 +457,7 @@ export function RankedMultiplayer() {
                   height: 32,
                   border: "none",
                   borderRadius: 8,
-                  background: "#F3F4F6",
-                  color: "#000",
+                  color: "var(--color-ink)",
                   fontSize: 20,
                   fontWeight: 700,
                   cursor: "pointer",
@@ -458,7 +467,7 @@ export function RankedMultiplayer() {
                   transition: "background 0.15s ease",
                 }}
               >
-                <IconBadge iconColor="#000" icon="x" color={""} />
+                <IconBadge iconColor="var(--color-ink)" icon="x" color={""} />
               </div>
 
               {/* Loading spinner */}
@@ -505,7 +514,7 @@ export function RankedMultiplayer() {
             style={{
               position: "fixed",
               inset: 0,
-              background: "rgba(0,0,0,0.25)",
+              background: "var(--color-surface)",
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
@@ -521,7 +530,7 @@ export function RankedMultiplayer() {
                 background: "var(--color-paper)",
                 borderRadius: 20,
                 textAlign: "center",
-                boxShadow: "0 12px 40px rgba(0,0,0,0.15)",
+                boxShadow: "0 12px 40px var(--color-line)",
               }}
             >
               {/* Cancel button */}
@@ -535,8 +544,8 @@ export function RankedMultiplayer() {
                   height: 32,
                   border: "none",
                   borderRadius: 8,
-                  background: "#F3F4F6",
-                  color: "#000",
+                  background: "var(--color-paper)",
+                  color: "var(--color-ink)",
                   fontSize: 20,
                   fontWeight: 700,
                   cursor: "pointer",
@@ -546,13 +555,16 @@ export function RankedMultiplayer() {
                   transition: "background 0.15s ease",
                 }}
               >
-                <IconBadge iconColor="#000" icon="x" color={""} />
+                <IconBadge iconColor="var(--color-ink)" icon="x" color={""} />
               </div>
 
               <h2
                 style={{
                   margin: 0,
                   fontSize: 24,
+                  color: "var(--color-ink-muted)",
+                  font: "var(--font-heading)",
+                  fontWeight: 700,
                 }}
               >
                 No match found
@@ -587,10 +599,6 @@ export function RankedMultiplayer() {
                 >
                   {requiresLogin ? "Login/Sign Up" : "Keep Searching"}
                 </Button>
-
-                {/*    <Button onClick={simulateMatchFound}>
-                    Simulate Match
-                </Button> */}
               </div>
             </div>
           </div>

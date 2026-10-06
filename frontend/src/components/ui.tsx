@@ -316,7 +316,7 @@ export function Logo({ size = 28 }: LogoProps) {
           letterSpacing: "-0.01em",
         }}
       >
-        Multi<span style={{ color: "var(--color-blue-500)" }}>Picross</span>
+        Multi<span style={{ color: "var(--color-logo)" }}>Picross</span>
       </span>
     </div>
   );
@@ -351,9 +351,9 @@ const BTN_BASE: CSSProperties = {
 const VARIANT_STYLES: Record<ButtonVariant, CSSProperties> = {
   primary: {
     background: "var(--color-blue-500)",
-    color: "var(--color-on-accent)",
+    color: "var(--color-blue-50)",
   },
-  dark: { background: "var(--color-ink)", color: "var(--color-surface)" },
+  dark: { background: "var(--color-paper)", color: "var(--color-ink)" },
   ghost: {
     background: "var(--color-surface)",
     color: "var(--color-ink)",
@@ -608,7 +608,7 @@ export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
           alignItems: "center",
           gap: 9,
           padding: "7px 12px 7px 8px",
-          background: "var(--color-surface)",
+          background: "var(--color-paper)",
           border: "1px solid var(--color-line)",
           borderRadius: 10,
           borderBottomLeftRadius: panelMounted ? 0 : 10,
@@ -696,7 +696,7 @@ export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
         >
           <div
             style={{
-              background: "var(--color-surface)",
+              background: "var(--color-paper)",
               border: "1px solid var(--color-line)",
               borderTop: "none",
               borderRadius: "0 0 10px 10px",
