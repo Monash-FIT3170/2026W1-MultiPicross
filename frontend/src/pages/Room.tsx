@@ -738,11 +738,7 @@ export function Room() {
             )}
           </div>
 
-          <div
-            className="mp-action-mode"
-            role="group"
-            aria-label="Cell action"
-          >
+          <div className="mp-action-mode" role="group" aria-label="Cell action">
             <button
               type="button"
               className={actionMode === "fill" ? "is-active" : undefined}
