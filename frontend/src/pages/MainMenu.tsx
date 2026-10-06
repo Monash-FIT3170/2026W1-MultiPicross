@@ -31,8 +31,8 @@ export default function MainMenu() {
     const tagline = taglineRef.current;
     const tiles = gridRef.current
       ? (Array.from(
-          gridRef.current.querySelectorAll(".tile-enter"),
-        ) as HTMLElement[])
+        gridRef.current.querySelectorAll(".tile-enter"),
+      ) as HTMLElement[])
       : [];
     const footer = footerRef.current;
 
@@ -193,7 +193,7 @@ export default function MainMenu() {
                 color: "var(--color-ink)",
               }}
             >
-              Picross Ranked
+              Competitive Picross
             </div>
 
             <p
@@ -263,7 +263,7 @@ export default function MainMenu() {
               size="md"
               onClick={
                 isAuth
-                  ? () => navigate("/multiplayer/ranked")
+                  ? () => navigate("/multiplayer/competitive")
                   : () => navigate("/login")
               }
               style={{
@@ -343,17 +343,17 @@ export default function MainMenu() {
                   }}
                 >
                   <ModeButton
-                    label="Unrated"
+                    label="Casual"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
-                      navigate("/multiplayer/unrated");
+                      navigate("/multiplayer/casual");
                     }}
                   />
                   <ModeButton
-                    label="Ranked"
+                    label="Competitive"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
-                      navigate(isAuth ? "/multiplayer/ranked" : "/login");
+                      navigate(isAuth ? "/multiplayer/competitive" : "/login");
                     }}
                   />
                 </div>

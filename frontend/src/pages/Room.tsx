@@ -252,7 +252,7 @@ export function Room() {
     if (snapshot?.phase === "playing") {
       setConfirmingAbandon(true);
     } else {
-      navigate("/multiplayer/unrated");
+      navigate("/multiplayer/casual");
     }
   }
 
@@ -273,7 +273,7 @@ export function Room() {
       /* ignore — navigating away regardless */
     }
     roomRef.current = null;
-    navigate("/multiplayer/unrated");
+    navigate("/multiplayer/casual");
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -292,7 +292,7 @@ export function Room() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/multiplayer/unrated")}
+            onClick={() => navigate("/multiplayer/casual")}
           >
             Back to lobby
           </Button>
@@ -529,9 +529,9 @@ export function Room() {
   );
   const opponentMistakeCrossIndices = opponent
     ? (opponent.mistakeCross ?? []).reduce<number[]>((acc, v, i) => {
-        if (v) acc.push(i);
-        return acc;
-      }, [])
+      if (v) acc.push(i);
+      return acc;
+    }, [])
     : [];
 
   // onLeave only crowns a survivor who is not already eliminated, so against
@@ -828,7 +828,7 @@ export function Room() {
               size="sm"
               onClick={() =>
                 navigate(
-                  isRanked ? "/multiplayer/ranked" : "/multiplayer/unrated",
+                  isRanked ? "/multiplayer/competitive" : "/multiplayer/casual",
                 )
               }
             >
