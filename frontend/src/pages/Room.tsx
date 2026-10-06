@@ -85,6 +85,7 @@ export function Room() {
   const intentionalLeaveRef = useRef(false);
   const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
   const mistakeCrossTimerRef = useRef<number | undefined>(undefined);
+  const [actionMode, setActionMode] = useState<"fill" | "cross">("fill");
 
   // ── Auth, captured once ────────────────────────────────────────────────────
 
@@ -608,7 +609,7 @@ export function Room() {
           fontSize: 13,
         }}
       >
-        Left-click to fill · Right-click to mark empty
+        Use the switch to pick fill or cross · right-click always marks empty
       </p>
 
       <div
@@ -640,6 +641,7 @@ export function Room() {
             completed={me.won}
             mistakeCrossIdx={mistakeCrossIdx}
             mistakeCrossIndices={myMistakeCrossIndices}
+            actionMode={actionMode}
             onFill={handleFill}
             onCross={handleCross}
           />
@@ -650,7 +652,9 @@ export function Room() {
           style={{
             paddingTop: clueOffset,
             display: "flex",
-            alignItems: "flex-start",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 12,
           }}
         >
           <div
@@ -684,6 +688,33 @@ export function Room() {
                 </Button>
               </>
             )}
+          </div>
+
+          <div
+            className="mp-action-mode"
+            role="group"
+            aria-label="Cell action"
+          >
+            <button
+              type="button"
+              className={actionMode === "fill" ? "is-active" : undefined}
+              onClick={() => setActionMode("fill")}
+              aria-pressed={actionMode === "fill"}
+              aria-label="Fill cells"
+              title="Fill cells"
+            >
+              <Icon name="check" size={22} />
+            </button>
+            <button
+              type="button"
+              className={actionMode === "cross" ? "is-active" : undefined}
+              onClick={() => setActionMode("cross")}
+              aria-pressed={actionMode === "cross"}
+              aria-label="Cross cells"
+              title="Cross cells"
+            >
+              <Icon name="x" size={22} />
+            </button>
           </div>
         </div>
 

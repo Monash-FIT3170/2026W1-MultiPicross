@@ -339,8 +339,33 @@ body {
   gap: 6px;
 }
 
-.mp-mobile-action-mode {
-  display: none;
+.mp-action-mode {
+  align-self: center;
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-xs);
+}
+
+.mp-action-mode button {
+  width: 46px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-ink-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.mp-action-mode button.is-active {
+  color: var(--color-on-accent);
+  background: var(--color-blue-500);
 }
 
 @media (max-width: 768px) {
@@ -633,36 +658,6 @@ body {
 
   .mp-nonogram-grid {
     align-self: center;
-  }
-
-  .mp-mobile-action-mode {
-    align-self: center;
-    display: inline-flex;
-    gap: 4px;
-    padding: 4px;
-    margin: 0 auto 10px;
-    background: var(--color-surface);
-    border: 1px solid var(--color-line);
-    border-radius: 12px;
-    box-shadow: var(--shadow-xs);
-  }
-
-  .mp-mobile-action-mode button {
-    width: 46px;
-    height: 42px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-ink-muted);
-    background: transparent;
-    border: 0;
-    border-radius: 9px;
-    cursor: pointer;
-  }
-
-  .mp-mobile-action-mode button.is-active {
-    color: var(--color-on-accent);
-    background: var(--color-blue-500);
   }
 
   .mp-game-sidebar-wrap {
