@@ -37,6 +37,12 @@ export function AccountSettings() {
 
     setPasswordError(null);
     setPasswordSaved(false);
+
+    if (newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters.");
+      return;
+    }
+
     setPasswordLoading(true);
 
     try {
@@ -220,7 +226,6 @@ export function AccountSettings() {
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
                           required
-                          minLength={8}
                           autoComplete="new-password"
                           className="
                             mt-2 min-h-11 w-full rounded-xl
@@ -234,7 +239,7 @@ export function AccountSettings() {
                       </div>
 
                       {passwordError && (
-                        <p className="text-sm text-[var(--color-accent-error)] font-ui">
+                        <p className="text-xs text-[var(--color-accent-error)] font-ui">
                           {passwordError}
                         </p>
                       )}
