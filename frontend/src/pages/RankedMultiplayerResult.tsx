@@ -207,7 +207,7 @@ export function RankedMultiplayerResults() {
               marginBottom: 18,
             }}
           >
-            {didWin ? "🏆" : "☹"}
+            {didWin ? "🏆" : "❌"}
           </div>
 
           {/* Result title */}
