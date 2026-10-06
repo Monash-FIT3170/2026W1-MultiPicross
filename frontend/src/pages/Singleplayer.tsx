@@ -238,6 +238,31 @@ export function Singleplayer() {
     }
   }
 
+  async function continueAuthGame(completion: ActiveCompletion) {
+    setPhase({ kind: "loading-puzzle" });
+    try {
+      const res = await apiFetch("/singleplayer/resume", { method: "POST" });
+      if (!res.ok) {
+        setPhase({ kind: "error", message: await parseApiError(res) });
+        return;
+      }
+      const { elapsedSeconds } = (await res.json()) as {
+        elapsedSeconds: number;
+      };
+      gameKeyRef.current++;
+      setPhase({
+        kind: "playing",
+        game: {
+          ...completionToGameState(completion),
+          baseElapsed: elapsedSeconds,
+        },
+        outcome: null,
+      });
+    } catch (e) {
+      setPhase({ kind: "error", message: String(e) });
+    }
+  }
+
   async function startGuestGame(width: number, height: number) {
     setPhase({ kind: "loading-puzzle" });
     try {
@@ -601,11 +626,7 @@ export function Singleplayer() {
       {phase.kind === "active-choice" && (
         <ActiveChoiceScreen
           completion={phase.completion}
-          onContinue={() => {
-            const game = completionToGameState(phase.completion);
-            gameKeyRef.current++;
-            setPhase({ kind: "playing", game, outcome: null });
-          }}
+          onContinue={() => void continueAuthGame(phase.completion)}
           onNewGame={() =>
             setPhase({
               kind: "size-select",
