@@ -5,7 +5,8 @@ import audioIcon from "../../assets/settings/audio.svg";
 import accessibilityIcon from "../../assets/settings/accessibility.svg";
 import accountIcon from "../../assets/settings/account.svg";
 
-export type SettingsSection = "profile" | "appearance" | "gameplay" | "audio" | "accessibility" | "account";
+export type SettingsSection =
+  "profile" | "appearance" | "gameplay" | "audio" | "accessibility" | "account";
 
 type SettingsSidebarProps = {
   activeSection: SettingsSection;
