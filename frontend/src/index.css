@@ -57,6 +57,9 @@
   --color-coral-400: #e07a5f;
   --color-coral-500: #c45f44;
 
+  /* Text and icons that sit on an accent (blue-500) background. */
+  --color-on-accent: #ffffff;
+
   --color-sage-50: #ecf6f0;
   --color-sage-100: #d4ebde;
   --color-sage-400: #4caf78;
@@ -381,7 +384,11 @@ body {
     z-index: 300 !important;
     margin: -16px -16px 18px !important;
     padding: calc(10px + env(safe-area-inset-top)) 16px 10px !important;
-    background: rgba(247, 246, 242, 0.94) !important;
+    background: color-mix(
+      in srgb,
+      var(--color-paper) 94%,
+      transparent
+    ) !important;
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--color-line);
   }
@@ -402,7 +409,11 @@ body {
     right: auto !important;
     margin: 0 !important;
     padding: calc(10px + env(safe-area-inset-top)) 16px 10px !important;
-    background: rgba(247, 246, 242, 0.94) !important;
+    background: color-mix(
+      in srgb,
+      var(--color-paper) 94%,
+      transparent
+    ) !important;
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--color-line);
   }
@@ -650,7 +661,7 @@ body {
   }
 
   .mp-mobile-action-mode button.is-active {
-    color: #ffffff;
+    color: var(--color-on-accent);
     background: var(--color-blue-500);
   }
 
