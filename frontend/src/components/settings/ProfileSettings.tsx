@@ -67,7 +67,7 @@ export function ProfileSettings() {
               src={profileIcon}
               alt=""
               aria-hidden="true"
-              className="settings-icon h-5 w-5 opacity-60"
+              className="icons h-5 w-5 opacity-60"
             />
           </div>
 
@@ -205,7 +205,7 @@ export function ProfileSettings() {
                   src={plusIcon}
                   alt=""
                   aria-hidden="true"
-                  className="settings-icon h-2.5 w-2.5"
+                  className="icons h-2.5 w-2.5"
                 />
               </span>
 

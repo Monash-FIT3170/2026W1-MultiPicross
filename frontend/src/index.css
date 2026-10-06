@@ -35,7 +35,7 @@
 :root {
   --color-paper: #f7f6f2;
   --color-surface: #ffffff;
-  --color-surface-sunk: #f0eee9;
+  --color-surface-sunk: #f0f3f5;
   --color-ink: #1c1c1e;
   --color-ink-soft: #4a4a52;
   --color-ink-muted: #6b6b6b;
@@ -49,12 +49,16 @@
   --color-blue-200: #b8d0ec;
   --color-blue-500: #3d5a80;
   --color-blue-600: #2f4868;
+  --color-logo: var(--color-blue-500);
 
   --color-coral-50: #fdf0eb;
   --color-coral-100: #fadbcf;
   --color-coral-200: #f4baa6;
   --color-coral-400: #e07a5f;
   --color-coral-500: #c45f44;
+
+  /* Text and icons that sit on an accent (blue-500) background. */
+  --color-on-accent: #ffffff;
 
   --color-sage-50: #ecf6f0;
   --color-sage-100: #d4ebde;
@@ -101,11 +105,12 @@
   --color-line: #383a40;
   --color-line-strong: #55575e;
 
-  --color-blue-50: #252f3d;
-  --color-blue-100: #2e4055;
+  --color-blue-50: #aac2dc;
+  --color-blue-100: #8eadd0;
   --color-blue-200: #55779d;
-  --color-blue-500: #8eadd0;
-  --color-blue-600: #aac2dc;
+  --color-blue-500: #2e4055;
+  --color-blue-600: #252f3d;
+  --color-logo: var(--color-blue-100);
 
   --color-butter-50: #332f24;
   --color-butter-500: #e0c276;
@@ -113,7 +118,7 @@
   --color-sage-50: #22332a;
   --color-sage-500: #6fc493;
 }
-.dark .settings-icon {
+.dark .icons {
   filter: invert(1);
 }
 /* High contrast colours */
@@ -133,6 +138,7 @@
 
   --color-blue-50: #ffffff;
   --color-blue-500: var(--color-contrast-accent-primary);
+  --color-logo: var(--color-contrast-accent-primary);
 
   --color-butter-50: #ffffff;
   --color-butter-500: #000000;
@@ -145,7 +151,7 @@
   --color-accent-error: var(--color-contrast-accent-error);
   --color-accent-win: var(--color-contrast-accent-win);
 }
-.high-contrast .settings-icon {
+.high-contrast .icons {
   filter: brightness(0);
 }
 
@@ -392,7 +398,11 @@ body {
     z-index: 300 !important;
     margin: -16px -16px 18px !important;
     padding: calc(10px + env(safe-area-inset-top)) 16px 10px !important;
-    background: rgba(247, 246, 242, 0.94) !important;
+    background: color-mix(
+      in srgb,
+      var(--color-paper) 94%,
+      transparent
+    ) !important;
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--color-line);
   }
@@ -413,7 +423,11 @@ body {
     right: auto !important;
     margin: 0 !important;
     padding: calc(10px + env(safe-area-inset-top)) 16px 10px !important;
-    background: rgba(247, 246, 242, 0.94) !important;
+    background: color-mix(
+      in srgb,
+      var(--color-paper) 94%,
+      transparent
+    ) !important;
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--color-line);
   }
@@ -661,7 +675,7 @@ body {
   }
 
   .mp-mobile-action-mode button.is-active {
-    color: #ffffff;
+    color: var(--color-on-accent);
     background: var(--color-blue-500);
   }
 
