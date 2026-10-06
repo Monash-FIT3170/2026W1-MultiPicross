@@ -18,6 +18,7 @@ const RETURN_TO_PATHS = new Set([
   "/multiplayer/unrated",
   "/multiplayer/ranked",
   "/statistics",
+  "/collection",
   "/tutorial",
   "/settings",
   "/welcome",
