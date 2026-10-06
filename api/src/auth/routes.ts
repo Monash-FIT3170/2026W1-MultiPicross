@@ -68,6 +68,13 @@ const HandleBody = v.object({
   ),
 });
 
+const ProfileAccentBody = v.object({
+  profileAccent: v.pipe(
+    v.string(),
+    v.regex(/^#[0-9A-Fa-f]{6}$/, "Invalid profile accent"),
+  ),
+});
+
 function schema<T extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(
   s: T,
 ): OpenAPIV3.SchemaObject {
@@ -418,6 +425,88 @@ auth.post(
 );
 
 auth.post(
+  "/profile-accent",
+  requireAuth,
+  csrf,
+  describeRoute({
+    tags: ["Auth"],
+    summary: "Set the account profile accent",
+    requestBody: {
+      required: true,
+      content: {
+        "application/json": {
+          schema: schema(ProfileAccentBody),
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Profile accent set",
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                profileAccent: { type: "string" },
+              },
+            },
+          },
+        },
+      },
+      400: {
+        description: "Validation error",
+        content: validationErrorContent,
+      },
+      401: {
+        description: "Not authenticated",
+        content: errorContent,
+      },
+      403: {
+        description: "Invalid CSRF token",
+        content: errorContent,
+      },
+      404: {
+        description: "Account not found",
+        content: errorContent,
+      },
+    },
+  }),
+  sValidator("json", ProfileAccentBody, (result, c) => {
+    if (!result.success) {
+      return c.json(
+        { error: result.error.map((i) => i.message) },
+        400,
+      );
+    }
+  }),
+  async (c) => {
+    const { sub: accountId } = c.get("jwtPayload") as {
+      sub: string;
+    };
+
+    const { profileAccent } = c.req.valid("json" as never) as v.InferOutput<
+      typeof ProfileAccentBody
+    >;
+
+    const [updated] = await db
+      .update(accounts)
+      .set({ profileAccent })
+      .where(eq(accounts.id, accountId))
+      .returning({
+        profileAccent: accounts.profileAccent,
+      });
+
+    if (!updated) {
+      return c.json({ error: "Account not found" }, 404);
+    }
+
+    return c.json({
+      profileAccent: updated.profileAccent,
+    });
+  },
+);
+
+auth.post(
   "/login",
   describeRoute({
     tags: ["Auth"],
@@ -600,13 +689,14 @@ auth.get(
     const { sub: accountId } = c.get("jwtPayload") as { sub: string };
     const account = await db.query.accounts.findFirst({
       where: eq(accounts.id, accountId),
-      columns: { id: true, handle: true, kind: true },
+      columns: { id: true, handle: true, kind: true, profileAccent: true },
     });
     if (!account) return c.json({ error: "Account not found" }, 404);
     return c.json({
       id: account.id,
       handle: account.handle,
       kind: account.kind,
+      profileAccent: account.profileAccent,
     });
   },
 );
