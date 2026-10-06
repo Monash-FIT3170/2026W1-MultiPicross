@@ -541,6 +541,18 @@ interface UserDropdownProps {
   onSignOut: () => void;
 }
 
+function getContrastTextColor(background: string) {
+  const hex = background.replace("#", "");
+
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  return luminance > 0.55 ? "#1c1c1e" : "#ffffff";
+}
+
 // Every account is now routed to /welcome until it has a handle, so this
 // fallback is defensive and should not appear.
 export function UserDropdown({ handle, accent, onSignOut }: UserDropdownProps) {
@@ -629,7 +641,7 @@ export function UserDropdown({ handle, accent, onSignOut }: UserDropdownProps) {
             borderRadius: "50%",
             flexShrink: 0,
             background: accent,
-            color: "var(--color-ink)",
+            color: getContrastTextColor(accent),
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

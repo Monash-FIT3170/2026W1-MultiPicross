@@ -571,6 +571,7 @@ auth.post(
       id: account.id,
       handle: account.handle,
       kind: account.kind,
+      profileAccent: account.profileAccent,
     });
   },
 );

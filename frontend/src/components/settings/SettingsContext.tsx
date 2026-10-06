@@ -1,3 +1,4 @@
+import { useAuth } from "../../auth/AuthContext";
 import {
   createContext,
   useContext,
@@ -68,6 +69,7 @@ type SettingsContextType = {
 const SettingsContext = createContext<SettingsContextType | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>("light");
   const [animationLevel, setAnimationLevel] = useState<AnimationLevel>("full");
@@ -85,6 +87,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [reducedMotion, setReducedMotion] = useState(false);
   const [largerClueNumbers, setLargerClueNumbers] = useState(false);
   const [boldGridLines, setBoldGridLines] = useState(false);
+
+  useEffect(() => {
+    if (user?.profileAccent) {
+      setProfileAccent(user.profileAccent);
+    }
+  }, [user?.profileAccent]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");

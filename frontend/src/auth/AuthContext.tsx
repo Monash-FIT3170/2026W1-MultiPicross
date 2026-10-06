@@ -18,6 +18,7 @@ type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 interface AuthUser {
   id: string;
   handle: string | null;
+  profileAccent: string;
   kind: "sso" | "service";
 }
 
@@ -32,6 +33,7 @@ interface AuthContextValue extends AuthState {
   login: (username: string, password: string) => Promise<void>;
   signIn: (returnTo?: string) => void;
   setHandle: (handle: string) => Promise<void>;
+  setProfileAccent: (profileAccent: string) => Promise<void>;
   logout: () => Promise<void>;
   setGuestNickname: (nickname: string) => void;
 }
@@ -133,6 +135,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
+  async function setProfileAccent(profileAccent: string): Promise<void> {
+    const res = await apiFetch("/auth/profile-accent", {
+      method: "POST",
+      body: JSON.stringify({ profileAccent }),
+    });
+
+    if (!res.ok) {
+      await throwApiError(res);
+    }
+
+    const body = (await res.json()) as { profileAccent: string };
+
+    setState((prev) =>
+      prev.user
+        ? {
+            ...prev,
+            user: {
+              ...prev.user,
+              profileAccent: body.profileAccent,
+            },
+          }
+        : prev,
+    );
+  }
+
   async function logout(): Promise<void> {
     await apiFetch("/auth/logout", { method: "POST" });
 
@@ -149,6 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         signIn,
         setHandle,
+        setProfileAccent,
         logout,
         setGuestNickname,
       }}

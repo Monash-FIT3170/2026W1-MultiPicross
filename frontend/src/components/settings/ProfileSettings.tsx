@@ -20,9 +20,21 @@ const accentOptions = [
   "#222225",
 ];
 
+function getContrastTextColor(background: string) {
+  const hex = background.replace("#", "");
+
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  return luminance > 0.55 ? "#1c1c1e" : "#ffffff";
+}
+
 export function ProfileSettings() {
   const navigate = useNavigate();
-  const { status, user, setHandle } = useAuth();
+  const { status, user, setHandle, setProfileAccent: saveProfileAccent } = useAuth();
   const { profileAccent, setProfileAccent, closeSettings } = useSettings();
 
   const [value, setValue] = useState(user?.handle ?? "");
@@ -33,6 +45,18 @@ export function ProfileSettings() {
   function handleSignIn() {
     closeSettings();
     navigate("/login");
+  }
+
+  async function handleAccentChange(color: string) {
+    setProfileAccent(color);
+
+    try {
+      await saveProfileAccent(color);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Could not save profile accent",
+      );
+    }
   }
 
   if (status !== "authenticated" || !user) {
@@ -136,9 +160,12 @@ export function ProfileSettings() {
         <div
           className="
             flex h-12 w-12 shrink-0 items-center justify-center
-            rounded-full text-sm font-bold text-white font-ui
+            rounded-full text-sm font-bold font-ui
           "
-          style={{ backgroundColor: profileAccent }}
+          style={{
+            backgroundColor: profileAccent,
+            color: getContrastTextColor(profileAccent),
+          }}
         >
           {user?.handle?.slice(0, 2).toUpperCase() ?? "?"}
         </div>
@@ -163,7 +190,7 @@ export function ProfileSettings() {
                 <button
                   key={color}
                   type="button"
-                  onClick={() => setProfileAccent(color)}
+                  onClick={() => void handleAccentChange(color)}
                   aria-label={`Select ${color} profile accent`}
                   aria-pressed={selected}
                   className="
@@ -213,6 +240,7 @@ export function ProfileSettings() {
                 type="color"
                 value={profileAccent}
                 onChange={(e) => setProfileAccent(e.target.value)}
+                onBlur={(e) => void saveProfileAccent(e.target.value)}
                 className="absolute inset-0 cursor-pointer opacity-0"
                 aria-label="Custom profile accent colour"
               />
