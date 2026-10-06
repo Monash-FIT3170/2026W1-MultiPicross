@@ -34,6 +34,10 @@ interface AuthContextValue extends AuthState {
   signIn: (returnTo?: string) => void;
   setHandle: (handle: string) => Promise<void>;
   setProfileAccent: (profileAccent: string) => Promise<void>;
+  changePassword: (
+    currentPassword: string,
+    newPassword: string,
+  ) => Promise<void>;
   logout: () => Promise<void>;
   setGuestNickname: (nickname: string) => void;
 }
@@ -160,6 +164,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
+  async function changePassword(
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const res = await apiFetch("/auth/password", {
+      method: "POST",
+      body: JSON.stringify({
+        currentPassword,
+        newPassword,
+      }),
+    });
+
+    if (!res.ok) {
+      await throwApiError(res);
+    }
+  }
+
   async function logout(): Promise<void> {
     await apiFetch("/auth/logout", { method: "POST" });
 
@@ -177,6 +198,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         setHandle,
         setProfileAccent,
+        changePassword,
         logout,
         setGuestNickname,
       }}

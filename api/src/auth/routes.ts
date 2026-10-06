@@ -56,6 +56,11 @@ const LoginBody = v.object({
   password: v.pipe(v.string(), v.maxLength(256)),
 });
 
+const ChangePasswordBody = v.object({
+  currentPassword: v.pipe(v.string(), v.maxLength(256)),
+  newPassword: v.pipe(v.string(), v.minLength(8), v.maxLength(256)),
+});
+
 const HandleBody = v.object({
   handle: v.pipe(
     v.string(),
@@ -364,6 +369,99 @@ auth.get(
 
     await issueSession(c, accountId);
     return c.redirect(tx.r, 302);
+  },
+);
+
+auth.post(
+  "/password",
+  requireAuth,
+  csrf,
+  describeRoute({
+    tags: ["Auth"],
+    summary: "Change the account password",
+    requestBody: {
+      required: true,
+      content: {
+        "application/json": {
+          schema: schema(ChangePasswordBody),
+        },
+      },
+    },
+    responses: {
+      200: {
+        description: "Password changed",
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                success: { type: "boolean" },
+              },
+            },
+          },
+        },
+      },
+      400: {
+        description: "Validation error",
+        content: validationErrorContent,
+      },
+      401: {
+        description: "Not authenticated or current password incorrect",
+        content: errorContent,
+      },
+      403: {
+        description: "Invalid CSRF token or password unavailable",
+        content: errorContent,
+      },
+      404: {
+        description: "Account not found",
+        content: errorContent,
+      },
+    },
+  }),
+  sValidator("json", ChangePasswordBody, (result, c) => {
+    if (!result.success) {
+      return c.json({ error: result.error.map((i) => i.message) }, 400);
+    }
+  }),
+  async (c) => {
+    const { sub: accountId } = c.get("jwtPayload") as {
+      sub: string;
+    };
+
+    const { currentPassword, newPassword } = c.req.valid(
+      "json" as never,
+    ) as v.InferOutput<typeof ChangePasswordBody>;
+
+    const account = await db.query.accounts.findFirst({
+      where: eq(accounts.id, accountId),
+    });
+
+    if (!account) {
+      return c.json({ error: "Account not found" }, 404);
+    }
+
+    if (account.kind !== "service" || !account.passwordHash) {
+      return c.json(
+        { error: "Password changes are not available for this account" },
+        403,
+      );
+    }
+
+    const valid = await verifyPassword(currentPassword, account.passwordHash);
+
+    if (!valid) {
+      return c.json({ error: "Current password is incorrect" }, 401);
+    }
+
+    const passwordHash = await hashPassword(newPassword);
+
+    await db
+      .update(accounts)
+      .set({ passwordHash })
+      .where(eq(accounts.id, accountId));
+
+    return c.json({ success: true });
   },
 );
 
