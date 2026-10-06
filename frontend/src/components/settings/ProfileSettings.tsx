@@ -34,7 +34,12 @@ function getContrastTextColor(background: string) {
 
 export function ProfileSettings() {
   const navigate = useNavigate();
-  const { status, user, setHandle, setProfileAccent: saveProfileAccent } = useAuth();
+  const {
+    status,
+    user,
+    setHandle,
+    setProfileAccent: saveProfileAccent,
+  } = useAuth();
   const { profileAccent, setProfileAccent, closeSettings } = useSettings();
 
   const [value, setValue] = useState(user?.handle ?? "");

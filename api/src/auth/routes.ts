@@ -473,10 +473,7 @@ auth.post(
   }),
   sValidator("json", ProfileAccentBody, (result, c) => {
     if (!result.success) {
-      return c.json(
-        { error: result.error.map((i) => i.message) },
-        400,
-      );
+      return c.json({ error: result.error.map((i) => i.message) }, 400);
     }
   }),
   async (c) => {
