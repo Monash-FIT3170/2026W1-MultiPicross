@@ -44,7 +44,10 @@ export default function App() {
         <Route path="/singleplayer" element={<Singleplayer />} />
         <Route element={<PlayerNameRoute />}>
           <Route path="/multiplayer/casual" element={<CasualMultiplayer />} />
-          <Route path="/multiplayer/competitive" element={<CompetitiveMultiplayer />} />
+          <Route
+            path="/multiplayer/competitive"
+            element={<CompetitiveMultiplayer />}
+          />
           {/* Guests arriving on an invite link are bounced to /nickname, which
               navigates back here once a name is set. */}
           <Route path="/room/:roomId" element={<Room />} />

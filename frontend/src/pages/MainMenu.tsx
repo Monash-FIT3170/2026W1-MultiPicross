@@ -31,8 +31,8 @@ export default function MainMenu() {
     const tagline = taglineRef.current;
     const tiles = gridRef.current
       ? (Array.from(
-        gridRef.current.querySelectorAll(".tile-enter"),
-      ) as HTMLElement[])
+          gridRef.current.querySelectorAll(".tile-enter"),
+        ) as HTMLElement[])
       : [];
     const footer = footerRef.current;
 

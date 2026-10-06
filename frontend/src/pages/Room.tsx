@@ -529,9 +529,9 @@ export function Room() {
   );
   const opponentMistakeCrossIndices = opponent
     ? (opponent.mistakeCross ?? []).reduce<number[]>((acc, v, i) => {
-      if (v) acc.push(i);
-      return acc;
-    }, [])
+        if (v) acc.push(i);
+        return acc;
+      }, [])
     : [];
 
   // onLeave only crowns a survivor who is not already eliminated, so against
