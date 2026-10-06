@@ -38,6 +38,7 @@ interface AuthContextValue extends AuthState {
     currentPassword: string,
     newPassword: string,
   ) => Promise<void>;
+  deleteAccount: () => Promise<void>;
   logout: () => Promise<void>;
   setGuestNickname: (nickname: string) => void;
 }
@@ -181,6 +182,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function deleteAccount(): Promise<void> {
+    const res = await apiFetch("/auth/account", {
+      method: "DELETE",
+    });
+
+    if (!res.ok) {
+      await throwApiError(res);
+    }
+
+    setState({
+      status: "unauthenticated",
+      user: null,
+      guestNickname: null,
+    });
+  }
+
   async function logout(): Promise<void> {
     await apiFetch("/auth/logout", { method: "POST" });
 
@@ -199,6 +216,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setHandle,
         setProfileAccent,
         changePassword,
+        deleteAccount,
         logout,
         setGuestNickname,
       }}

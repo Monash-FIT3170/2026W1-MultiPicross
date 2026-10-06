@@ -465,6 +465,57 @@ auth.post(
   },
 );
 
+auth.delete(
+  "/account",
+  requireAuth,
+  csrf,
+  describeRoute({
+    tags: ["Auth"],
+    summary: "Delete the current account",
+    responses: {
+      200: {
+        description: "Account deleted",
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                success: { type: "boolean" },
+              },
+            },
+          },
+        },
+      },
+      401: {
+        description: "Not authenticated",
+        content: errorContent,
+      },
+      403: {
+        description: "Invalid CSRF token",
+        content: errorContent,
+      },
+      404: {
+        description: "Account not found",
+        content: errorContent,
+      },
+    },
+  }),
+  async (c) => {
+    const { sub: accountId } = c.get("jwtPayload") as { sub: string };
+
+    const [deleted] = await db
+      .delete(accounts)
+      .where(eq(accounts.id, accountId))
+      .returning({ id: accounts.id });
+
+    if (!deleted) {
+      return c.json({ error: "Account not found" }, 404);
+    }
+
+    return c.json({ success: true });
+  },
+);
+
 auth.post(
   "/handle",
   requireAuth,

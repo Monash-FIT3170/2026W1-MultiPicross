@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { useSettings } from "./SettingsContext";
 import profileIcon from "../../assets/settings/profile.svg";
+import { ConfirmDialog } from "../ui";
 
 export function AccountSettings() {
-  const { status, user, logout, changePassword } = useAuth();
+  const { status, user, logout, changePassword, deleteAccount } = useAuth();
   const navigate = useNavigate();
 
   const [showPasswordForm, setShowPasswordForm] = useState(false);
@@ -14,6 +15,7 @@ export function AccountSettings() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const { closeSettings } = useSettings();
 
@@ -329,6 +331,7 @@ export function AccountSettings() {
 
               <button
                 type="button"
+                onClick={() => setShowDeleteConfirm(true)}
                 className="
                   min-h-11 rounded-xl
                   border-1 border-[var(--color-accent-error)]
@@ -343,6 +346,23 @@ export function AccountSettings() {
             </div>
           </div>
         </div>
+      )}
+
+      {showDeleteConfirm && (
+        <ConfirmDialog
+          titleId="delete-account-title"
+          title="Delete account?"
+          body="This will permanently delete your account and all associated data. This action cannot be undone."
+          confirmLabel="Delete account"
+          cancelLabel="Cancel"
+          onCancel={() => setShowDeleteConfirm(false)}
+          onConfirm={async () => {
+            await deleteAccount();
+            setShowDeleteConfirm(false);
+            closeSettings();
+            navigate("/");
+          }}
+        />
       )}
     </div>
   );
