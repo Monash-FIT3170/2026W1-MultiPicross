@@ -256,6 +256,46 @@ body {
   animation: mp-toast-in var(--dur-base) var(--ease-out);
 }
 
+.mp-life-lost-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: rgba(196, 95, 68, 0.12);
+  animation: mp-life-lost-backdrop 1200ms var(--ease-out) forwards;
+}
+
+.mp-life-lost-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 220px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  border: 1px solid var(--color-coral-100);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 22px 50px -18px rgba(196, 95, 68, 0.45);
+  color: var(--color-ink);
+  animation: mp-life-lost-card 1200ms var(--ease-out) forwards;
+}
+
+.mp-life-lost-title {
+  font-size: 18px;
+  line-height: 1.1;
+  font-weight: 800;
+}
+
+.mp-life-lost-subtitle {
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 1.25;
+  color: var(--color-ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ──── Animations ──── */
 @keyframes mp-toast-in {
   from {
@@ -265,6 +305,43 @@ body {
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes mp-life-lost-backdrop {
+  0% {
+    opacity: 0;
+  }
+  14% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes mp-life-lost-card {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.94);
+  }
+  16% {
+    opacity: 1;
+    transform: translateY(0) scale(1.04);
+  }
+  32% {
+    transform: translateY(0) scale(1);
+  }
+  76% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
   }
 }
 
@@ -866,6 +943,107 @@ body {
   .page-placeholder button {
     width: 100%;
     min-height: 44px;
+  }
+}
+
+/* ──── Heart break (LivesPips) ──── */
+/* Durations should match HEART_BREAK_MS in components/ui.tsx. */
+.mp-heart-half {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform-origin: 50% 95%;
+}
+/* A jagged crack down the middle of the heart */
+.mp-heart-half--left {
+  clip-path: polygon(
+    0 0,
+    50% 0,
+    50% 24%,
+    42% 42%,
+    57% 58%,
+    45% 76%,
+    50% 100%,
+    0 100%
+  );
+  animation: mp-heart-break-left 700ms var(--ease-out) forwards;
+}
+.mp-heart-half--right {
+  clip-path: polygon(
+    50% 0,
+    100% 0,
+    100% 100%,
+    50% 100%,
+    45% 76%,
+    57% 58%,
+    42% 42%,
+    50% 24%
+  );
+  animation: mp-heart-break-right 700ms var(--ease-out) forwards;
+}
+.mp-heart-breaking {
+  animation: mp-heart-break-jolt 700ms var(--ease-out);
+}
+/* The grey "empty" heart fades in once the halves have split */
+.mp-heart-break-base {
+  animation: mp-heart-break-base 700ms ease forwards;
+}
+
+@keyframes mp-heart-break-jolt {
+  0% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.25);
+  }
+  20% {
+    transform: scale(1.15) rotate(-6deg);
+  }
+  28% {
+    transform: scale(1.15) rotate(6deg);
+  }
+  36%,
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes mp-heart-break-left {
+  0%,
+  32% {
+    transform: none;
+    opacity: 1;
+  }
+  55% {
+    transform: translateX(-3px) rotate(-22deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-6px, 10px) rotate(-38deg);
+    opacity: 0;
+  }
+}
+@keyframes mp-heart-break-right {
+  0%,
+  32% {
+    transform: none;
+    opacity: 1;
+  }
+  55% {
+    transform: translateX(3px) rotate(22deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(6px, 10px) rotate(38deg);
+    opacity: 0;
+  }
+}
+@keyframes mp-heart-break-base {
+  0%,
+  35% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
   }
 }
 
