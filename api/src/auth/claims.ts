@@ -18,6 +18,7 @@ const RETURN_TO_PATHS = new Set([
   "/multiplayer/casual",
   "/multiplayer/competitive",
   "/statistics",
+  "/collection",
   "/tutorial",
   "/settings",
   "/welcome",
