@@ -20,6 +20,11 @@ export const accounts = pgTable("accounts", {
   handle: text("handle").unique(),
   username: text("username").unique(),
   passwordHash: text("password_hash"),
+  // User preferences (appearance for now), validated by settings/routes.ts.
+  // jsonb rather than a column per setting so adding one needs no migration.
+  settings: jsonb("settings")
+    .notNull()
+    .default(sql`'{}'::jsonb`),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
