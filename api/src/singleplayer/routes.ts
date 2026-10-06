@@ -702,6 +702,112 @@ sp.post(
   },
 );
 
+// The clock runs while lastResumedAt is set. The client pauses whenever the
+// player leaves an unfinished game and resumes when they continue it, so time
+// spent away from the puzzle isn't counted.
+sp.post(
+  "/pause",
+  requireAuth,
+  csrf,
+  describeRoute({
+    tags: ["Singleplayer"],
+    summary: "Pause the active game's timer (no-op if nothing is running)",
+    responses: {
+      200: { description: "Timer paused" },
+      401: { description: "Not authenticated", content: errorContent },
+      403: { description: "Invalid CSRF token", content: errorContent },
+    },
+  }),
+  async (c) => {
+    const { sub: accountId } = c.get("jwtPayload") as { sub: string };
+    await db.transaction(async (tx) => {
+      const [completion] = await tx
+        .select({
+          id: spCompletions.id,
+          elapsedSeconds: spCompletions.elapsedSeconds,
+          lastResumedAt: spCompletions.lastResumedAt,
+        })
+        .from(spCompletions)
+        .where(
+          and(
+            eq(spCompletions.accountId, accountId),
+            eq(spCompletions.state, "active"),
+          ),
+        )
+        .for("update");
+
+      // Already paused, or the game ended before this request arrived
+      if (!completion?.lastResumedAt) return;
+
+      await tx
+        .update(spCompletions)
+        .set({
+          elapsedSeconds: computeElapsed(
+            completion.elapsedSeconds,
+            completion.lastResumedAt,
+          ),
+          lastResumedAt: null,
+        })
+        .where(eq(spCompletions.id, completion.id));
+    });
+
+    return c.json({ success: true });
+  },
+);
+
+sp.post(
+  "/resume",
+  requireAuth,
+  csrf,
+  describeRoute({
+    tags: ["Singleplayer"],
+    summary: "Resume the active game's timer",
+    responses: {
+      200: { description: "Timer running, with elapsed seconds so far" },
+      401: { description: "Not authenticated", content: errorContent },
+      403: { description: "Invalid CSRF token", content: errorContent },
+      404: { description: "No active game", content: errorContent },
+    },
+  }),
+  async (c) => {
+    const { sub: accountId } = c.get("jwtPayload") as { sub: string };
+    const elapsedSeconds = await db.transaction(async (tx) => {
+      const [completion] = await tx
+        .select({
+          id: spCompletions.id,
+          elapsedSeconds: spCompletions.elapsedSeconds,
+          lastResumedAt: spCompletions.lastResumedAt,
+        })
+        .from(spCompletions)
+        .where(
+          and(
+            eq(spCompletions.accountId, accountId),
+            eq(spCompletions.state, "active"),
+          ),
+        )
+        .for("update");
+
+      if (!completion) return null;
+
+      if (!completion.lastResumedAt) {
+        await tx
+          .update(spCompletions)
+          .set({ lastResumedAt: new Date() })
+          .where(eq(spCompletions.id, completion.id));
+      }
+
+      return computeElapsed(
+        completion.elapsedSeconds,
+        completion.lastResumedAt,
+      );
+    });
+
+    if (elapsedSeconds === null)
+      return c.json({ error: "No active game" }, 404);
+    return c.json({ elapsedSeconds });
+  },
+);
+
 sp.get(
   "/history",
   requireAuth,
