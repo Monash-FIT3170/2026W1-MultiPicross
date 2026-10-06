@@ -245,9 +245,13 @@ export function UnratedMultiplayer() {
                     style={{
                       padding: "4px 10px",
                       background:
-                        createSize === s ? "var(--color-blue-500)" : "var(--color-surface)",
+                        createSize === s
+                          ? "var(--color-blue-500)"
+                          : "var(--color-surface)",
                       color:
-                        createSize === s ? "var(--color-surface" : "var(--color-ink-soft)",
+                        createSize === s
+                          ? "var(--color-surface"
+                          : "var(--color-ink-soft)",
                       border: `1px solid ${createSize === s ? "var(--color-blue-500)" : "var(--color-line)"}`,
                       borderRadius: 999,
                       fontSize: 16,
