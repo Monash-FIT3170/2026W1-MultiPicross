@@ -24,6 +24,7 @@ const sections: { id: SettingsSection; label: string; icon: string }[] = [
   { id: "gameplay", label: "Gameplay", icon: gameplayIcon },
   { id: "audio", label: "Audio", icon: audioIcon },
   { id: "accessibility", label: "Accessibility", icon: accessibilityIcon },
+  { id: "account", label: "Account", icon: accountIcon },
 ];
 
 const getButtonClass = (isActive: boolean) =>
