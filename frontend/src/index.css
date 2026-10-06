@@ -932,6 +932,108 @@ body {
   }
 }
 
+/* ──── Heart break (LivesPips) ──── */
+/* Durations should match HEART_BREAK_MS in components/ui.tsx. */
+.mp-heart-half {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform-origin: 50% 95%;
+}
+/* A jagged crack down the middle of the heart */
+.mp-heart-half--left {
+  clip-path: polygon(
+    0 0,
+    50% 0,
+    50% 24%,
+    42% 42%,
+    57% 58%,
+    45% 76%,
+    50% 100%,
+    0 100%
+  );
+  animation: mp-heart-break-left 700ms var(--ease-out) forwards;
+}
+.mp-heart-half--right {
+  clip-path: polygon(
+    50% 0,
+    100% 0,
+    100% 100%,
+    50% 100%,
+    45% 76%,
+    57% 58%,
+    42% 42%,
+    50% 24%
+  );
+  animation: mp-heart-break-right 700ms var(--ease-out) forwards;
+}
+.mp-heart-breaking {
+  animation: mp-heart-break-jolt 700ms var(--ease-out);
+}
+/* The grey "empty" heart fades in once the halves have split */
+.mp-heart-break-base {
+  animation: mp-heart-break-base 700ms ease forwards;
+}
+ 
+@keyframes mp-heart-break-jolt {
+  0% {
+    transform: scale(1);
+  }
+  12% {
+    transform: scale(1.25);
+  }
+  20% {
+    transform: scale(1.15) rotate(-6deg);
+  }
+  28% {
+    transform: scale(1.15) rotate(6deg);
+  }
+  36%,
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes mp-heart-break-left {
+  0%,
+  32% {
+    transform: none;
+    opacity: 1;
+  }
+  55% {
+    transform: translateX(-3px) rotate(-22deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-6px, 10px) rotate(-38deg);
+    opacity: 0;
+  }
+}
+@keyframes mp-heart-break-right {
+  0%,
+  32% {
+    transform: none;
+    opacity: 1;
+  }
+  55% {
+    transform: translateX(3px) rotate(22deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(6px, 10px) rotate(38deg);
+    opacity: 0;
+  }
+}
+@keyframes mp-heart-break-base {
+  0%,
+  35% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+ 
+
 /* Dropdown spring — expands outward in both axes then oscillates back (entry) */
 @keyframes mp-dropdown-spring {
   0% {
