@@ -245,9 +245,9 @@ export function UnratedMultiplayer() {
                     style={{
                       padding: "4px 10px",
                       background:
-                        createSize === s ? "var(--color-blue-500)" : "#fff",
+                        createSize === s ? "var(--color-blue-500)" : "var(--color-surface)",
                       color:
-                        createSize === s ? "#fff" : "var(--color-ink-soft)",
+                        createSize === s ? "var(--color-surface" : "var(--color-ink-soft)",
                       border: `1px solid ${createSize === s ? "var(--color-blue-500)" : "var(--color-line)"}`,
                       borderRadius: 999,
                       fontSize: 16,
@@ -342,7 +342,7 @@ export function UnratedMultiplayer() {
                 borderRadius: 10,
                 fontSize: 16,
                 fontFamily: "var(--font-ui)",
-                background: "#fff",
+                background: "var(--color-surface)",
                 color: "var(--color-ink)",
                 outline: "none",
                 textAlign: "center",
