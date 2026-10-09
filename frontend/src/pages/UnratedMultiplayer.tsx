@@ -250,7 +250,7 @@ export function UnratedMultiplayer() {
                           : "var(--color-surface)",
                       color:
                         createSize === s
-                          ? "var(--color-surface)"
+                          ? "var(--color-white)"
                           : "var(--color-ink-soft)",
                       border: `1px solid ${createSize === s ? "var(--color-blue-500)" : "var(--color-line)"}`,
                       borderRadius: 999,
