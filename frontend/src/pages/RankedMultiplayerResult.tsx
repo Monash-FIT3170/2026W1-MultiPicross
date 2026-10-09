@@ -1,4 +1,3 @@
-//import { useNavigate } from "react-router-dom";
 import { useLocation, useNavigate } from "react-router-dom";
 import { fmtSeconds } from "../components/NonogramGrid";
 
@@ -18,39 +17,95 @@ export function RankedMultiplayerResults() {
     solution,
   } = location.state;
 
-  const didWin = winnerId === mySessionId;
+  const noWinner = !winnerId;
+  const didWin = !noWinner && winnerId === mySessionId;
 
-  const player = didWin
-    ? {
-        username: me.username,
-        eloBefore: rankedResult.winnerEloBefore,
-        eloAfter: rankedResult.winnerEloAfter,
-        eloChange: rankedResult.winnerEloChange,
-        mistakes: 3 - me.livesLeft,
-      }
-    : {
-        username: me.username,
-        eloBefore: rankedResult.loserEloBefore,
-        eloAfter: rankedResult.loserEloAfter,
-        eloChange: rankedResult.loserEloChange,
-        mistakes: 3 - me.livesLeft,
-      };
+  const isDoubleElimination =
+    rankedResult?.resultType === "double-elimination";
 
-  const opponentResult = didWin
-    ? {
-        username: opponent.username,
-        eloBefore: rankedResult.loserEloBefore,
-        eloAfter: rankedResult.loserEloAfter,
-        eloChange: rankedResult.loserEloChange,
-        mistakes: 3 - opponent.livesLeft,
-      }
-    : {
-        username: opponent.username,
-        eloBefore: rankedResult.winnerEloBefore,
-        eloAfter: rankedResult.winnerEloAfter,
-        eloChange: rankedResult.winnerEloChange,
-        mistakes: 3 - opponent.livesLeft,
-      };
+  const playerWon = didWin && !isDoubleElimination;
+  const opponentWon = !didWin && !isDoubleElimination && !noWinner;
+
+  let player;
+  let opponentResult;
+  let ratingHistory: number[];
+
+  if (isDoubleElimination) {
+    const iAmPlayerOne =
+      mySessionId === rankedResult.playerOneSessionId;
+
+    player = iAmPlayerOne
+      ? {
+          username: me.username,
+          eloBefore: rankedResult.playerOneEloBefore,
+          eloAfter: rankedResult.playerOneEloAfter,
+          eloChange: rankedResult.playerOneEloChange,
+          mistakes: 3 - me.livesLeft,
+        }
+      : {
+          username: me.username,
+          eloBefore: rankedResult.playerTwoEloBefore,
+          eloAfter: rankedResult.playerTwoEloAfter,
+          eloChange: rankedResult.playerTwoEloChange,
+          mistakes: 3 - me.livesLeft,
+        };
+
+    opponentResult = iAmPlayerOne
+      ? {
+          username: opponent.username,
+          eloBefore: rankedResult.playerTwoEloBefore,
+          eloAfter: rankedResult.playerTwoEloAfter,
+          eloChange: rankedResult.playerTwoEloChange,
+          mistakes: 3 - opponent.livesLeft,
+        }
+      : {
+          username: opponent.username,
+          eloBefore: rankedResult.playerOneEloBefore,
+          eloAfter: rankedResult.playerOneEloAfter,
+          eloChange: rankedResult.playerOneEloChange,
+          mistakes: 3 - opponent.livesLeft,
+        };
+
+    ratingHistory = iAmPlayerOne
+      ? rankedResult.playerOneRatingHistory
+      : rankedResult.playerTwoRatingHistory;
+  } else {
+    player = didWin
+      ? {
+          username: me.username,
+          eloBefore: rankedResult.winnerEloBefore,
+          eloAfter: rankedResult.winnerEloAfter,
+          eloChange: rankedResult.winnerEloChange,
+          mistakes: 3 - me.livesLeft,
+        }
+      : {
+          username: me.username,
+          eloBefore: rankedResult.loserEloBefore,
+          eloAfter: rankedResult.loserEloAfter,
+          eloChange: rankedResult.loserEloChange,
+          mistakes: 3 - me.livesLeft,
+        };
+
+    opponentResult = didWin
+      ? {
+          username: opponent.username,
+          eloBefore: rankedResult.loserEloBefore,
+          eloAfter: rankedResult.loserEloAfter,
+          eloChange: rankedResult.loserEloChange,
+          mistakes: 3 - opponent.livesLeft,
+        }
+      : {
+          username: opponent.username,
+          eloBefore: rankedResult.winnerEloBefore,
+          eloAfter: rankedResult.winnerEloAfter,
+          eloChange: rankedResult.winnerEloChange,
+          mistakes: 3 - opponent.livesLeft,
+        };
+
+    ratingHistory = didWin
+      ? rankedResult.winnerRatingHistory
+      : rankedResult.loserRatingHistory;
+  }
 
   const completedPuzzle = solution
     ? Array.from({ length: height }, (_, row) =>
@@ -62,10 +117,6 @@ export function RankedMultiplayerResults() {
     time: fmtSeconds(displaySeconds),
     boardSize: `${width}x${height}`,
   };
-
-  const ratingHistory = didWin
-    ? rankedResult.winnerRatingHistory
-    : rankedResult.loserRatingHistory;
 
   /*
    * ============================================================
@@ -109,8 +160,13 @@ export function RankedMultiplayerResults() {
     ratingHistory.length - 1,
   );
 
-  const resultColour = didWin ? "#00B87C" : "#F43F5E";
-  const resultBackground = didWin ? "#D1FAE5" : "#FFE4E6";
+  const resultColour = playerWon ? "#00B87C" : "#F43F5E";
+  const resultBackground = playerWon ? "#D1FAE5" : "#FFE4E6";
+  const resultTitle = noWinner
+    ? "Double Elimination"
+    : didWin
+      ? "Victory!"
+      : "Defeat";
 
   /*
    * ============================================================
@@ -207,7 +263,7 @@ export function RankedMultiplayerResults() {
               marginBottom: 18,
             }}
           >
-            {didWin ? "🏆" : "❌"}
+            {noWinner ? "⚔️" : didWin ? "🏆" : "❌"}
           </div>
 
           {/* Result title */}
@@ -215,13 +271,23 @@ export function RankedMultiplayerResults() {
           <h1
             style={{
               margin: 0,
-              fontSize: 36,
-              lineHeight: 1,
+              fontSize: isDoubleElimination ? 30 : 36,
+              lineHeight: 1.2,
               fontWeight: 800,
-              color: didWin ? "#047857" : "#BE123C",
+              color: isDoubleElimination
+                ? "#BE123C"
+                : didWin
+                  ? "#047857"
+                  : "#BE123C",
+              textAlign: "center",
+              width: "100%",
             }}
           >
-            {didWin ? "Victory!" : "Defeat"}
+            {isDoubleElimination
+              ? "Double Elimination"
+              : didWin
+                ? "Victory!"
+                : "Defeat"}
           </h1>
 
           {/* Match details */}
@@ -347,8 +413,8 @@ export function RankedMultiplayerResults() {
                 style={{
                   padding: 16,
                   borderRadius: 12,
-                  border: `2px solid ${didWin ? "#10B981" : "#FB7185"}`,
-                  background: didWin ? "#F0FDF4" : "#FFF1F2",
+                  border: `2px solid ${playerWon ? "#10B981" : "#FB7185"}`,
+                  background: playerWon ? "#F0FDF4" : "#FFF1F2",
                 }}
               >
                 {/* Name row */}
@@ -373,7 +439,7 @@ export function RankedMultiplayerResults() {
                         width: 30,
                         height: 30,
                         borderRadius: "50%",
-                        background: didWin ? "#A7F3D0" : "#FECDD3",
+                        background: playerWon ? "#A7F3D0" : "#FECDD3",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -401,11 +467,19 @@ export function RankedMultiplayerResults() {
                       fontWeight: 700,
                       padding: "4px 8px",
                       borderRadius: 20,
-                      background: didWin ? "#10B981" : "#FB7185",
+                      background: isDoubleElimination
+                        ? "#FB7185"
+                        : playerWon
+                          ? "#10B981"
+                          : "#FB7185",
                       color: "white",
                     }}
                   >
-                    {didWin ? "Winner" : "Loser"}
+                    {isDoubleElimination
+                      ? "Eliminated"
+                      : playerWon
+                        ? "Winner"
+                        : "Loser"}
                   </span>
                 </div>
 
@@ -433,7 +507,7 @@ export function RankedMultiplayerResults() {
                     style={{
                       fontSize: 13,
                       fontWeight: 700,
-                      color: didWin ? "#059669" : "#E11D48",
+                      color: playerWon ? "#059669" : "#E11D48",
                     }}
                   >
                     {player.eloChange > 0 ? "+" : ""}
@@ -475,7 +549,7 @@ export function RankedMultiplayerResults() {
                     height: 4,
                     marginTop: 10,
                     borderRadius: 10,
-                    background: didWin ? "#10B981" : "#FB7185",
+                    background: playerWon ? "#10B981" : "#FB7185",
                     width: "100%",
                   }}
                 />
@@ -487,8 +561,8 @@ export function RankedMultiplayerResults() {
                 style={{
                   padding: 16,
                   borderRadius: 12,
-                  border: `2px solid ${didWin ? "#FB7185" : "#10B981"}`,
-                  background: didWin ? "#FFF1F2" : "#F0FDF4",
+                  border: `2px solid ${opponentWon ? "#10B981" : "#FB7185"}`,
+                  background: opponentWon ? "#F0FDF4" : "#FFF1F2",
                 }}
               >
                 {/* Name row */}
@@ -513,7 +587,7 @@ export function RankedMultiplayerResults() {
                         width: 30,
                         height: 30,
                         borderRadius: "50%",
-                        background: didWin ? "#FECDD3" : "#A7F3D0",
+                        background: opponentWon ? "#A7F3D0" : "#FECDD3",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -541,11 +615,19 @@ export function RankedMultiplayerResults() {
                       fontWeight: 700,
                       padding: "4px 8px",
                       borderRadius: 20,
-                      background: didWin ? "#FB7185" : "#10B981",
+                      background: isDoubleElimination
+                        ? "#FB7185"
+                        : opponentWon
+                          ? "#10B981"
+                          : "#FB7185",
                       color: "white",
                     }}
                   >
-                    {didWin ? "Loser" : "Winner"}
+                    {isDoubleElimination
+                      ? "Eliminated"
+                      : opponentWon
+                        ? "Winner"
+                        : "Loser"}
                   </span>
                 </div>
 
@@ -573,7 +655,7 @@ export function RankedMultiplayerResults() {
                     style={{
                       fontSize: 13,
                       fontWeight: 700,
-                      color: didWin ? "#E11D48" : "#059669",
+                      color: opponentWon ? "#059669" : "#E11D48",
                     }}
                   >
                     {opponentResult.eloChange > 0 ? "+" : ""}
@@ -615,7 +697,7 @@ export function RankedMultiplayerResults() {
                     height: 4,
                     marginTop: 10,
                     borderRadius: 10,
-                    background: didWin ? "#FB7185" : "#10B981",
+                    background: opponentWon ? "#10B981" : "#FB7185",
                     width: "100%",
                   }}
                 />
@@ -683,7 +765,7 @@ export function RankedMultiplayerResults() {
                     style={{
                       fontSize: 11,
                       fontWeight: 700,
-                      color: didWin ? "#059669" : "#E11D48",
+                      color: playerWon ? "#059669" : "#E11D48",
                     }}
                   >
                     {player.eloChange > 0 ? "+" : ""}
@@ -811,3 +893,4 @@ export function RankedMultiplayerResults() {
     </div>
   );
 }
+

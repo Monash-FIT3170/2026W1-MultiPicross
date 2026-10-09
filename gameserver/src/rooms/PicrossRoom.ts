@@ -3,7 +3,7 @@ import { PicrossRoomState } from "./schema/PicrossRoomState.js";
 import { sql } from "../db/client.js";
 import { verifyRoomToken } from "../auth/roomToken.js";
 import { requireEnv } from "../env.js";
-import { recordRankedResult, type RankedResult } from "../elo/ratedResults.js";
+import { recordRankedResult, recordDoubleEliminationResult, type RankedResult, type DoubleEliminationResult } from "../elo/ratedResults.js";
 
 interface RoomAuth {
   username: string | null;
@@ -104,7 +104,18 @@ export class PicrossRoom extends Room {
   private forfeit = false;
   private isRanked = false;
   private rankedResultRecorded = false;
-  private rankedResult: RankedResult | null = null;
+  // private rankedResult: RankedResult | null = null;
+
+  private rankedResult:
+  | (RankedResult & {
+      resultType: "normal";
+    })
+  | (DoubleEliminationResult & {
+      resultType: "double-elimination";
+      playerOneSessionId: string;
+      playerTwoSessionId: string;
+    })
+  | null = null;
 
   async onCreate(options: {
     width?: number;
@@ -305,7 +316,7 @@ export class PicrossRoom extends Room {
     }
   }
 
-  private async recordRankedResult(): Promise<void> {
+ /*  private async recordRankedResult(): Promise<void> {
     if (!this.isRanked || this.rankedResultRecorded || !this.winnerId) {
       return;
     }
@@ -333,6 +344,100 @@ export class PicrossRoom extends Room {
       // The first "finished" snapshot may have been sent before
       // the Elo calculation completed. Broadcast another snapshot
       // now that the real ranked result is available.
+      this.broadcast("state", this.buildSnapshot());
+    } catch (error) {
+      this.rankedResultRecorded = false;
+      console.error("ranked result error", error);
+    }
+  } */
+
+
+  private async recordRankedResult(): Promise<void> {
+    if (!this.isRanked || this.rankedResultRecorded) {
+      return;
+    }
+
+    const players = [...this.players.entries()];
+
+    if (players.length !== 2) {
+      return;
+    }
+
+    const [firstSessionId, firstPlayer] = players[0];
+    const [secondSessionId, secondPlayer] = players[1];
+
+    // Both players were eliminated: both lose Elo.
+    if (
+      !this.winnerId &&
+      firstPlayer.done &&
+      secondPlayer.done
+    ) {
+      if (!firstPlayer.accountId || !secondPlayer.accountId) {
+        return;
+      }
+
+      this.rankedResultRecorded = true;
+
+      try {
+        const result = await recordDoubleEliminationResult({
+          playerOneAccountId: firstPlayer.accountId,
+          playerTwoAccountId: secondPlayer.accountId,
+          playerOneMistakes: 3 - firstPlayer.livesLeft,
+          playerTwoMistakes: 3 - secondPlayer.livesLeft,
+        });
+
+        this.rankedResult = {
+          ...result,
+          resultType: "double-elimination",
+          playerOneSessionId: firstSessionId,
+          playerTwoSessionId: secondSessionId,
+        };
+
+        // Send a new snapshot after both Elo updates have completed.
+        this.broadcast("state", this.buildSnapshot());
+
+        console.log("Double-elimination Elo recorded.");
+      } catch (error) {
+        this.rankedResultRecorded = false;
+        console.error("Double-elimination Elo error", error);
+      }
+
+      return;
+    }
+
+    // Normal ranked result: one player won.
+    if (!this.winnerId) {
+      return;
+    }
+
+    const winner = this.players.get(this.winnerId);
+
+    const loser =
+      this.winnerId === firstSessionId
+        ? secondPlayer
+        : this.winnerId === secondSessionId
+          ? firstPlayer
+          : undefined;
+
+    if (!winner?.accountId || !loser?.accountId) {
+      return;
+    }
+
+    this.rankedResultRecorded = true;
+
+    try {
+      const result = await recordRankedResult({
+        winnerAccountId: winner.accountId,
+        loserAccountId: loser.accountId,
+        winnerMistakes: 3 - winner.livesLeft,
+        loserMistakes: 3 - loser.livesLeft,
+      });
+
+      this.rankedResult = {
+        ...result,
+        resultType: "normal",
+      };
+
       this.broadcast("state", this.buildSnapshot());
     } catch (error) {
       this.rankedResultRecorded = false;

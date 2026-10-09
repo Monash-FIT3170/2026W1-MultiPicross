@@ -34,7 +34,7 @@ interface PlayerSnapshot {
   connected: boolean;
 }
 
-interface RankedResult {
+/* interface RankedResult {
   winnerAccountId: string;
   loserAccountId: string;
 
@@ -45,7 +45,40 @@ interface RankedResult {
   loserEloBefore: number;
   loserEloAfter: number;
   loserEloChange: number;
+} */
+
+
+interface NormalRankedResult {
+  resultType: "normal";
+  winnerAccountId: string;
+  loserAccountId: string;
+  winnerEloBefore: number;
+  winnerEloAfter: number;
+  winnerEloChange: number;
+  loserEloBefore: number;
+  loserEloAfter: number;
+  loserEloChange: number;
+  winnerRatingHistory: number[];
+  loserRatingHistory: number[];
 }
+
+interface DoubleEliminationResult {
+  resultType: "double-elimination";
+  playerOneSessionId: string;
+  playerTwoSessionId: string;
+  playerOneAccountId: string;
+  playerTwoAccountId: string;
+  playerOneEloBefore: number;
+  playerOneEloAfter: number;
+  playerOneEloChange: number;
+  playerOneRatingHistory: number[];
+  playerTwoEloBefore: number;
+  playerTwoEloAfter: number;
+  playerTwoEloChange: number;
+  playerTwoRatingHistory: number[];
+}
+
+type RankedResult = NormalRankedResult | DoubleEliminationResult;
 
 interface RoomSnapshot {
   phase: "waiting" | "playing" | "finished";
