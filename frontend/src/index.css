@@ -117,13 +117,13 @@
   --color-butter-500: #e0c276;
 
   --color-sage-50: #064210;
-  --color-sage-100: #096C1A;
+  --color-sage-100: #096c1a;
   --color-sage-500: #6fc493;
 
-  --color-coral-50: #6C0909;
-  --color-coral-100:#420606;
-  --color-coral-400: #FB324D;
-  --color-coral-500:#F9BDBD;
+  --color-coral-50: #6c0909;
+  --color-coral-100: #420606;
+  --color-coral-400: #fb324d;
+  --color-coral-500: #f9bdbd;
 }
 .dark .icons {
   filter: invert(1);
@@ -149,16 +149,16 @@
 
   --color-butter-50: white;
   --color-butter-100: black;
-  --color-butter-500: black;;
+  --color-butter-500: black;
 
   --color-sage-50: lightgreen;
   --color-sage-100: white;
   --color-sage-500: black;
 
   --color-coral-50: lightcoral;
-  --color-coral-100:black;
+  --color-coral-100: black;
   --color-coral-400: red;
-  --color-coral-500:black;
+  --color-coral-500: black;
 
   --color-cell-filled: var(--color-contrast-cell-filled);
   --color-accent-primary: var(--color-contrast-accent-primary);
