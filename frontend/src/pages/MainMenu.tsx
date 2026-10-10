@@ -17,7 +17,7 @@ export default function MainMenu() {
   const { status, user, guestNickname, playerName, logout } = useAuth();
 
   const isAuth = status === "authenticated";
-  const { openSettings } = useSettings();
+  const { openSettings, profileAccent } = useSettings();
 
   const wordmarkRef = useRef<HTMLDivElement>(null);
   const taglineRef = useRef<HTMLParagraphElement>(null);
@@ -104,6 +104,7 @@ export default function MainMenu() {
         >
           {isAuth ? (
             <UserDropdown
+              accent={profileAccent}
               handle={user?.handle ?? null}
               onSignOut={() => void logout()}
             />

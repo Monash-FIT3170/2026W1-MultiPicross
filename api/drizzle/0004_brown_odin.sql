@@ -1,0 +1,1 @@
+ALTER TABLE "accounts" ADD COLUMN "profile_accent" text DEFAULT '#3D5A80' NOT NULL;
