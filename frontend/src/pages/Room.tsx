@@ -34,20 +34,6 @@ interface PlayerSnapshot {
   connected: boolean;
 }
 
-/* interface RankedResult {
-  winnerAccountId: string;
-  loserAccountId: string;
-
-  winnerEloBefore: number;
-  winnerEloAfter: number;
-  winnerEloChange: number;
-
-  loserEloBefore: number;
-  loserEloAfter: number;
-  loserEloChange: number;
-} */
-
-
 interface NormalRankedResult {
   resultType: "normal";
   winnerAccountId: string;

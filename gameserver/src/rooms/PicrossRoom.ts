@@ -3,7 +3,12 @@ import { PicrossRoomState } from "./schema/PicrossRoomState.js";
 import { sql } from "../db/client.js";
 import { verifyRoomToken } from "../auth/roomToken.js";
 import { requireEnv } from "../env.js";
-import { recordRankedResult, recordDoubleEliminationResult, type RankedResult, type DoubleEliminationResult } from "../elo/ratedResults.js";
+import {
+  recordRankedResult,
+  recordDoubleEliminationResult,
+  type RankedResult,
+  type DoubleEliminationResult,
+} from "../elo/ratedResults.js";
 
 interface RoomAuth {
   username: string | null;
@@ -107,15 +112,15 @@ export class PicrossRoom extends Room {
   // private rankedResult: RankedResult | null = null;
 
   private rankedResult:
-  | (RankedResult & {
-      resultType: "normal";
-    })
-  | (DoubleEliminationResult & {
-      resultType: "double-elimination";
-      playerOneSessionId: string;
-      playerTwoSessionId: string;
-    })
-  | null = null;
+    | (RankedResult & {
+        resultType: "normal";
+      })
+    | (DoubleEliminationResult & {
+        resultType: "double-elimination";
+        playerOneSessionId: string;
+        playerTwoSessionId: string;
+      })
+    | null = null;
 
   async onCreate(options: {
     width?: number;
@@ -327,7 +332,7 @@ export class PicrossRoom extends Room {
     }
   }
 
- /*  private async recordRankedResult(): Promise<void> {
+  /*  private async recordRankedResult(): Promise<void> {
     if (!this.isRanked || this.rankedResultRecorded || !this.winnerId) {
       return;
     }
@@ -362,7 +367,6 @@ export class PicrossRoom extends Room {
     }
   } */
 
-
   private async recordRankedResult(): Promise<void> {
     if (!this.isRanked || this.rankedResultRecorded) {
       return;
@@ -378,11 +382,7 @@ export class PicrossRoom extends Room {
     const [secondSessionId, secondPlayer] = players[1];
 
     // Both players were eliminated: both lose Elo.
-    if (
-      !this.winnerId &&
-      firstPlayer.done &&
-      secondPlayer.done
-    ) {
+    if (!this.winnerId && firstPlayer.done && secondPlayer.done) {
       if (!firstPlayer.accountId || !secondPlayer.accountId) {
         return;
       }

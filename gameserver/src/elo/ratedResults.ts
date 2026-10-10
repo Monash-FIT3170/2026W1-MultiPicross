@@ -103,7 +103,6 @@ export async function recordRankedResult({
   };
 }
 
-
 export type DoubleEliminationResult = {
   playerOneAccountId: string;
   playerTwoAccountId: string;
@@ -164,11 +163,10 @@ export async function recordDoubleEliminationResult({
     `;
   });
 
-  const [playerOneRatingHistory, playerTwoRatingHistory] =
-    await Promise.all([
-      getRankedRatingHistory(playerOneAccountId),
-      getRankedRatingHistory(playerTwoAccountId),
-    ]);
+  const [playerOneRatingHistory, playerTwoRatingHistory] = await Promise.all([
+    getRankedRatingHistory(playerOneAccountId),
+    getRankedRatingHistory(playerTwoAccountId),
+  ]);
 
   return {
     playerOneAccountId,

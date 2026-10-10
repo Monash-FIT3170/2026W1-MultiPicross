@@ -21,21 +21,19 @@ export function RankedMultiplayerResults() {
   const noWinner = !winnerId;
   const didWin = !noWinner && winnerId === mySessionId;
 
-  const isDoubleElimination =
-    rankedResult?.resultType === "double-elimination";
+  const isDoubleElimination = rankedResult?.resultType === "double-elimination";
 
   const playerWon = didWin && !isDoubleElimination;
   const opponentWon = !didWin && !isDoubleElimination && !noWinner;
 
-  const opponentAbandoned = forfeit === true; 
+  const opponentAbandoned = forfeit === true;
 
   let player;
   let opponentResult;
   let ratingHistory: number[];
 
   if (isDoubleElimination) {
-    const iAmPlayerOne =
-      mySessionId === rankedResult.playerOneSessionId;
+    const iAmPlayerOne = mySessionId === rankedResult.playerOneSessionId;
 
     player = iAmPlayerOne
       ? {
@@ -165,11 +163,6 @@ export function RankedMultiplayerResults() {
 
   const resultColour = playerWon ? "#00B87C" : "#F43F5E";
   const resultBackground = playerWon ? "#D1FAE5" : "#FFE4E6";
-  const resultTitle = noWinner
-    ? "Double Elimination"
-    : didWin
-      ? "Victory!"
-      : "Defeat";
 
   /*
    * ============================================================
@@ -627,12 +620,12 @@ export function RankedMultiplayerResults() {
                     }}
                   >
                     {isDoubleElimination
-                        ? "Eliminated"
-                        : opponentAbandoned
-                            ? "Abandoned"
-                            : opponentWon
-                            ? "Winner"
-                            : "Loser"}
+                      ? "Eliminated"
+                      : opponentAbandoned
+                        ? "Abandoned"
+                        : opponentWon
+                          ? "Winner"
+                          : "Loser"}
                   </span>
                 </div>
 
@@ -898,4 +891,3 @@ export function RankedMultiplayerResults() {
     </div>
   );
 }
-
