@@ -293,16 +293,27 @@ export class PicrossRoom extends Room {
       // Never overwrite an already-decided winner either.
       if (!this.winnerId) {
         const survivors = [...this.players.entries()].filter(
-          ([sessionId, p]) => sessionId !== client.sessionId && !p.done,
+          ([sessionId, player]) =>
+            sessionId !== client.sessionId && !player.done,
         );
+
         if (survivors.length === 1) {
           this.winnerId = survivors[0][0];
         }
       }
+
       this.forfeit = true;
       this.setPhase("finished");
+
+      // IMPORTANT:
+      // Keep both players in the map after a match ends. The frontend needs
+      // both snapshots for the results page, and Elo calculation needs both
+      // players' account IDs and statistics.
+    } else if (this.state.phase !== "finished") {
+      // A player leaving the waiting lobby is not a match result.
+      this.players.delete(client.sessionId);
     }
-    this.players.delete(client.sessionId);
+
     this.broadcast("state", this.buildSnapshot());
   }
 

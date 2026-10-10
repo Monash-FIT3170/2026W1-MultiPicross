@@ -15,6 +15,7 @@ export function RankedMultiplayerResults() {
     displaySeconds,
     rankedResult,
     solution,
+    forfeit,
   } = location.state;
 
   const noWinner = !winnerId;
@@ -25,6 +26,8 @@ export function RankedMultiplayerResults() {
 
   const playerWon = didWin && !isDoubleElimination;
   const opponentWon = !didWin && !isDoubleElimination && !noWinner;
+
+  const opponentAbandoned = forfeit === true; 
 
   let player;
   let opponentResult;
@@ -624,10 +627,12 @@ export function RankedMultiplayerResults() {
                     }}
                   >
                     {isDoubleElimination
-                      ? "Eliminated"
-                      : opponentWon
-                        ? "Winner"
-                        : "Loser"}
+                        ? "Eliminated"
+                        : opponentAbandoned
+                            ? "Abandoned"
+                            : opponentWon
+                            ? "Winner"
+                            : "Loser"}
                   </span>
                 </div>
 
