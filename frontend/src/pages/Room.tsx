@@ -120,6 +120,13 @@ export function Room() {
   const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
   const mistakeCrossTimerRef = useRef<number | undefined>(undefined);
   const resultsNavigatedRef = useRef(false);
+  const [lifeLostNotice, setLifeLostNotice] = useState<{
+    id: number;
+    livesLeft: number;
+  } | null>(null);
+  const lifeLostTimerRef = useRef<number | undefined>(undefined);
+  const lifeLostNoticeIdRef = useRef(0);
+  const previousLivesRef = useRef<number | null>(null);
 
   // ── Auth, captured once ────────────────────────────────────────────────────
 
@@ -228,7 +235,10 @@ export function Room() {
       roomRef.current = null;
       // A pending index would shake a cell on whatever board renders next.
       window.clearTimeout(mistakeCrossTimerRef.current);
+      window.clearTimeout(lifeLostTimerRef.current);
       setMistakeCrossIdx(null);
+      setLifeLostNotice(null);
+      previousLivesRef.current = null;
     };
   }, [roomId, authReady, retryNonce]);
 
@@ -288,6 +298,40 @@ export function Room() {
       replace: true,
     });
   }, [isRanked, snapshot, mySessionId, displaySeconds, navigate]);
+  // ── Life lost overlay ─────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!snapshot || snapshot.phase === "waiting") {
+      previousLivesRef.current = null;
+      window.clearTimeout(lifeLostTimerRef.current);
+      return;
+    }
+
+    const sessionIds = Object.keys(snapshot.players);
+    const currentId = mySessionId ?? sessionIds[0];
+    const currentLives = currentId
+      ? snapshot.players[currentId]?.livesLeft
+      : undefined;
+
+    if (typeof currentLives !== "number") {
+      previousLivesRef.current = null;
+      return;
+    }
+
+    const previousLives = previousLivesRef.current;
+    previousLivesRef.current = currentLives;
+
+    if (previousLives === null || currentLives >= previousLives) return;
+
+    window.clearTimeout(lifeLostTimerRef.current);
+    setLifeLostNotice({
+      id: ++lifeLostNoticeIdRef.current,
+      livesLeft: currentLives,
+    });
+    lifeLostTimerRef.current = window.setTimeout(() => {
+      setLifeLostNotice(null);
+    }, 1200);
+  }, [snapshot, mySessionId]);
 
   // ── Actions ────────────────────────────────────────────────────────────────
 
@@ -304,6 +348,9 @@ export function Room() {
     setReconnecting(false);
     setSnapshot(null);
     setMistakeCrossIdx(null);
+    setLifeLostNotice(null);
+    previousLivesRef.current = null;
+    window.clearTimeout(lifeLostTimerRef.current);
     setRetryNonce((n) => n + 1);
   }
 
@@ -831,6 +878,25 @@ export function Room() {
 
       {/* Outcome banner - only used for unranked games*/}
       {isFinished && !isRanked && (
+      {/* Life lost overlay */}
+      {lifeLostNotice && (
+        <div key={lifeLostNotice.id} className="mp-life-lost-overlay">
+          <div className="mp-life-lost-card" role="status" aria-live="polite">
+            <Icon name="x" size={24} color="var(--color-coral-500)" />
+            <div>
+              <div className="mp-life-lost-title">Life lost</div>
+              <div className="mp-life-lost-subtitle">
+                {lifeLostNotice.livesLeft > 0
+                  ? `${lifeLostNotice.livesLeft}/3 lives remaining`
+                  : "No lives remaining"}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Outcome banner */}
+      {isFinished && (
         <div
           style={{
             position: "fixed",

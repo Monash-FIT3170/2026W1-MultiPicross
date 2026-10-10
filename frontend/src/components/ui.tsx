@@ -25,7 +25,9 @@ export type IconName =
   | "bar-chart"
   | "settings"
   | "home"
-  | "refresh";
+  | "refresh"
+  | "volume"
+  | "volume-x";
 
 interface IconProps {
   name: IconName;
@@ -179,6 +181,22 @@ export function Icon({
           <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
         </svg>
       );
+    case "volume":
+      return (
+        <svg {...p}>
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+        </svg>
+      );
+    case "volume-x":
+      return (
+        <svg {...p}>
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+          <line x1="23" y1="9" x2="17" y2="15" />
+          <line x1="17" y1="9" x2="23" y2="15" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -214,18 +232,80 @@ export function Logo({ size = 28 }: LogoProps) {
           width="27"
           height="27"
           rx="6.5"
-          fill="#fff"
-          stroke="#e7e4dc"
+          style={{ fill: "var(--color-surface)", stroke: "var(--color-line)" }}
         />
-        <rect x="4" y="4" width="6" height="6" rx="1.5" fill="#3d5a80" />
-        <rect x="11" y="4" width="6" height="6" rx="1.5" fill="#b8d0ec" />
-        <rect x="18" y="4" width="6" height="6" rx="1.5" fill="#3d5a80" />
-        <rect x="4" y="11" width="6" height="6" rx="1.5" fill="#b8d0ec" />
-        <rect x="11" y="11" width="6" height="6" rx="1.5" fill="#3d5a80" />
-        <rect x="18" y="11" width="6" height="6" rx="1.5" fill="#b8d0ec" />
-        <rect x="4" y="18" width="6" height="6" rx="1.5" fill="#3d5a80" />
-        <rect x="11" y="18" width="6" height="6" rx="1.5" fill="#b8d0ec" />
-        <rect x="18" y="18" width="6" height="6" rx="1.5" fill="#3d5a80" />
+        <rect
+          x="4"
+          y="4"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-500)" }}
+        />
+        <rect
+          x="11"
+          y="4"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-200)" }}
+        />
+        <rect
+          x="18"
+          y="4"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-500)" }}
+        />
+        <rect
+          x="4"
+          y="11"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-200)" }}
+        />
+        <rect
+          x="11"
+          y="11"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-500)" }}
+        />
+        <rect
+          x="18"
+          y="11"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-200)" }}
+        />
+        <rect
+          x="4"
+          y="18"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-500)" }}
+        />
+        <rect
+          x="11"
+          y="18"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-200)" }}
+        />
+        <rect
+          x="18"
+          y="18"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-500)" }}
+        />
       </svg>
       <span
         style={{
@@ -236,7 +316,7 @@ export function Logo({ size = 28 }: LogoProps) {
           letterSpacing: "-0.01em",
         }}
       >
-        Multi<span style={{ color: "var(--color-blue-500)" }}>Picross</span>
+        Multi<span style={{ color: "var(--color-logo)" }}>Picross</span>
       </span>
     </div>
   );
@@ -269,10 +349,13 @@ const BTN_BASE: CSSProperties = {
 };
 
 const VARIANT_STYLES: Record<ButtonVariant, CSSProperties> = {
-  primary: { background: "var(--color-blue-500)", color: "#fff" },
-  dark: { background: "#1c1c1e", color: "#fff" },
+  primary: {
+    background: "var(--color-blue-500)",
+    color: "var(--color-blue-50)",
+  },
+  dark: { background: "var(--color-paper)", color: "var(--color-ink)" },
   ghost: {
-    background: "#fff",
+    background: "var(--color-surface)",
     color: "var(--color-ink)",
     borderColor: "var(--color-line)",
   },
@@ -387,28 +470,102 @@ export function Chip({ tone = "blue", children, style }: ChipProps) {
 
 // ──── LivesPips ───────────────────────────────────────────────────────────────
 
+const HEART_PATH =
+  "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z";
+
+// How long a heart takes to break. Keep in sync with the
+// mp-heart-break-* animations in index.css.
+const HEART_BREAK_MS = 700;
+
+function HeartShape({ fill, className }: { fill: string; className?: string }) {
+  return (
+    <svg
+      width={18}
+      height={18}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+      style={{ fill, transition: "fill 200ms ease", display: "block" }}
+    >
+      <path d={HEART_PATH} />
+    </svg>
+  );
+}
+
 interface LivesPipsProps {
   lives: number;
   max?: number;
 }
 
 export function LivesPips({ lives, max = 3 }: LivesPipsProps) {
+  // Indices of hearts currently playing the break animation.
+  const [breaking, setBreaking] = useState<number[]>([]);
+  const [prevLives, setPrevLives] = useState(lives);
+
+  // When lives drops, mark the newly lost hearts as breaking. Done during
+  // render (rather than in an effect) so the animation starts on the same
+  // frame the heart turns grey.
+  if (lives !== prevLives) {
+    setPrevLives(lives);
+    if (lives < prevLives) {
+      const lost: number[] = [];
+      for (let i = Math.max(0, lives); i < Math.min(prevLives, max); i++) {
+        lost.push(i);
+      }
+      setBreaking((b) => [...new Set([...b, ...lost])]);
+    } else {
+      // Lives went up (e.g. a new game started), so cancel any breaks.
+      setBreaking([]);
+    }
+  }
+
+  useEffect(() => {
+    if (breaking.length === 0) return;
+    const t = setTimeout(() => setBreaking([]), HEART_BREAK_MS);
+    return () => clearTimeout(t);
+  }, [breaking]);
+
   return (
-    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-      {Array.from({ length: max }, (_, i) => (
-        <div
-          key={i}
-          style={{
-            width: 18,
-            height: 18,
-            borderRadius: "50%",
-            background:
-              i < lives ? "var(--color-coral-400)" : "var(--color-line-strong)",
-            transition: "background 200ms ease",
-            flexShrink: 0,
-          }}
-        />
-      ))}
+    <div
+      role="img"
+      aria-label={`${Math.max(0, lives)} of ${max} lives left`}
+      style={{ display: "flex", gap: 8, alignItems: "center" }}
+    >
+      {Array.from({ length: max }, (_, i) => {
+        const alive = i < lives;
+        const isBreaking = !alive && breaking.includes(i);
+        return (
+          <span
+            key={i}
+            className={isBreaking ? "mp-heart-breaking" : undefined}
+            style={{
+              position: "relative",
+              width: 18,
+              height: 18,
+              flexShrink: 0,
+            }}
+          >
+            {/* The heart that stays behind: coral while alive, grey once lost */}
+            <HeartShape
+              className={isBreaking ? "mp-heart-break-base" : undefined}
+              fill={
+                alive ? "var(--color-coral-400)" : "var(--color-line-strong)"
+              }
+            />
+            {/* Two coral halves that crack apart and fall away */}
+            {isBreaking && (
+              <>
+                <span className="mp-heart-half mp-heart-half--left">
+                  <HeartShape fill="var(--color-coral-400)" />
+                </span>
+                <span className="mp-heart-half mp-heart-half--right">
+                  <HeartShape fill="var(--color-coral-400)" />
+                </span>
+              </>
+            )}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -525,7 +682,7 @@ export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
           alignItems: "center",
           gap: 9,
           padding: "7px 12px 7px 8px",
-          background: "#fff",
+          background: "var(--color-paper)",
           border: "1px solid var(--color-line)",
           borderRadius: 10,
           borderBottomLeftRadius: panelMounted ? 0 : 10,
@@ -613,7 +770,7 @@ export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
         >
           <div
             style={{
-              background: "#fff",
+              background: "var(--color-paper)",
               border: "1px solid var(--color-line)",
               borderTop: "none",
               borderRadius: "0 0 10px 10px",
