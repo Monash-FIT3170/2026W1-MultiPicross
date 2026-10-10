@@ -5,7 +5,7 @@
 @theme {
   /*Custom colours for the main app*/
   --color-background: #f7f6f2;
-  --color-surface: #ffffff;
+  --color-surface: white;
   --color-cell-unknown: #f0eee9;
   --color-cell-filled: #3d5a80;
   --color-cell-filled-opponent: #3d5a8040;
@@ -20,8 +20,8 @@
   --color-clue-number: #3d3d3d;
 
   /*Custom colours for high contrast mode*/
-  --color-contrast-background: #ffffff;
-  --color-contrast-cell-filled: #000000;
+  --color-contrast-background: white;
+  --color-contrast-cell-filled: black;
   --color-contrast-accent-primary: #0053bf;
   --color-contrast-accent-error: #d62e00;
   --color-contrast-accent-win: #00ff73;
@@ -34,7 +34,7 @@
 /* ──── Design system tokens (defined above @layer so they win over layered styles) ──── */
 :root {
   --color-paper: #f7f6f2;
-  --color-surface: #ffffff;
+  --color-surface: white;
   --color-surface-sunk: #f0f3f5;
   --color-ink: #1c1c1e;
   --color-ink-soft: #4a4a52;
@@ -58,7 +58,7 @@
   --color-coral-500: #c45f44;
 
   /* Text and icons that sit on an accent (blue-500) background. */
-  --color-on-accent: #ffffff;
+  --color-on-accent: white;
 
   --color-sage-50: #ecf6f0;
   --color-sage-100: #d4ebde;
@@ -113,10 +113,17 @@
   --color-logo: var(--color-blue-100);
 
   --color-butter-50: #332f24;
+  --color-butter-100: #4d452e;
   --color-butter-500: #e0c276;
 
-  --color-sage-50: #22332a;
+  --color-sage-50: #064210;
+  --color-sage-100: #096c1a;
   --color-sage-500: #6fc493;
+
+  --color-coral-50: #6c0909;
+  --color-coral-100: #420606;
+  --color-coral-400: #fb324d;
+  --color-coral-500: #f9bdbd;
 }
 .dark .icons {
   filter: invert(1);
@@ -127,24 +134,31 @@
   --color-surface: var(--color-contrast-background);
   --color-surface-sunk: var(--color-contrast-background);
 
-  --color-ink: #000000;
-  --color-ink-soft: #000000;
-  --color-ink-muted: #000000;
-  --color-ink-faint: #000000;
-  --color-ink-clue: #000000;
+  --color-ink: black;
+  --color-ink-soft: black;
+  --color-ink-muted: black;
+  --color-ink-faint: black;
+  --color-ink-clue: black;
 
-  --color-line: #000000;
-  --color-line-strong: #000000;
+  --color-line: black;
+  --color-line-strong: black;
 
-  --color-blue-50: #ffffff;
+  --color-blue-50: white;
   --color-blue-500: var(--color-contrast-accent-primary);
   --color-logo: var(--color-contrast-accent-primary);
 
-  --color-butter-50: #ffffff;
-  --color-butter-500: #000000;
+  --color-butter-50: white;
+  --color-butter-100: black;
+  --color-butter-500: black;
 
-  --color-sage-50: #ffffff;
-  --color-sage-500: #000000;
+  --color-sage-50: lightgreen;
+  --color-sage-100: white;
+  --color-sage-500: black;
+
+  --color-coral-50: lightcoral;
+  --color-coral-100: black;
+  --color-coral-400: red;
+  --color-coral-500: black;
 
   --color-cell-filled: var(--color-contrast-cell-filled);
   --color-accent-primary: var(--color-contrast-accent-primary);
