@@ -34,6 +34,38 @@ interface PlayerSnapshot {
   connected: boolean;
 }
 
+interface NormalRankedResult {
+  resultType: "normal";
+  winnerAccountId: string;
+  loserAccountId: string;
+  winnerEloBefore: number;
+  winnerEloAfter: number;
+  winnerEloChange: number;
+  loserEloBefore: number;
+  loserEloAfter: number;
+  loserEloChange: number;
+  winnerRatingHistory: number[];
+  loserRatingHistory: number[];
+}
+
+interface DoubleEliminationResult {
+  resultType: "double-elimination";
+  playerOneSessionId: string;
+  playerTwoSessionId: string;
+  playerOneAccountId: string;
+  playerTwoAccountId: string;
+  playerOneEloBefore: number;
+  playerOneEloAfter: number;
+  playerOneEloChange: number;
+  playerOneRatingHistory: number[];
+  playerTwoEloBefore: number;
+  playerTwoEloAfter: number;
+  playerTwoEloChange: number;
+  playerTwoRatingHistory: number[];
+}
+
+type RankedResult = NormalRankedResult | DoubleEliminationResult;
+
 interface RoomSnapshot {
   phase: "waiting" | "playing" | "finished";
   inviteCode: string;
@@ -45,6 +77,8 @@ interface RoomSnapshot {
   winnerId: string;
   forfeit: boolean;
   colors?: string[];
+  rankedResult?: RankedResult;
+  solution?: number[];
 }
 
 function buildGrid(p: PlayerSnapshot): CellValue[] {
@@ -135,6 +169,7 @@ export function Room() {
   const intentionalLeaveRef = useRef(false);
   const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
   const mistakeCrossTimerRef = useRef<number | undefined>(undefined);
+  const resultsNavigatedRef = useRef(false);
   const [actionMode, setActionMode] = useState<"fill" | "cross">("fill");
   const [lifeLostNotice, setLifeLostNotice] = useState<{
     id: number;
@@ -277,6 +312,43 @@ export function Room() {
     return () => clearInterval(id);
   }, [snapshot?.phase]);
 
+  // ── Ranked results navigation ───────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!isRanked) return;
+    if (snapshot?.phase !== "finished") return;
+    if (!snapshot.rankedResult) return;
+    if (resultsNavigatedRef.current) return;
+
+    const sessionIds = Object.keys(snapshot.players);
+    const myId = mySessionId ?? sessionIds[0];
+    const opponentId = sessionIds.find((id) => id !== myId) ?? null;
+
+    const me = snapshot.players[myId];
+    const opponent = opponentId ? snapshot.players[opponentId] : null;
+
+    if (!me || !opponent) return;
+
+    resultsNavigatedRef.current = true;
+
+    navigate("/multiplayer/ranked/results", {
+      state: {
+        winnerId: snapshot.winnerId,
+        mySessionId: myId,
+        opponentId,
+        me,
+        opponent,
+        width: snapshot.width,
+        height: snapshot.height,
+        colors: snapshot.colors,
+        forfeit: snapshot.forfeit,
+        displaySeconds,
+        rankedResult: snapshot.rankedResult,
+        solution: snapshot.solution,
+      },
+      replace: true,
+    });
+  }, [isRanked, snapshot, mySessionId, displaySeconds, navigate]);
   // ── Life lost overlay ─────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -351,7 +423,7 @@ export function Room() {
     if (snapshot?.phase === "playing") {
       setConfirmingAbandon(true);
     } else {
-      navigate("/multiplayer/casual");
+      navigate(isRanked ? "/multiplayer/competitive" : "/multiplayer/casual");
     }
   }
 
@@ -372,7 +444,7 @@ export function Room() {
       /* ignore — navigating away regardless */
     }
     roomRef.current = null;
-    navigate("/multiplayer/casual");
+    navigate(isRanked ? "/multiplayer/competitive" : "/multiplayer/casual");
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -881,6 +953,9 @@ export function Room() {
           <span>Connection lost — reconnecting…</span>
         </div>
       )}
+
+      {/* Outcome banner - only used for unranked games
+      {isFinished && !isRanked && ( )} */}
 
       {/* Life lost overlay */}
       {lifeLostNotice && (

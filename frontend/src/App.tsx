@@ -18,6 +18,7 @@ import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { useAuth } from "./auth/AuthContext";
 
 import { SettingsModal } from "./components/settings/SettingsModal";
+import { RankedMultiplayerResults } from "./pages/RankedMultiplayerResult";
 
 export default function App() {
   const { status, user } = useAuth();
@@ -51,6 +52,10 @@ export default function App() {
           {/* Guests arriving on an invite link are bounced to /nickname, which
               navigates back here once a name is set. */}
           <Route path="/room/:roomId" element={<Room />} />
+          <Route
+            path="/multiplayer/ranked/results"
+            element={<RankedMultiplayerResults />}
+          />
         </Route>
         {/* Bare /multiplayer has no page of its own; without this it would hit the
             catch-all below and silently land on the main menu. */}

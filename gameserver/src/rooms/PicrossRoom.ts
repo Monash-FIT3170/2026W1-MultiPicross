@@ -3,7 +3,12 @@ import { PicrossRoomState } from "./schema/PicrossRoomState.js";
 import { sql } from "../db/client.js";
 import { verifyRoomToken } from "../auth/roomToken.js";
 import { requireEnv } from "../env.js";
-import { recordRankedResult } from "../elo/ratedResults.js";
+import {
+  recordRankedResult,
+  recordDoubleEliminationResult,
+  type RankedResult,
+  type DoubleEliminationResult,
+} from "../elo/ratedResults.js";
 
 interface RoomAuth {
   username: string | null;
@@ -104,6 +109,18 @@ export class PicrossRoom extends Room {
   private forfeit = false;
   private isRanked = false;
   private rankedResultRecorded = false;
+  // private rankedResult: RankedResult | null = null;
+
+  private rankedResult:
+    | (RankedResult & {
+        resultType: "normal";
+      })
+    | (DoubleEliminationResult & {
+        resultType: "double-elimination";
+        playerOneSessionId: string;
+        playerTwoSessionId: string;
+      })
+    | null = null;
 
   async onCreate(options: {
     width?: number;
@@ -281,16 +298,27 @@ export class PicrossRoom extends Room {
       // Never overwrite an already-decided winner either.
       if (!this.winnerId) {
         const survivors = [...this.players.entries()].filter(
-          ([sessionId, p]) => sessionId !== client.sessionId && !p.done,
+          ([sessionId, player]) =>
+            sessionId !== client.sessionId && !player.done,
         );
+
         if (survivors.length === 1) {
           this.winnerId = survivors[0][0];
         }
       }
+
       this.forfeit = true;
       this.setPhase("finished");
+
+      // IMPORTANT:
+      // Keep both players in the map after a match ends. The frontend needs
+      // both snapshots for the results page, and Elo calculation needs both
+      // players' account IDs and statistics.
+    } else if (this.state.phase !== "finished") {
+      // A player leaving the waiting lobby is not a match result.
+      this.players.delete(client.sessionId);
     }
-    this.players.delete(client.sessionId);
+
     this.broadcast("state", this.buildSnapshot());
   }
 
@@ -304,24 +332,124 @@ export class PicrossRoom extends Room {
     }
   }
 
-  private async recordRankedResult(): Promise<void> {
-    if (!this.isRanked || this.rankedResultRecorded || !this.winnerId) return;
+  /*  private async recordRankedResult(): Promise<void> {
+    if (!this.isRanked || this.rankedResultRecorded || !this.winnerId) {
+      return;
+    }
 
     const winner = this.players.get(this.winnerId);
+
     const loser = [...this.players.entries()].find(
       ([sessionId]) => sessionId !== this.winnerId,
     )?.[1];
 
-    if (!winner?.accountId || !loser?.accountId) return;
+    if (!winner?.accountId || !loser?.accountId) {
+      return;
+    }
 
     this.rankedResultRecorded = true;
+
     try {
-      await recordRankedResult({
+      this.rankedResult = await recordRankedResult({
         winnerAccountId: winner.accountId,
         loserAccountId: loser.accountId,
         winnerMistakes: 3 - winner.livesLeft,
         loserMistakes: 3 - loser.livesLeft,
       });
+
+      // The first "finished" snapshot may have been sent before
+      // the Elo calculation completed. Broadcast another snapshot
+      // now that the real ranked result is available.
+      this.broadcast("state", this.buildSnapshot());
+    } catch (error) {
+      this.rankedResultRecorded = false;
+      console.error("ranked result error", error);
+    }
+  } */
+
+  private async recordRankedResult(): Promise<void> {
+    if (!this.isRanked || this.rankedResultRecorded) {
+      return;
+    }
+
+    const players = [...this.players.entries()];
+
+    if (players.length !== 2) {
+      return;
+    }
+
+    const [firstSessionId, firstPlayer] = players[0];
+    const [secondSessionId, secondPlayer] = players[1];
+
+    // Both players were eliminated: both lose Elo.
+    if (!this.winnerId && firstPlayer.done && secondPlayer.done) {
+      if (!firstPlayer.accountId || !secondPlayer.accountId) {
+        return;
+      }
+
+      this.rankedResultRecorded = true;
+
+      try {
+        const result = await recordDoubleEliminationResult({
+          playerOneAccountId: firstPlayer.accountId,
+          playerTwoAccountId: secondPlayer.accountId,
+          playerOneMistakes: 3 - firstPlayer.livesLeft,
+          playerTwoMistakes: 3 - secondPlayer.livesLeft,
+        });
+
+        this.rankedResult = {
+          ...result,
+          resultType: "double-elimination",
+          playerOneSessionId: firstSessionId,
+          playerTwoSessionId: secondSessionId,
+        };
+
+        // Send a new snapshot after both Elo updates have completed.
+        this.broadcast("state", this.buildSnapshot());
+
+        console.log("Double-elimination Elo recorded.");
+      } catch (error) {
+        this.rankedResultRecorded = false;
+        console.error("Double-elimination Elo error", error);
+      }
+
+      return;
+    }
+
+    // Normal ranked result: one player won.
+    if (!this.winnerId) {
+      return;
+    }
+
+    const winner = this.players.get(this.winnerId);
+
+    const loser =
+      this.winnerId === firstSessionId
+        ? secondPlayer
+        : this.winnerId === secondSessionId
+          ? firstPlayer
+          : undefined;
+
+    if (!winner?.accountId || !loser?.accountId) {
+      return;
+    }
+
+    this.rankedResultRecorded = true;
+
+    try {
+      const result = await recordRankedResult({
+        winnerAccountId: winner.accountId,
+        loserAccountId: loser.accountId,
+        winnerMistakes: 3 - winner.livesLeft,
+        loserMistakes: 3 - loser.livesLeft,
+      });
+
+      this.rankedResult = {
+        ...result,
+        resultType: "normal",
+      };
+
+      this.broadcast("state", this.buildSnapshot());
     } catch (error) {
       this.rankedResultRecorded = false;
       console.error("ranked result error", error);
@@ -465,10 +593,13 @@ export class PicrossRoom extends Room {
       players,
       winnerId: this.winnerId,
       forfeit: this.forfeit,
+
+      rankedResult: this.isRanked ? this.rankedResult : undefined,
     };
 
     if (this.state.phase === "finished") {
       snapshot.colors = this.colors;
+      snapshot.solution = [...this.solution];
     }
 
     return snapshot;
