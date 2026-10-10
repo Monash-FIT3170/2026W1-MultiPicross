@@ -876,8 +876,9 @@ export function Room() {
         </div>
       )}
 
-      {/* Outcome banner - only used for unranked games*/}
-      {isFinished && !isRanked && (
+      {/* Outcome banner - only used for unranked games
+      {isFinished && !isRanked && ( )} */}
+
       {/* Life lost overlay */}
       {lifeLostNotice && (
         <div key={lifeLostNotice.id} className="mp-life-lost-overlay">
