@@ -18,6 +18,7 @@ type AuthStatus = "loading" | "authenticated" | "unauthenticated";
 interface AuthUser {
   id: string;
   handle: string | null;
+  profileAccent: string;
   kind: "sso" | "service";
 }
 
@@ -32,6 +33,12 @@ interface AuthContextValue extends AuthState {
   login: (username: string, password: string) => Promise<void>;
   signIn: (returnTo?: string) => void;
   setHandle: (handle: string) => Promise<void>;
+  setProfileAccent: (profileAccent: string) => Promise<void>;
+  changePassword: (
+    currentPassword: string,
+    newPassword: string,
+  ) => Promise<void>;
+  deleteAccount: () => Promise<void>;
   logout: () => Promise<void>;
   setGuestNickname: (nickname: string) => void;
 }
@@ -133,6 +140,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
+  async function setProfileAccent(profileAccent: string): Promise<void> {
+    const res = await apiFetch("/auth/profile-accent", {
+      method: "POST",
+      body: JSON.stringify({ profileAccent }),
+    });
+
+    if (!res.ok) {
+      await throwApiError(res);
+    }
+
+    const body = (await res.json()) as { profileAccent: string };
+
+    setState((prev) =>
+      prev.user
+        ? {
+            ...prev,
+            user: {
+              ...prev.user,
+              profileAccent: body.profileAccent,
+            },
+          }
+        : prev,
+    );
+  }
+
+  async function changePassword(
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    const res = await apiFetch("/auth/password", {
+      method: "POST",
+      body: JSON.stringify({
+        currentPassword,
+        newPassword,
+      }),
+    });
+
+    if (!res.ok) {
+      await throwApiError(res);
+    }
+  }
+
+  async function deleteAccount(): Promise<void> {
+    const res = await apiFetch("/auth/account", {
+      method: "DELETE",
+    });
+
+    if (!res.ok) {
+      await throwApiError(res);
+    }
+
+    setState({
+      status: "unauthenticated",
+      user: null,
+      guestNickname: null,
+    });
+  }
+
   async function logout(): Promise<void> {
     await apiFetch("/auth/logout", { method: "POST" });
 
@@ -149,6 +214,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         signIn,
         setHandle,
+        setProfileAccent,
+        changePassword,
+        deleteAccount,
         logout,
         setGuestNickname,
       }}
