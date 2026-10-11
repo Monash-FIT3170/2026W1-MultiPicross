@@ -19,9 +19,9 @@
   --color-text-muted: #6b6b6b;
   --color-clue-number: #3d3d3d;
   --color-result-win: #4caf78;
-  --color-result-loss: #F43F5E;
-  --color-result-win-background: #D1FAE5;
-  --color-result-loss-background: #FFE4E6;
+  --color-result-loss: #f43f5e;
+  --color-result-win-background: #d1fae5;
+  --color-result-loss-background: #ffe4e6;
 
   /*Custom colours for high contrast mode*/
   --color-contrast-background: #ffffff;
@@ -122,11 +122,10 @@
   --color-sage-50: #22332a;
   --color-sage-500: #6fc493;
 
-  --color-result-win: #34D399;
-  --color-result-loss: #FB7185;
-  --color-result-win-background: #064E3B;
+  --color-result-win: #34d399;
+  --color-result-loss: #fb7185;
+  --color-result-win-background: #064e3b;
   --color-result-loss-background: #881337;
-
 }
 .dark .icons {
   filter: invert(1);
@@ -163,8 +162,8 @@
 
   --color-result-win: var(--color-sage-400);
   --color-result-loss: var(--color-coral-500);
-  --color-result-win-background: #FFFFFF;
-  --color-result-loss-background: #FFFFFF;
+  --color-result-win-background: #ffffff;
+  --color-result-loss-background: #ffffff;
 }
 .high-contrast .icons {
   filter: brightness(0);

@@ -21,8 +21,7 @@ export function RankedMultiplayerResults() {
   const noWinner = !winnerId;
   const didWin = !noWinner && winnerId === mySessionId;
 
-  const isDoubleElimination =
-    rankedResult?.resultType === "double-elimination";
+  const isDoubleElimination = rankedResult?.resultType === "double-elimination";
 
   const playerWon = didWin && !isDoubleElimination;
   const opponentWon = !didWin && !isDoubleElimination && !noWinner;
@@ -34,8 +33,7 @@ export function RankedMultiplayerResults() {
   let ratingHistory: number[];
 
   if (isDoubleElimination) {
-    const iAmPlayerOne =
-      mySessionId === rankedResult.playerOneSessionId;
+    const iAmPlayerOne = mySessionId === rankedResult.playerOneSessionId;
 
     player = iAmPlayerOne
       ? {
@@ -554,8 +552,7 @@ export function RankedMultiplayerResults() {
                     color: "var(--color-ink-muted)",
                   }}
                 >
-                  {player.mistakes}{" "}
-                  {player.mistakes === 1 ? "error" : "errors"}
+                  {player.mistakes} {player.mistakes === 1 ? "error" : "errors"}
                 </div>
 
                 {/* Progress bar */}
@@ -909,4 +906,3 @@ export function RankedMultiplayerResults() {
     </div>
   );
 }
-
