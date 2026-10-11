@@ -535,7 +535,7 @@ export function RankedMultiplayerResults() {
                     color: "var(--color-ink-muted)",
                   }}
                 >
-                  {player.mistakes} error
+                  {player.mistakes} {player.mistakes === 1 ? "error" : "errors"}
                 </div>
 
                 {/* Progress bar */}
@@ -685,7 +685,7 @@ export function RankedMultiplayerResults() {
                     color: "var(--color-ink-muted)",
                   }}
                 >
-                  {opponentResult.mistakes} errors
+                  {opponentResult.mistakes} {opponentResult.mistakes === 1 ? "error" : "errors"}
                 </div>
 
                 {/* Progress bar */}
