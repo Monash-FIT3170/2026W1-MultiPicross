@@ -21,7 +21,7 @@ export interface MyAchievement {
 
 // Definitions only change on deploy, so one fetch per session is enough —
 // shared by the unlock toast (Singleplayer.tsx) and the achievements screen
-// (Statistics.tsx).
+// (Achievements.tsx).
 let definitionsCache: AchievementDef[] | null = null;
 
 export function useAchievementDefinitions() {

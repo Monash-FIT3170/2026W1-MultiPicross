@@ -403,7 +403,7 @@ export default function MainMenu() {
               badge={!isAuth ? <SignInHint /> : undefined}
             />
 
-            {/* Statistics */}
+            {/* Achievements */}
             <SecondaryTile
               disabled={!isAuth}
               icon={
@@ -413,8 +413,8 @@ export default function MainMenu() {
                   style={{ width: 20, height: 20, opacity: 0.8 }}
                 />
               }
-              label="Statistics"
-              onClick={isAuth ? () => navigate("/statistics") : undefined}
+              label="Achievements"
+              onClick={isAuth ? () => navigate("/achievements") : undefined}
               badge={!isAuth ? <SignInHint /> : undefined}
             />
 

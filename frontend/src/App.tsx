@@ -4,7 +4,7 @@ import MainMenu from "./pages/MainMenu";
 import { Singleplayer } from "./pages/Singleplayer";
 import { UnratedMultiplayer } from "./pages/UnratedMultiplayer";
 import { Room } from "./pages/Room";
-import { Statistics } from "./pages/Statistics";
+import { Achievements } from "./pages/Achievements";
 import { Tutorial } from "./pages/Tutorial";
 import { Settings } from "./pages/Settings";
 import { AuthLayout } from "./pages/AuthLayout";
@@ -60,7 +60,7 @@ export default function App() {
         <Route path="/welcome" element={<ChooseHandle />} />
         <Route path="/auth/error" element={<AuthError />} />
         <Route element={<ProtectedRoute />}>
-          <Route path="/statistics" element={<Statistics />} />
+          <Route path="/achievements" element={<Achievements />} />
         </Route>
         <Route element={<GuestOnly />}>
           <Route path="/nickname" element={<GuestNickname />} />

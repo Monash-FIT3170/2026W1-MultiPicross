@@ -17,7 +17,7 @@ const RETURN_TO_PATHS = new Set([
   "/singleplayer",
   "/multiplayer/unrated",
   "/multiplayer/ranked",
-  "/statistics",
+  "/achievements",
   "/tutorial",
   "/settings",
   "/welcome",
