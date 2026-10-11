@@ -21,7 +21,8 @@ export function RankedMultiplayerResults() {
   const noWinner = !winnerId;
   const didWin = !noWinner && winnerId === mySessionId;
 
-  const isDoubleElimination = rankedResult?.resultType === "double-elimination";
+  const isDoubleElimination =
+    rankedResult?.resultType === "double-elimination";
 
   const playerWon = didWin && !isDoubleElimination;
   const opponentWon = !didWin && !isDoubleElimination && !noWinner;
@@ -33,7 +34,8 @@ export function RankedMultiplayerResults() {
   let ratingHistory: number[];
 
   if (isDoubleElimination) {
-    const iAmPlayerOne = mySessionId === rankedResult.playerOneSessionId;
+    const iAmPlayerOne =
+      mySessionId === rankedResult.playerOneSessionId;
 
     player = iAmPlayerOne
       ? {
@@ -161,8 +163,33 @@ export function RankedMultiplayerResults() {
     ratingHistory.length - 1,
   );
 
-  const resultColour = playerWon ? "#00B87C" : "#F43F5E";
-  const resultBackground = playerWon ? "#D1FAE5" : "#FFE4E6";
+  /*
+   * ============================================================
+   * THEME-AWARE RESULT COLOURS
+   * ============================================================
+   */
+
+  const resultColour = playerWon
+    ? "var(--color-result-win)"
+    : "var(--color-result-loss)";
+
+  const resultBackground = playerWon
+    ? "var(--color-result-win-background)"
+    : "var(--color-result-loss-background)";
+
+  const winColour = "var(--color-result-win)";
+  const lossColour = "var(--color-result-loss)";
+
+  const playerColour = playerWon ? winColour : lossColour;
+  const opponentColour = opponentWon ? winColour : lossColour;
+
+  const playerBackground = playerWon
+    ? "var(--color-result-win-background)"
+    : "var(--color-result-loss-background)";
+
+  const opponentBackground = opponentWon
+    ? "var(--color-result-win-background)"
+    : "var(--color-result-loss-background)";
 
   /*
    * ============================================================
@@ -177,11 +204,11 @@ export function RankedMultiplayerResults() {
         position: "relative",
         display: "flex",
         flexDirection: "column",
+        background: "var(--color-paper)",
+        color: "var(--color-ink)",
       }}
     >
-      {/* ======================================================
-          TOP BAR
-          ====================================================== */}
+      {/* TOP BAR */}
 
       <div
         style={{
@@ -198,13 +225,11 @@ export function RankedMultiplayerResults() {
           zIndex: 10,
         }}
       >
-        {/* Lobby button */}
-
         <button
           onClick={() => navigate("/")}
           style={{
-            border: "1px solid #D1D5DB",
-            background: "white",
+            border: "1px solid var(--color-line)",
+            background: "var(--color-surface)",
             borderRadius: 10,
             padding: "8px 14px",
             fontSize: 14,
@@ -217,9 +242,7 @@ export function RankedMultiplayerResults() {
         </button>
       </div>
 
-      {/* ======================================================
-          MAIN SPLIT SCREEN
-          ====================================================== */}
+      {/* MAIN SPLIT SCREEN */}
 
       <div
         style={{
@@ -229,9 +252,7 @@ export function RankedMultiplayerResults() {
           minHeight: "100vh",
         }}
       >
-        {/* ====================================================
-            LEFT RESULT PANEL
-            ==================================================== */}
+        {/* LEFT RESULT PANEL */}
 
         <div
           style={{
@@ -250,12 +271,12 @@ export function RankedMultiplayerResults() {
               width: 52,
               height: 52,
               borderRadius: 14,
-              background: "white",
+              background: "var(--color-surface)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: 26,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+              boxShadow: "0 2px 8px var(--color-line)",
               marginBottom: 18,
             }}
           >
@@ -271,10 +292,10 @@ export function RankedMultiplayerResults() {
               lineHeight: 1.2,
               fontWeight: 800,
               color: isDoubleElimination
-                ? "#BE123C"
+                ? lossColour
                 : didWin
-                  ? "#047857"
-                  : "#BE123C",
+                  ? winColour
+                  : lossColour,
               textAlign: "center",
               width: "100%",
             }}
@@ -293,7 +314,7 @@ export function RankedMultiplayerResults() {
               marginTop: 12,
               fontSize: 14,
               fontWeight: 600,
-              color: didWin ? "#059669" : "#E11D48",
+              color: didWin ? winColour : lossColour,
             }}
           >
             Rated Match · {match.boardSize} · {match.time}
@@ -308,24 +329,22 @@ export function RankedMultiplayerResults() {
               fontSize: 11,
               fontWeight: 800,
               letterSpacing: "0.12em",
-              color: didWin ? "#059669" : "#E11D48",
+              color: didWin ? winColour : lossColour,
             }}
           >
             COMPLETED PUZZLE
           </div>
 
-          {/* ==================================================
-              PICROSS BOARD
-              ================================================== */}
+          {/* PICROSS BOARD */}
 
           <div
             style={{
               width: "min(310px, 80%)",
               aspectRatio: "1",
               padding: 10,
-              background: "white",
+              background: "var(--color-surface)",
               borderRadius: 14,
-              boxShadow: "0 3px 12px rgba(0,0,0,0.08)",
+              boxShadow: "0 3px 12px var(--color-line)",
             }}
           >
             <div
@@ -334,7 +353,7 @@ export function RankedMultiplayerResults() {
                 height: "100%",
                 display: "grid",
                 gridTemplateColumns: `repeat(${completedPuzzle.length}, 1fr)`,
-                border: "1px solid #D1D5DB",
+                border: "1px solid var(--color-line)",
               }}
             >
               {completedPuzzle.flatMap((row, rowIndex) =>
@@ -342,15 +361,17 @@ export function RankedMultiplayerResults() {
                   <div
                     key={`${rowIndex}-${columnIndex}`}
                     style={{
-                      background: cell ? resultColour : "#F3F4F6",
+                      background: cell
+                        ? "var(--color-ink)"
+                        : "var(--color-surface-sunk)",
                       borderRight:
                         columnIndex === row.length - 1
                           ? "none"
-                          : "1px solid white",
+                          : "1px solid var(--color-line)",
                       borderBottom:
                         rowIndex === completedPuzzle.length - 1
                           ? "none"
-                          : "1px solid white",
+                          : "1px solid var(--color-line)",
                     }}
                   />
                 )),
@@ -359,9 +380,7 @@ export function RankedMultiplayerResults() {
           </div>
         </div>
 
-        {/* ====================================================
-            RIGHT MATCH SUMMARY
-            ==================================================== */}
+        {/* RIGHT MATCH SUMMARY */}
 
         <div
           style={{
@@ -391,9 +410,7 @@ export function RankedMultiplayerResults() {
               Match Summary
             </h2>
 
-            {/* ==================================================
-                PLAYER SUMMARY CARDS
-                ================================================== */}
+            {/* PLAYER SUMMARY CARDS */}
 
             <div
               style={{
@@ -409,8 +426,8 @@ export function RankedMultiplayerResults() {
                 style={{
                   padding: 16,
                   borderRadius: 12,
-                  border: `2px solid ${playerWon ? "#10B981" : "#FB7185"}`,
-                  background: playerWon ? "#F0FDF4" : "#FFF1F2",
+                  border: `2px solid ${playerColour}`,
+                  background: playerBackground,
                 }}
               >
                 {/* Name row */}
@@ -435,12 +452,14 @@ export function RankedMultiplayerResults() {
                         width: 30,
                         height: 30,
                         borderRadius: "50%",
-                        background: playerWon ? "#A7F3D0" : "#FECDD3",
+                        background: "var(--color-surface)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         fontSize: 13,
                         fontWeight: 800,
+                        color: "var(--color-ink)",
+                        border: "1px solid var(--color-line)",
                       }}
                     >
                       Y
@@ -464,11 +483,11 @@ export function RankedMultiplayerResults() {
                       padding: "4px 8px",
                       borderRadius: 20,
                       background: isDoubleElimination
-                        ? "#FB7185"
+                        ? lossColour
                         : playerWon
-                          ? "#10B981"
-                          : "#FB7185",
-                      color: "white",
+                          ? winColour
+                          : lossColour,
+                      color: "var(--color-paper)",
                     }}
                   >
                     {isDoubleElimination
@@ -503,7 +522,7 @@ export function RankedMultiplayerResults() {
                     style={{
                       fontSize: 13,
                       fontWeight: 700,
-                      color: playerWon ? "#059669" : "#E11D48",
+                      color: playerColour,
                     }}
                   >
                     {player.eloChange > 0 ? "+" : ""}
@@ -530,12 +549,13 @@ export function RankedMultiplayerResults() {
                     marginTop: 12,
                     padding: "7px 9px",
                     borderRadius: 8,
-                    background: "rgba(255,255,255,0.7)",
+                    background: "var(--color-surface)",
                     fontSize: 11,
                     color: "var(--color-ink-muted)",
                   }}
                 >
-                  {player.mistakes} {player.mistakes === 1 ? "error" : "errors"}
+                  {player.mistakes}{" "}
+                  {player.mistakes === 1 ? "error" : "errors"}
                 </div>
 
                 {/* Progress bar */}
@@ -545,7 +565,7 @@ export function RankedMultiplayerResults() {
                     height: 4,
                     marginTop: 10,
                     borderRadius: 10,
-                    background: playerWon ? "#10B981" : "#FB7185",
+                    background: playerColour,
                     width: "100%",
                   }}
                 />
@@ -557,8 +577,8 @@ export function RankedMultiplayerResults() {
                 style={{
                   padding: 16,
                   borderRadius: 12,
-                  border: `2px solid ${opponentWon ? "#10B981" : "#FB7185"}`,
-                  background: opponentWon ? "#F0FDF4" : "#FFF1F2",
+                  border: `2px solid ${opponentColour}`,
+                  background: opponentBackground,
                 }}
               >
                 {/* Name row */}
@@ -583,12 +603,14 @@ export function RankedMultiplayerResults() {
                         width: 30,
                         height: 30,
                         borderRadius: "50%",
-                        background: opponentWon ? "#A7F3D0" : "#FECDD3",
+                        background: "var(--color-surface)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         fontSize: 13,
                         fontWeight: 800,
+                        color: "var(--color-ink)",
+                        border: "1px solid var(--color-line)",
                       }}
                     >
                       S
@@ -612,11 +634,11 @@ export function RankedMultiplayerResults() {
                       padding: "4px 8px",
                       borderRadius: 20,
                       background: isDoubleElimination
-                        ? "#FB7185"
+                        ? lossColour
                         : opponentWon
-                          ? "#10B981"
-                          : "#FB7185",
-                      color: "white",
+                          ? winColour
+                          : lossColour,
+                      color: "var(--color-paper)",
                     }}
                   >
                     {isDoubleElimination
@@ -653,7 +675,7 @@ export function RankedMultiplayerResults() {
                     style={{
                       fontSize: 13,
                       fontWeight: 700,
-                      color: opponentWon ? "#059669" : "#E11D48",
+                      color: opponentColour,
                     }}
                   >
                     {opponentResult.eloChange > 0 ? "+" : ""}
@@ -680,12 +702,13 @@ export function RankedMultiplayerResults() {
                     marginTop: 12,
                     padding: "7px 9px",
                     borderRadius: 8,
-                    background: "rgba(255,255,255,0.7)",
+                    background: "var(--color-surface)",
                     fontSize: 11,
                     color: "var(--color-ink-muted)",
                   }}
                 >
-                  {opponentResult.mistakes} {opponentResult.mistakes === 1 ? "error" : "errors"}
+                  {opponentResult.mistakes}{" "}
+                  {opponentResult.mistakes === 1 ? "error" : "errors"}
                 </div>
 
                 {/* Progress bar */}
@@ -695,25 +718,23 @@ export function RankedMultiplayerResults() {
                     height: 4,
                     marginTop: 10,
                     borderRadius: 10,
-                    background: opponentWon ? "#10B981" : "#FB7185",
+                    background: opponentColour,
                     width: "100%",
                   }}
                 />
               </div>
             </div>
 
-            {/* ==================================================
-                RATING HISTORY
-                ================================================== */}
+            {/* RATING HISTORY */}
 
             <div
               style={{
                 marginTop: 20,
                 padding: 20,
                 borderRadius: 14,
-                border: "1px solid #E5E7EB",
-                background: "white",
-                boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+                border: "1px solid var(--color-line)",
+                background: "var(--color-surface)",
+                boxShadow: "0 2px 8px var(--color-line)",
               }}
             >
               {/* Graph heading */}
@@ -763,7 +784,7 @@ export function RankedMultiplayerResults() {
                     style={{
                       fontSize: 11,
                       fontWeight: 700,
-                      color: playerWon ? "#059669" : "#E11D48",
+                      color: playerColour,
                     }}
                   >
                     {player.eloChange > 0 ? "+" : ""}
@@ -799,7 +820,7 @@ export function RankedMultiplayerResults() {
                       x2={graphWidth - graphPadding}
                       y1={y}
                       y2={y}
-                      stroke="#E5E7EB"
+                      stroke="var(--color-line)"
                       strokeDasharray="3 4"
                     />
                   );
@@ -849,14 +870,11 @@ export function RankedMultiplayerResults() {
                 }}
               >
                 <span>{Math.round(minRating + 30)}</span>
-
                 <span>Now</span>
               </div>
             </div>
 
-            {/* ==================================================
-                PLAY AGAIN
-                ================================================== */}
+            {/* PLAY AGAIN */}
 
             <button
               onClick={() => navigate("/multiplayer/ranked")}
@@ -867,7 +885,7 @@ export function RankedMultiplayerResults() {
                 border: "none",
                 borderRadius: 10,
                 background: resultColour,
-                color: "white",
+                color: "var(--color-paper)",
                 fontSize: 14,
                 fontWeight: 700,
                 cursor: "pointer",
@@ -891,3 +909,4 @@ export function RankedMultiplayerResults() {
     </div>
   );
 }
+
