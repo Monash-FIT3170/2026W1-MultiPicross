@@ -154,7 +154,7 @@ export function Room() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { status, playerName } = useAuth();
-  const isRanked = searchParams.get("mode") === "ranked";
+  const isRanked = searchParams.get("mode") === "competitive";
 
   const roomRef = useRef<ColyseusRoom | null>(null);
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
