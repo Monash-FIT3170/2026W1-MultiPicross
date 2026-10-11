@@ -15,94 +15,81 @@ type AnimationLevel = "full" | "subtle" | "off";
 type ProfileAccent = string;
 type PrimaryClick = "fill" | "cross";
 
-type SettingsContextType = {
-  isOpen: boolean;
-  openSettings: () => void;
-  closeSettings: () => void;
-
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-
-  animationLevel: AnimationLevel;
-  setAnimationLevel: (level: AnimationLevel) => void;
-
-  cellFillPop: boolean;
-  setCellFillPop: (enabled: boolean) => void;
-
-  showOpponentProgress: boolean;
-  setShowOpponentProgress: (enabled: boolean) => void;
-
-  profileAccent: ProfileAccent;
-  setProfileAccent: (accent: ProfileAccent) => void;
-
-  primaryClick: PrimaryClick;
-  setPrimaryClick: (action: PrimaryClick) => void;
-
-  dragToFill: boolean;
-  setDragToFill: (enabled: boolean) => void;
-
-  autoCrossSolvedLines: boolean;
-  setAutoCrossSolvedLines: (enabled: boolean) => void;
-
-  confirmBeforeAbandoning: boolean;
-  setConfirmBeforeAbandoning: (enabled: boolean) => void;
-
-  singleplayerLives: boolean;
-  setSingleplayerLives: (enabled: boolean) => void;
-
-  volume: number;
-  setVolume: (volume: number) => void;
-
-  cellFillSound: boolean;
-  setCellFillSound: (enabled: boolean) => void;
-
-  crossSound: boolean;
-  setCrossSound: (enabled: boolean) => void;
-
-  reducedMotion: boolean;
-  setReducedMotion: (enabled: boolean) => void;
-
-  largerClueNumbers: boolean;
-  setLargerClueNumbers: (enabled: boolean) => void;
-
-  boldGridLines: boolean;
-  setBoldGridLines: (enabled: boolean) => void;
-};
-
-const SettingsContext = createContext<SettingsContextType | null>(null);
-
 // The settings saved to the account (see api/src/settings/routes.ts). Also
-// cached in localStorage so the theme applies before /settings answers, and so
-// guests keep their choice between visits.
-type AppearanceSettings = {
+// cached in localStorage so they apply before /settings answers, and so guests
+// keep their choices between visits.
+export type Settings = {
+  // Appearance
   theme: Theme;
   animationLevel: AnimationLevel;
   cellFillPop: boolean;
   showOpponentProgress: boolean;
+  // Gameplay
+  primaryClick: PrimaryClick;
+  dragToFill: boolean;
+  autoCrossSolvedLines: boolean;
+  confirmBeforeAbandoning: boolean;
+  singleplayerLives: boolean;
+  // Audio
+  volume: number;
+  cellFillSound: boolean;
+  crossSound: boolean;
+  // Accessibility
+  reducedMotion: boolean;
+  largerClueNumbers: boolean;
+  boldGridLines: boolean;
 };
 
-const APPEARANCE_DEFAULTS: AppearanceSettings = {
+const SETTINGS_DEFAULTS: Settings = {
   theme: "light",
   animationLevel: "full",
   cellFillPop: true,
   showOpponentProgress: true,
+  primaryClick: "fill",
+  dragToFill: true,
+  autoCrossSolvedLines: true,
+  confirmBeforeAbandoning: true,
+  singleplayerLives: true,
+  volume: 60,
+  cellFillSound: true,
+  crossSound: true,
+  reducedMotion: false,
+  largerClueNumbers: false,
+  boldGridLines: false,
 };
 
-const APPEARANCE_STORAGE_KEY = "appearanceSettings";
+// A setter for every setting: theme -> setTheme, volume -> setVolume, ...
+type Setters = {
+  [K in keyof Settings as `set${Capitalize<K>}`]: (value: Settings[K]) => void;
+};
 
-function readCachedAppearance(): AppearanceSettings {
+type SettingsContextType = Settings &
+  Setters & {
+    isOpen: boolean;
+    openSettings: () => void;
+    closeSettings: () => void;
+
+    profileAccent: ProfileAccent;
+    setProfileAccent: (accent: ProfileAccent) => void;
+  };
+
+const SettingsContext = createContext<SettingsContextType | null>(null);
+
+const SETTINGS_STORAGE_KEY = "settings";
+
+function readCachedSettings(): Settings {
   try {
-    const raw = localStorage.getItem(APPEARANCE_STORAGE_KEY);
-    if (raw) return { ...APPEARANCE_DEFAULTS, ...JSON.parse(raw) };
+    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (raw) return { ...SETTINGS_DEFAULTS, ...JSON.parse(raw) };
   } catch {
     // Storage blocked or corrupt; fall back to defaults.
   }
-  return APPEARANCE_DEFAULTS;
+  return SETTINGS_DEFAULTS;
 }
 
-function writeCachedAppearance(appearance: AppearanceSettings) {
+function writeCachedSettings(settings: Settings) {
   try {
-    localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(appearance));
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
   } catch {
     // Storage blocked; the account copy still saves.
   }
@@ -111,32 +98,18 @@ function writeCachedAppearance(appearance: AppearanceSettings) {
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const { status, user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [appearance, setAppearance] =
-    useState<AppearanceSettings>(readCachedAppearance);
-  const { theme, animationLevel, cellFillPop, showOpponentProgress } =
-    appearance;
+  const [settings, setSettings] = useState<Settings>(readCachedSettings);
   // Keys changed while the saved settings were loading, so the load doesn't
   // overwrite a choice the user just made.
-  const changedWhileLoading = useRef(new Set<keyof AppearanceSettings>());
+  const changedWhileLoading = useRef(new Set<keyof Settings>());
   const loading = useRef(false);
   const [profileAccent, setProfileAccent] = useState<ProfileAccent>(
     user?.profileAccent ?? "#3D5A80",
   );
-  const [primaryClick, setPrimaryClick] = useState<PrimaryClick>("fill");
-  const [dragToFill, setDragToFill] = useState(true);
-  const [autoCrossSolvedLines, setAutoCrossSolvedLines] = useState(true);
-  const [confirmBeforeAbandoning, setConfirmBeforeAbandoning] = useState(true);
-  const [singleplayerLives, setSingleplayerLives] = useState(true);
-  const [volume, setVolume] = useState(60);
-  const [cellFillSound, setCellFillSound] = useState(true);
-  const [crossSound, setCrossSound] = useState(true);
-  const [reducedMotion, setReducedMotion] = useState(false);
-  const [largerClueNumbers, setLargerClueNumbers] = useState(false);
-  const [boldGridLines, setBoldGridLines] = useState(false);
 
   useEffect(() => {
-    writeCachedAppearance(appearance);
-  }, [appearance]);
+    writeCachedSettings(settings);
+  }, [settings]);
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -147,10 +120,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     apiFetch("/settings")
       .then(async (res) => {
         if (!res.ok || cancelled) return;
-        const saved = (await res.json()) as Partial<AppearanceSettings>;
+        const saved = (await res.json()) as Partial<Settings>;
         if (cancelled) return;
         for (const key of changedWhileLoading.current) delete saved[key];
-        setAppearance((prev) => ({ ...prev, ...saved }));
+        setSettings((prev) => ({ ...prev, ...saved }));
       })
       .catch((err: unknown) => {
         console.warn("Failed to load saved settings:", err);
@@ -165,12 +138,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     };
   }, [status]);
 
-  const updateAppearance = useCallback(
-    <K extends keyof AppearanceSettings>(
-      key: K,
-      value: AppearanceSettings[K],
-    ) => {
-      setAppearance((prev) => ({ ...prev, [key]: value }));
+  const updateSetting = useCallback(
+    <K extends keyof Settings>(key: K, value: Settings[K]) => {
+      setSettings((prev) => ({ ...prev, [key]: value }));
       if (status !== "authenticated") return;
       if (loading.current) changedWhileLoading.current.add(key);
 
@@ -188,13 +158,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     [status],
   );
 
-  const setTheme = (value: Theme) => updateAppearance("theme", value);
-  const setAnimationLevel = (value: AnimationLevel) =>
-    updateAppearance("animationLevel", value);
-  const setCellFillPop = (value: boolean) =>
-    updateAppearance("cellFillPop", value);
-  const setShowOpponentProgress = (value: boolean) =>
-    updateAppearance("showOpponentProgress", value);
+  const setters = Object.fromEntries(
+    (Object.keys(SETTINGS_DEFAULTS) as (keyof Settings)[]).map((key) => [
+      `set${key[0].toUpperCase()}${key.slice(1)}`,
+      (value: Settings[typeof key]) => updateSetting(key, value),
+    ]),
+  ) as Setters;
+
+  const { theme, animationLevel, cellFillPop, reducedMotion } = settings;
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -210,11 +181,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       animationLevel === "subtle",
     );
 
+    // Reduced motion reuses the "off" animation rules.
     document.documentElement.classList.toggle(
       "animations-off",
-      animationLevel === "off",
+      animationLevel === "off" || reducedMotion,
     );
-  }, [animationLevel]);
+  }, [animationLevel, reducedMotion]);
 
   useEffect(() => {
     document.documentElement.classList.toggle(
@@ -226,41 +198,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   return (
     <SettingsContext.Provider
       value={{
+        ...settings,
+        ...setters,
         isOpen,
         openSettings: () => setIsOpen(true),
         closeSettings: () => setIsOpen(false),
-        theme,
-        setTheme,
-        animationLevel,
-        setAnimationLevel,
-        cellFillPop,
-        setCellFillPop,
-        showOpponentProgress,
-        setShowOpponentProgress,
         profileAccent,
         setProfileAccent,
-        primaryClick,
-        setPrimaryClick,
-        dragToFill,
-        setDragToFill,
-        autoCrossSolvedLines,
-        setAutoCrossSolvedLines,
-        confirmBeforeAbandoning,
-        setConfirmBeforeAbandoning,
-        singleplayerLives,
-        setSingleplayerLives,
-        volume,
-        setVolume,
-        cellFillSound,
-        setCellFillSound,
-        crossSound,
-        setCrossSound,
-        reducedMotion,
-        setReducedMotion,
-        largerClueNumbers,
-        setLargerClueNumbers,
-        boldGridLines,
-        setBoldGridLines,
       }}
     >
       {children}
