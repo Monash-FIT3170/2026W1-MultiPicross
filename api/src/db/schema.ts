@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -109,6 +110,8 @@ export const spCompletions = pgTable(
       .notNull()
       .default(sql`'[]'::jsonb`),
     livesLeft: smallint("lives_left").notNull().default(3),
+    // False when the player turned "Singleplayer lives" off for this game.
+    livesEnabled: boolean("lives_enabled").notNull().default(true),
     elapsedSeconds: integer("elapsed_seconds").notNull().default(0),
     lastResumedAt: timestamp("last_resumed_at"),
     createdAt: timestamp("created_at").defaultNow().notNull(),
