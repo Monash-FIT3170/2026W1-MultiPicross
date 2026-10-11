@@ -36,6 +36,20 @@
       "when": 1791251252500,
       "tag": "0004_brown_odin",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791690150382,
+      "tag": "0005_account_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791690552785,
+      "tag": "0006_sp_lives_enabled",
+      "breakpoints": true
     }
   ]
 }
