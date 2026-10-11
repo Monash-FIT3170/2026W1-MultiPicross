@@ -394,11 +394,17 @@ export class PicrossRoom extends Room {
     this.broadcastState();
   }
 
-  // Centralizes the "finished rooms must not be joinable/listed" invariant
-  // in one place instead of every phase-transition call site.
+  // Centralizes the "started and finished rooms must not be joinable/listed"
+  // invariant in one place instead of every phase-transition call site.
   private setPhase(phase: "waiting" | "playing" | "finished") {
     this.state.phase = phase;
-    if (phase === "playing") this.startedAt = Date.now();
+    if (phase === "playing") {
+      this.startedAt = Date.now();
+      // A full room is already auto-locked, but Colyseus lifts that lock the
+      // moment a player leaves; an explicit lock holds, so a mid-match
+      // departure never reopens the seat to a late joiner.
+      this.lock();
+    }
     if (phase === "finished") {
       // Every 2v2 player has a teammate whose pointer should now disappear.
       if (this.modeConfig.teamBased) this.broadcast("teammateCursor", null);

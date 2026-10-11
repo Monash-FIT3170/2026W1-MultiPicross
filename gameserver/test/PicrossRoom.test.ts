@@ -557,6 +557,41 @@ describe("PicrossRoom", () => {
     assert.ok(snapshot.players[cId]);
   });
 
+  it("stays locked and unlisted when a player leaves a match in progress", async () => {
+    const room: ServerRoom = await colyseus.createRoom("picross_room", {
+      width: 3,
+      height: 3,
+      mode: "1v1v1",
+      isPublic: true,
+    });
+    const clientA = await colyseus.connectTo(room, { username: "A" });
+    const clientB = await colyseus.connectTo(room, { username: "B" });
+    const seenByB = track(clientB);
+    await colyseus.connectTo(room, { username: "C" });
+    const started = await seenByB.wait(
+      (s) => s.phase === "playing",
+      "the match to start",
+    );
+
+    await clientA.leave();
+    await seenByB.wait(
+      (s) => Object.keys(s.players).length === 2,
+      "A's departure to be reflected",
+    );
+
+    const listed = (await colyseus.http.get("/public-rooms")).data as Array<{
+      roomId: string;
+    }>;
+    assert.ok(!listed.some((r) => r.roomId === room.roomId));
+
+    await assert.rejects(
+      colyseus.http.get(`/room-by-code/${started.inviteCode}`),
+    );
+    await assert.rejects(
+      colyseus.sdk.joinById(room.roomId, { username: "Late" }),
+    );
+  });
+
   it("declares the sole remaining player the winner once the other two have left", async () => {
     const { clientA, clientB, seenByC, cId } = await startTriMatch();
 
