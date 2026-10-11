@@ -926,6 +926,7 @@ export function Room() {
               completed={isFinished}
               mistakeCrossIdx={mistakeCrossIdx}
               mistakeCrossIndices={myMistakeCrossIndices}
+              actionMode={actionMode}
               onFill={handleFill}
               onCross={handleCross}
             />
@@ -1371,7 +1372,8 @@ function BlurredBoard({
         marginBottom: 8,
       }}
     >
-      <NonogramGrid
+      <LaggedOpponentGrid
+        live={revealed}
         rowClues={rowClues}
         colClues={colClues}
         grid={buildGrid(board)}
