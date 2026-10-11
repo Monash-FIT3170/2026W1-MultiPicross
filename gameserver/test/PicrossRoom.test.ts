@@ -555,6 +555,30 @@ describe("PicrossRoom", () => {
     assert.strictEqual(snapshot.winnerId, "");
     assert.ok(snapshot.players[bId]);
     assert.ok(snapshot.players[cId]);
+    // The leave did not decide anything, so the match is not forfeited.
+    assert.strictEqual(snapshot.forfeit, false);
+  });
+
+  it("does not report a forfeit when a player solves the puzzle after someone else left", async () => {
+    const { clientA, clientB, seenByC, bId } = await startTriMatch();
+
+    await clientA.leave();
+    await seenByC.wait(
+      (s) => Object.keys(s.players).length === 2,
+      "A's departure to be reflected",
+    );
+
+    // B wins on merit; A's earlier departure had nothing to do with it.
+    for (const cell of FILLED_CELLS) fill(clientB, cell);
+
+    const final = await seenByC.wait(
+      (s) => s.phase === "finished",
+      "the match to end once B finishes",
+    );
+
+    assert.strictEqual(final.winnerId, bId);
+    assert.strictEqual(final.players[bId].won, true);
+    assert.strictEqual(final.forfeit, false);
   });
 
   it("stays locked and unlisted when a player leaves a match in progress", async () => {

@@ -372,7 +372,6 @@ export class PicrossRoom extends Room {
       const leaving = this.players.get(client.sessionId);
       if (leaving) this.clearCursorOf(client.sessionId, leaving);
       this.players.delete(client.sessionId);
-      this.forfeit = true;
       this.checkSoleSurvivor();
       this.checkTeamWipeout();
       // Neither check above always ends the match — with 2+ active players
@@ -383,6 +382,9 @@ export class PicrossRoom extends Room {
       if (this.state.phase === "playing" && this.allPlayersDone()) {
         this.setPhase("finished");
       }
+      // Only a departure that ended the match is a forfeit. One the match
+      // survived must not relabel a later win on merit as "opponent left".
+      if (this.state.phase !== "playing") this.forfeit = true;
       this.broadcastState();
       return;
     }
