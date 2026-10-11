@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { animate, stagger, createTimeline, steps, spring } from "animejs";
+import { useSettings } from "./settings/SettingsContext";
+import { useGameSounds } from "./settings/useGameSounds";
 
 export type CellValue = 0 | 1 | 2 | 3; // unknown | filled | cross | mistake
 
@@ -83,6 +85,16 @@ export default function NonogramGrid({
   onCross,
 }: NonogramGridProps) {
   const cs = cellSize ?? autoCellSize(width, height);
+  const {
+    dragToFill,
+    largerClueNumbers,
+    boldGridLines,
+    reducedMotion,
+    animationLevel,
+  } = useSettings();
+  const { playFill, playCross } = useGameSounds();
+  // anime.js animations ignore the CSS animation rules, so skip them here.
+  const motionOff = reducedMotion || animationLevel === "off";
 
   const maxRowClueLen = Math.max(1, ...rowClues.map((r) => r.length));
   const maxColClueLen = Math.max(1, ...colClues.map((c) => c.length));
@@ -110,13 +122,14 @@ export default function NonogramGrid({
   // anime.js animates the real DOM. Because React only patches changed props,
   // keeping opacity at 0 in React state means React never overwrites anime.js's
   // intermediate opacity values during re-renders (e.g. from the timer tick).
-  const [cellsIntroPlaying, setCellsIntroPlaying] = useState(true);
-  const [cluesIntroPlaying, setCluesIntroPlaying] = useState(true);
+  const [cellsIntroPlaying, setCellsIntroPlaying] = useState(!motionOff);
+  const [cluesIntroPlaying, setCluesIntroPlaying] = useState(!motionOff);
 
   // ── Start animation (on mount) ─────────────────────────────────────────────
   // useLayoutEffect runs before the first browser paint, so nothing is ever
   // visible before the animation begins — no flash on load or continue.
   useLayoutEffect(() => {
+    if (motionOff) return;
     const cells = cellRefs.current.filter(Boolean) as HTMLButtonElement[];
 
     if (cells.length === 0) {
@@ -197,10 +210,29 @@ export default function NonogramGrid({
     if (cells.length === 0) return;
 
     const timeoutId = setTimeout(() => {
-      // Fade out cross/stripe SVG overlays
       const svgs = cells.flatMap((el) =>
         Array.from(el.querySelectorAll("svg")),
       );
+      // Collapse only inner borders; outer grid edge borders are preserved.
+      // The right outer border lives on col=width-1 cells (borderRight=groupBorder),
+      // the bottom outer border on row=height-1 cells — both are excluded here.
+      const innerRight = cells.filter((_, i) => i % width < width - 1);
+      const innerBottom = cells.filter(
+        (_, i) => Math.floor(i / width) < height - 1,
+      );
+
+      // Reduced motion: jump straight to the finished picture.
+      if (motionOff) {
+        svgs.forEach((el) => (el.style.opacity = "0"));
+        innerRight.forEach((el) => (el.style.borderRightWidth = "0px"));
+        innerBottom.forEach((el) => (el.style.borderBottomWidth = "0px"));
+        cells.forEach((el, i) => {
+          el.style.backgroundColor = colors[i] ?? "#ffffff";
+        });
+        return;
+      }
+
+      // Fade out cross/stripe SVG overlays
       if (svgs.length > 0) {
         animate(svgs as Element[], {
           opacity: [1, 0],
@@ -222,13 +254,6 @@ export default function NonogramGrid({
 
       const tl = createTimeline({ defaults: { ease: "outQuad" } });
 
-      // Collapse only inner borders; outer grid edge borders are preserved.
-      // The right outer border lives on col=width-1 cells (borderRight=groupBorder),
-      // the bottom outer border on row=height-1 cells — both are excluded here.
-      const innerRight = cells.filter((_, i) => i % width < width - 1);
-      const innerBottom = cells.filter(
-        (_, i) => Math.floor(i / width) < height - 1,
-      );
       if (innerRight.length > 0)
         tl.add(innerRight, { borderRightWidth: "0px", duration: 380 }, 0);
       if (innerBottom.length > 0)
@@ -329,10 +354,10 @@ export default function NonogramGrid({
     // undefined leaves the `border: "none"` below in force.
     const innerBorder = hideGridlines
       ? undefined
-      : "1px solid var(--color-line)";
+      : `${boldGridLines ? 2 : 1}px solid var(--color-line)`;
     const groupBorder = hideGridlines
       ? undefined
-      : "2px solid var(--color-line-strong)";
+      : `${boldGridLines ? 3 : 2}px solid var(--color-line-strong)`;
 
     const base: React.CSSProperties = {
       width: cs,
@@ -407,6 +432,26 @@ export default function NonogramGrid({
     }
   }
 
+  // Sounds play once per click, not once per cell dragged over, so a long
+  // drag doesn't stack up into one loud burst.
+  function fillCell(row: number, col: number) {
+    playFill();
+    onFill?.(row, col);
+  }
+
+  function crossCell(row: number, col: number, markCross: boolean) {
+    playCross();
+    onCross?.(row, col, markCross);
+  }
+
+  function beginDrag(row: number, col: number) {
+    if (!dragToFill) return;
+    dragActiveRef.current = true;
+    dragStartRef.current = { row, col };
+    dragAxisRef.current = null;
+    lastFillRef.current = { row, col };
+  }
+
   function handleCellMouseDown(e: React.MouseEvent, row: number, col: number) {
     if (window.matchMedia("(pointer: coarse)").matches) return;
     if (e.button !== 0) return;
@@ -414,19 +459,13 @@ export default function NonogramGrid({
     const val = grid[row * width + col];
     if (actionMode === "cross") {
       if (val === 1 || val === 3) return;
-      dragActiveRef.current = true;
-      dragStartRef.current = { row, col };
-      dragAxisRef.current = null;
-      lastFillRef.current = { row, col };
-      onCross?.(row, col, val !== 2);
+      beginDrag(row, col);
+      crossCell(row, col, val !== 2);
       return;
     }
     if (val !== 0) return;
-    dragActiveRef.current = true;
-    dragStartRef.current = { row, col };
-    dragAxisRef.current = null;
-    lastFillRef.current = { row, col };
-    onFill?.(row, col);
+    beginDrag(row, col);
+    fillCell(row, col);
   }
 
   function handleCellMouseEnter(row: number, col: number) {
@@ -462,12 +501,17 @@ export default function NonogramGrid({
     lastFillRef.current = { row, col };
   }
 
+  // Right-click does whichever action left-click currently doesn't.
   function handleContextMenu(e: React.MouseEvent, row: number, col: number) {
     e.preventDefault();
     if (!interactive) return;
     const val = grid[row * width + col];
+    if (actionMode === "cross") {
+      if (val === 0) fillCell(row, col);
+      return;
+    }
     if (val === 1 || val === 3) return;
-    onCross?.(row, col, val !== 2);
+    crossCell(row, col, val !== 2);
   }
 
   function handleCellClick(e: React.MouseEvent, row: number, col: number) {
@@ -477,10 +521,10 @@ export default function NonogramGrid({
     const val = grid[row * width + col];
     if (actionMode === "cross") {
       if (val === 1 || val === 3) return;
-      onCross?.(row, col, val !== 2);
+      crossCell(row, col, val !== 2);
       return;
     }
-    if (val === 0) onFill?.(row, col);
+    if (val === 0) fillCell(row, col);
   }
 
   // ── Clue cell base style ───────────────────────────────────────────────────
@@ -491,7 +535,9 @@ export default function NonogramGrid({
     alignItems: "center",
     justifyContent: "center",
     fontFamily: "var(--font-ui)",
-    fontSize: Math.max(10, cs * 0.38),
+    fontSize: largerClueNumbers
+      ? Math.max(13, cs * 0.5)
+      : Math.max(10, cs * 0.38),
     fontWeight: 600,
     color: "var(--color-ink-clue)",
     fontVariantNumeric: "tabular-nums",

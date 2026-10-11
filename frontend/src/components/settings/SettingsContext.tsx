@@ -158,12 +158,26 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     [status],
   );
 
-  const setters = Object.fromEntries(
-    (Object.keys(SETTINGS_DEFAULTS) as (keyof Settings)[]).map((key) => [
-      `set${key[0].toUpperCase()}${key.slice(1)}`,
-      (value: Settings[typeof key]) => updateSetting(key, value),
-    ]),
-  ) as Setters;
+  const setters: Setters = {
+    setTheme: (value) => updateSetting("theme", value),
+    setAnimationLevel: (value) => updateSetting("animationLevel", value),
+    setCellFillPop: (value) => updateSetting("cellFillPop", value),
+    setShowOpponentProgress: (value) =>
+      updateSetting("showOpponentProgress", value),
+    setPrimaryClick: (value) => updateSetting("primaryClick", value),
+    setDragToFill: (value) => updateSetting("dragToFill", value),
+    setAutoCrossSolvedLines: (value) =>
+      updateSetting("autoCrossSolvedLines", value),
+    setConfirmBeforeAbandoning: (value) =>
+      updateSetting("confirmBeforeAbandoning", value),
+    setSingleplayerLives: (value) => updateSetting("singleplayerLives", value),
+    setVolume: (value) => updateSetting("volume", value),
+    setCellFillSound: (value) => updateSetting("cellFillSound", value),
+    setCrossSound: (value) => updateSetting("crossSound", value),
+    setReducedMotion: (value) => updateSetting("reducedMotion", value),
+    setLargerClueNumbers: (value) => updateSetting("largerClueNumbers", value),
+    setBoldGridLines: (value) => updateSetting("boldGridLines", value),
+  };
 
   const { theme, animationLevel, cellFillPop, reducedMotion } = settings;
 
