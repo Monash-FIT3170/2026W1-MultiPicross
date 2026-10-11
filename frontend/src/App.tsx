@@ -53,7 +53,7 @@ export default function App() {
               navigates back here once a name is set. */}
           <Route path="/room/:roomId" element={<Room />} />
           <Route
-            path="/multiplayer/ranked/results"
+            path="/multiplayer/competitive/results"
             element={<RankedMultiplayerResults />}
           />
         </Route>

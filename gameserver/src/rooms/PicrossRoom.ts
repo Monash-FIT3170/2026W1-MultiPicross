@@ -332,41 +332,6 @@ export class PicrossRoom extends Room {
     }
   }
 
-  /*  private async recordRankedResult(): Promise<void> {
-    if (!this.isRanked || this.rankedResultRecorded || !this.winnerId) {
-      return;
-    }
-
-    const winner = this.players.get(this.winnerId);
-
-    const loser = [...this.players.entries()].find(
-      ([sessionId]) => sessionId !== this.winnerId,
-    )?.[1];
-
-    if (!winner?.accountId || !loser?.accountId) {
-      return;
-    }
-
-    this.rankedResultRecorded = true;
-
-    try {
-      this.rankedResult = await recordRankedResult({
-        winnerAccountId: winner.accountId,
-        loserAccountId: loser.accountId,
-        winnerMistakes: 3 - winner.livesLeft,
-        loserMistakes: 3 - loser.livesLeft,
-      });
-
-      // The first "finished" snapshot may have been sent before
-      // the Elo calculation completed. Broadcast another snapshot
-      // now that the real ranked result is available.
-      this.broadcast("state", this.buildSnapshot());
-    } catch (error) {
-      this.rankedResultRecorded = false;
-      console.error("ranked result error", error);
-    }
-  } */
-
   private async recordRankedResult(): Promise<void> {
     if (!this.isRanked || this.rankedResultRecorded) {
       return;

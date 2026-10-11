@@ -331,7 +331,7 @@ export function Room() {
 
     resultsNavigatedRef.current = true;
 
-    navigate("/multiplayer/ranked/results", {
+    navigate("/multiplayer/competitive/results", {
       state: {
         winnerId: snapshot.winnerId,
         mySessionId: myId,
