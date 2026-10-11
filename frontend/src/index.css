@@ -47,6 +47,7 @@
   --color-blue-50: #eaf2fb;
   --color-blue-100: #d6e4f5;
   --color-blue-200: #b8d0ec;
+  --color-blue-400: #3d5a80;
   --color-blue-500: #3d5a80;
   --color-blue-600: #2f4868;
   --color-logo: var(--color-blue-500);
@@ -108,6 +109,7 @@
   --color-blue-50: #aac2dc;
   --color-blue-100: #8eadd0;
   --color-blue-200: #55779d;
+  --color-blue-400: #446086;
   --color-blue-500: #2e4055;
   --color-blue-600: #252f3d;
   --color-logo: var(--color-blue-100);
@@ -144,6 +146,7 @@
   --color-line-strong: black;
 
   --color-blue-50: white;
+  --color-blue-400: var(--color-contrast-accent-primary);
   --color-blue-500: var(--color-contrast-accent-primary);
   --color-logo: var(--color-contrast-accent-primary);
 
