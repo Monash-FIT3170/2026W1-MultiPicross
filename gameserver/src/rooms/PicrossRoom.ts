@@ -83,6 +83,8 @@ interface PlayerData {
   revealedEmpty: boolean[];
   mistakeCross: boolean[];
   livesLeft: number;
+  /** The player's "Auto-cross solved lines" setting, sent when joining. */
+  autoCross: boolean;
   done: boolean;
   won: boolean;
   /** False while the player is inside their reconnection window. */
@@ -214,7 +216,7 @@ export class PicrossRoom extends Room {
     return `${base} (${suffix})`;
   }
 
-  onJoin(client: Client, options: { username?: string }) {
+  onJoin(client: Client, options: { username?: string; autoCross?: boolean }) {
     const cellCount = this.width * this.height;
     const player: PlayerData = {
       accountId: (client.auth as RoomAuth).accountId,
@@ -224,6 +226,7 @@ export class PicrossRoom extends Room {
       revealedEmpty: Array(cellCount).fill(false),
       mistakeCross: Array(cellCount).fill(false),
       livesLeft: 3,
+      autoCross: options.autoCross !== false,
       done: false,
       won: false,
       connected: true,
@@ -340,14 +343,16 @@ export class PicrossRoom extends Room {
     if (this.solution[idx] === 1) {
       player.confirmedFilled[idx] = true;
       player.crosses[idx] = false;
-      player.crosses = applyAutoComplete(
-        player.confirmedFilled,
-        player.crosses,
-        this.rowClues,
-        this.colClues,
-        this.width,
-        this.height,
-      );
+      if (player.autoCross) {
+        player.crosses = applyAutoComplete(
+          player.confirmedFilled,
+          player.crosses,
+          this.rowClues,
+          this.colClues,
+          this.width,
+          this.height,
+        );
+      }
 
       const isComplete = this.solution.every(
         (v, i) => v === 0 || player.confirmedFilled[i],
@@ -392,14 +397,16 @@ export class PicrossRoom extends Room {
       player.crosses[idx] = false;
       player.mistakeCross[idx] = true;
       player.livesLeft = Math.max(0, player.livesLeft - 1);
-      player.crosses = applyAutoComplete(
-        player.confirmedFilled,
-        player.crosses,
-        this.rowClues,
-        this.colClues,
-        this.width,
-        this.height,
-      );
+      if (player.autoCross) {
+        player.crosses = applyAutoComplete(
+          player.confirmedFilled,
+          player.crosses,
+          this.rowClues,
+          this.colClues,
+          this.width,
+          this.height,
+        );
+      }
 
       const isComplete = this.solution.every(
         (v, i) => v === 0 || player.confirmedFilled[i],

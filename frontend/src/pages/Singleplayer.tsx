@@ -222,7 +222,6 @@ export function Singleplayer() {
     return applyAutoComplete(grid, g.rowClues, g.colClues, g.width, g.height);
   }
 
-
   async function startAuthGame(width: number, height: number) {
     setPhase({ kind: "loading-puzzle" });
     try {
