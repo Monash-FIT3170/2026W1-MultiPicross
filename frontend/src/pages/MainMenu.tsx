@@ -17,7 +17,7 @@ export default function MainMenu() {
   const { status, user, guestNickname, playerName, logout } = useAuth();
 
   const isAuth = status === "authenticated";
-  const { openSettings } = useSettings();
+  const { openSettings, profileAccent } = useSettings();
 
   const wordmarkRef = useRef<HTMLDivElement>(null);
   const taglineRef = useRef<HTMLParagraphElement>(null);
@@ -104,6 +104,7 @@ export default function MainMenu() {
         >
           {isAuth ? (
             <UserDropdown
+              accent={profileAccent}
               handle={user?.handle ?? null}
               onSignOut={() => void logout()}
             />
@@ -193,7 +194,7 @@ export default function MainMenu() {
                 color: "var(--color-ink)",
               }}
             >
-              Picross Ranked
+              Competitive Picross
             </div>
 
             <p
@@ -263,7 +264,7 @@ export default function MainMenu() {
               size="md"
               onClick={
                 isAuth
-                  ? () => navigate("/multiplayer/ranked")
+                  ? () => navigate("/multiplayer/competitive")
                   : () => navigate("/login")
               }
               style={{
@@ -344,17 +345,17 @@ export default function MainMenu() {
                   }}
                 >
                   <ModeButton
-                    label="Unrated"
+                    label="Casual"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
-                      navigate("/multiplayer/unrated");
+                      navigate("/multiplayer/casual");
                     }}
                   />
                   <ModeButton
-                    label="Ranked"
+                    label="Competitive"
                     onClick={() => {
                       setShowMultiplayerMenu(false);
-                      navigate(isAuth ? "/multiplayer/ranked" : "/login");
+                      navigate(isAuth ? "/multiplayer/competitive" : "/login");
                     }}
                   />
                 </div>

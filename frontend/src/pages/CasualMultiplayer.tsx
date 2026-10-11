@@ -47,7 +47,7 @@ interface PublicRoom {
   maxClients: number;
 }
 
-export function UnratedMultiplayer() {
+export function CasualMultiplayer() {
   const navigate = useNavigate();
   const { playerName } = useAuth();
 
@@ -162,7 +162,7 @@ export function UnratedMultiplayer() {
             color: "var(--color-ink)",
           }}
         >
-          Unrated Multiplayer
+          Casual Multiplayer
         </h1>
         <p
           style={{

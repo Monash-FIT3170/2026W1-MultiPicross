@@ -1,11 +1,22 @@
+import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { useSettings } from "./SettingsContext";
 import profileIcon from "../../assets/settings/profile.svg";
+import { ConfirmDialog } from "../ui";
 
 export function AccountSettings() {
-  const { status, user, logout } = useAuth();
+  const { status, user, logout, changePassword, deleteAccount } = useAuth();
   const navigate = useNavigate();
+
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSaved, setPasswordSaved] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   const { closeSettings } = useSettings();
 
   const isAuthenticated = status === "authenticated";
@@ -19,6 +30,35 @@ export function AccountSettings() {
     await logout();
     closeSettings();
     navigate("/");
+  }
+
+  async function handlePasswordSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    setPasswordError(null);
+    setPasswordSaved(false);
+
+    if (newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters.");
+      return;
+    }
+
+    setPasswordLoading(true);
+
+    try {
+      await changePassword(currentPassword, newPassword);
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setPasswordSaved(true);
+      setShowPasswordForm(false);
+    } catch (err) {
+      setPasswordError(
+        err instanceof Error ? err.message : "Could not change password",
+      );
+    } finally {
+      setPasswordLoading(false);
+    }
   }
 
   return (
@@ -87,40 +127,156 @@ export function AccountSettings() {
       ) : (
         <div>
           <div className="mt-8 space-y-3">
-            {/* Password */}
-            <div
-              className="
-                flex items-center justify-between gap-6
-                rounded-2xl
-                border-2 border-[var(--color-line)]
-                bg-[var(--color-surface)]
-                px-5 py-4
-              "
-            >
-              <div>
-                <h3 className="text-sm font-semibold text-[var(--color-ink)] font-ui">
-                  Password
-                </h3>
+            {user?.kind === "service" && (
+              <>
+                {/* Password */}
+                <div
+                  className="
+                    flex items-center justify-between gap-6
+                    rounded-2xl
+                    border-2 border-[var(--color-line)]
+                    bg-[var(--color-surface)]
+                    px-5 py-4
+                  "
+                >
+                  <div>
+                    <h3 className="text-sm font-semibold text-[var(--color-ink)] font-ui">
+                      Password
+                    </h3>
 
-                <p className="mt-1 text-[13px] text-[var(--color-ink-muted)] font-ui">
-                  Change the password used to access your account.
-                </p>
-              </div>
+                    <p className="mt-1 text-[13px] text-[var(--color-ink-muted)] font-ui">
+                      Change the password used to access your account.
+                    </p>
 
-              <button
-                type="button"
-                className="
-                  min-h-11 rounded-xl
-                  border-1 border-[var(--color-line-strong)]
-                  px-4
-                  text-sm font-semibold
-                  text-[var(--color-ink)] font-ui
-                  transition hover:bg-[var(--color-surface-sunk)]
-                "
-              >
-                Change
-              </button>
-            </div>
+                    {passwordSaved && (
+                      <p className="mt-2 text-xs text-green-700 font-ui">
+                        Password updated.
+                      </p>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowPasswordForm(true);
+                      setPasswordError(null);
+                      setPasswordSaved(false);
+                    }}
+                    className="
+                      min-h-11 rounded-xl
+                      border-1 border-[var(--color-line-strong)]
+                      px-4
+                      text-sm font-semibold
+                      text-[var(--color-ink)] font-ui
+                      transition hover:bg-[var(--color-surface-sunk)]
+                    "
+                  >
+                    Change
+                  </button>
+                </div>
+
+                {showPasswordForm && (
+                  <form
+                    onSubmit={handlePasswordSubmit}
+                    className="
+                      rounded-2xl
+                      border-2 border-[var(--color-line)]
+                      bg-[var(--color-surface-sunk)]
+                      p-5
+                    "
+                  >
+                    <div className="flex flex-col gap-4">
+                      <div>
+                        <label
+                          htmlFor="current-password"
+                          className="text-sm font-medium text-[var(--color-ink)] font-ui"
+                        >
+                          Current password
+                        </label>
+
+                        <input
+                          id="current-password"
+                          type="password"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          required
+                          autoComplete="current-password"
+                          className="
+                            mt-2 min-h-11 w-full rounded-xl
+                            border border-[var(--color-line-strong)]
+                            bg-[var(--color-surface)]
+                            px-3 text-sm text-[var(--color-ink)]
+                            outline-none font-ui
+                            focus:border-[var(--color-blue-500)]
+                          "
+                        />
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="new-password"
+                          className="text-sm font-medium text-[var(--color-ink)] font-ui"
+                        >
+                          New password
+                        </label>
+
+                        <input
+                          id="new-password"
+                          type="password"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          required
+                          autoComplete="new-password"
+                          className="
+                            mt-2 min-h-11 w-full rounded-xl
+                            border border-[var(--color-line-strong)]
+                            bg-[var(--color-surface)]
+                            px-3 text-sm text-[var(--color-ink)]
+                            outline-none font-ui
+                            focus:border-[var(--color-blue-500)]
+                          "
+                        />
+                      </div>
+
+                      {passwordError && (
+                        <p className="text-xs text-[var(--color-accent-error)] font-ui">
+                          {passwordError}
+                        </p>
+                      )}
+
+                      <div className="flex justify-end gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setShowPasswordForm(false)}
+                          className="
+                            min-h-11 rounded-xl
+                            border border-[var(--color-line-strong)]
+                            px-4 text-sm font-semibold
+                            text-[var(--color-ink)] font-ui
+                          "
+                        >
+                          Cancel
+                        </button>
+
+                        <button
+                          type="submit"
+                          disabled={passwordLoading}
+                          className="
+                            min-h-11 rounded-xl
+                            bg-[var(--color-blue-500)]
+                            px-4 text-sm font-semibold
+                            text-white font-ui
+                            disabled:cursor-not-allowed disabled:opacity-50
+                          "
+                        >
+                          {passwordLoading ? "Saving…" : "Save password"}
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                )}
+              </>
+            )}
 
             {/* Sign out */}
             <div
@@ -180,6 +336,7 @@ export function AccountSettings() {
 
               <button
                 type="button"
+                onClick={() => setShowDeleteConfirm(true)}
                 className="
                   min-h-11 rounded-xl
                   border-1 border-[var(--color-accent-error)]
@@ -194,6 +351,23 @@ export function AccountSettings() {
             </div>
           </div>
         </div>
+      )}
+
+      {showDeleteConfirm && (
+        <ConfirmDialog
+          titleId="delete-account-title"
+          title="Delete account?"
+          body="This will permanently delete your account and all associated data. This action cannot be undone."
+          confirmLabel="Delete account"
+          cancelLabel="Cancel"
+          onCancel={() => setShowDeleteConfirm(false)}
+          onConfirm={async () => {
+            await deleteAccount();
+            setShowDeleteConfirm(false);
+            closeSettings();
+            navigate("/");
+          }}
+        />
       )}
     </div>
   );

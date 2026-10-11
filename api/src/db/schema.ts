@@ -18,6 +18,7 @@ export const accounts = pgTable("accounts", {
   id: uuid("id").defaultRandom().primaryKey(),
   kind: accountKind("kind").notNull().default("sso"),
   handle: text("handle").unique(),
+  profileAccent: text("profile_accent").notNull().default("#3D5A80"),
   username: text("username").unique(),
   passwordHash: text("password_hash"),
   createdAt: timestamp("created_at").defaultNow().notNull(),

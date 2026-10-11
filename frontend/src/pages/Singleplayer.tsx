@@ -1033,7 +1033,7 @@ function PlayingScreen({
           fontSize: 13,
         }}
       >
-        Left-click to fill · Right-click to mark empty
+        Use the switch to pick fill or cross · right-click always marks empty
       </p>
 
       <div
@@ -1070,34 +1070,16 @@ function PlayingScreen({
           />
 
           {/* Sidebar */}
-          <div className="mp-game-sidebar-wrap" style={{ paddingTop: 0 }}>
-            <div
-              className="mp-mobile-action-mode"
-              role="group"
-              aria-label="Cell action"
-            >
-              <button
-                type="button"
-                className={actionMode === "fill" ? "is-active" : undefined}
-                onClick={() => setActionMode("fill")}
-                aria-pressed={actionMode === "fill"}
-                aria-label="Fill cells"
-                title="Fill cells"
-              >
-                <Icon name="check" size={22} />
-              </button>
-              <button
-                type="button"
-                className={actionMode === "cross" ? "is-active" : undefined}
-                onClick={() => setActionMode("cross")}
-                aria-pressed={actionMode === "cross"}
-                aria-label="Cross cells"
-                title="Cross cells"
-              >
-                <Icon name="x" size={22} />
-              </button>
-            </div>
-
+          <div
+            className="mp-game-sidebar-wrap"
+            style={{
+              paddingTop: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
             <div
               className="mp-surface mp-game-sidebar"
               style={{
@@ -1172,6 +1154,33 @@ function PlayingScreen({
               >
                 Abandon
               </Button>
+            </div>
+
+            <div
+              className="mp-action-mode"
+              role="group"
+              aria-label="Cell action"
+            >
+              <button
+                type="button"
+                className={actionMode === "fill" ? "is-active" : undefined}
+                onClick={() => setActionMode("fill")}
+                aria-pressed={actionMode === "fill"}
+                aria-label="Fill cells"
+                title="Fill cells"
+              >
+                <Icon name="check" size={22} />
+              </button>
+              <button
+                type="button"
+                className={actionMode === "cross" ? "is-active" : undefined}
+                onClick={() => setActionMode("cross")}
+                aria-pressed={actionMode === "cross"}
+                aria-label="Cross cells"
+                title="Cross cells"
+              >
+                <Icon name="x" size={22} />
+              </button>
             </div>
           </div>
         </div>

@@ -611,12 +611,25 @@ export function StatTile({ icon, label, children }: StatTileProps) {
 
 interface UserDropdownProps {
   handle: string | null;
+  accent: string;
   onSignOut: () => void;
+}
+
+function getContrastTextColor(background: string) {
+  const hex = background.replace("#", "");
+
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  return luminance > 0.55 ? "#1c1c1e" : "#ffffff";
 }
 
 // Every account is now routed to /welcome until it has a handle, so this
 // fallback is defensive and should not appear.
-export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
+export function UserDropdown({ handle, accent, onSignOut }: UserDropdownProps) {
   const displayName = handle ?? "Account";
   const [open, setOpen] = useState(false);
   const [panelMounted, setPanelMounted] = useState(false);
@@ -701,8 +714,8 @@ export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
             height: 30,
             borderRadius: "50%",
             flexShrink: 0,
-            background: "var(--color-blue-100)",
-            color: "var(--color-blue-600)",
+            background: accent,
+            color: getContrastTextColor(accent),
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
