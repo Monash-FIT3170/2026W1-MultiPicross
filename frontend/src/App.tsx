@@ -2,7 +2,7 @@ import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 
 import MainMenu from "./pages/MainMenu";
 import { Singleplayer } from "./pages/Singleplayer";
-import { UnratedMultiplayer } from "./pages/UnratedMultiplayer";
+import { CasualMultiplayer } from "./pages/CasualMultiplayer";
 import { Room } from "./pages/Room";
 import { Statistics } from "./pages/Statistics";
 import { Tutorial } from "./pages/Tutorial";
@@ -11,7 +11,7 @@ import { AuthLayout } from "./pages/AuthLayout";
 import { ChooseHandle } from "./pages/ChooseHandle";
 import { AuthError } from "./pages/AuthError";
 import { GuestOnly } from "./auth/GuestOnly";
-import { RankedMultiplayer } from "./pages/RankedMultiplayer";
+import { CompetitiveMultiplayer } from "./pages/CompetitiveMultiplayer";
 import { GuestNickname } from "./pages/GuestNickname";
 import { PlayerNameRoute } from "./auth/PlayerNameRoute";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
@@ -43,8 +43,11 @@ export default function App() {
         <Route path="/" element={<MainMenu />} />
         <Route path="/singleplayer" element={<Singleplayer />} />
         <Route element={<PlayerNameRoute />}>
-          <Route path="/multiplayer/unrated" element={<UnratedMultiplayer />} />
-          <Route path="/multiplayer/ranked" element={<RankedMultiplayer />} />
+          <Route path="/multiplayer/casual" element={<CasualMultiplayer />} />
+          <Route
+            path="/multiplayer/competitive"
+            element={<CompetitiveMultiplayer />}
+          />
           {/* Guests arriving on an invite link are bounced to /nickname, which
               navigates back here once a name is set. */}
           <Route path="/room/:roomId" element={<Room />} />
@@ -53,7 +56,7 @@ export default function App() {
             catch-all below and silently land on the main menu. */}
         <Route
           path="/multiplayer"
-          element={<Navigate to="/multiplayer/unrated" replace />}
+          element={<Navigate to="/multiplayer/casual" replace />}
         />
         <Route path="/tutorial" element={<Tutorial />} />
         <Route path="/settings" element={<Settings />} />

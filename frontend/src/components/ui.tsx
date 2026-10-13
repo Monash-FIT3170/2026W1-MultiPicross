@@ -25,7 +25,9 @@ export type IconName =
   | "bar-chart"
   | "settings"
   | "home"
-  | "refresh";
+  | "refresh"
+  | "volume"
+  | "volume-x";
 
 interface IconProps {
   name: IconName;
@@ -179,6 +181,22 @@ export function Icon({
           <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
         </svg>
       );
+    case "volume":
+      return (
+        <svg {...p}>
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+        </svg>
+      );
+    case "volume-x":
+      return (
+        <svg {...p}>
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+          <line x1="23" y1="9" x2="17" y2="15" />
+          <line x1="17" y1="9" x2="23" y2="15" />
+        </svg>
+      );
     default:
       return null;
   }
@@ -214,18 +232,80 @@ export function Logo({ size = 28 }: LogoProps) {
           width="27"
           height="27"
           rx="6.5"
-          fill="#fff"
-          stroke="#e7e4dc"
+          style={{ fill: "var(--color-surface)", stroke: "var(--color-line)" }}
         />
-        <rect x="4" y="4" width="6" height="6" rx="1.5" fill="#3d5a80" />
-        <rect x="11" y="4" width="6" height="6" rx="1.5" fill="#b8d0ec" />
-        <rect x="18" y="4" width="6" height="6" rx="1.5" fill="#3d5a80" />
-        <rect x="4" y="11" width="6" height="6" rx="1.5" fill="#b8d0ec" />
-        <rect x="11" y="11" width="6" height="6" rx="1.5" fill="#3d5a80" />
-        <rect x="18" y="11" width="6" height="6" rx="1.5" fill="#b8d0ec" />
-        <rect x="4" y="18" width="6" height="6" rx="1.5" fill="#3d5a80" />
-        <rect x="11" y="18" width="6" height="6" rx="1.5" fill="#b8d0ec" />
-        <rect x="18" y="18" width="6" height="6" rx="1.5" fill="#3d5a80" />
+        <rect
+          x="4"
+          y="4"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-500)" }}
+        />
+        <rect
+          x="11"
+          y="4"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-200)" }}
+        />
+        <rect
+          x="18"
+          y="4"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-500)" }}
+        />
+        <rect
+          x="4"
+          y="11"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-200)" }}
+        />
+        <rect
+          x="11"
+          y="11"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-500)" }}
+        />
+        <rect
+          x="18"
+          y="11"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-200)" }}
+        />
+        <rect
+          x="4"
+          y="18"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-500)" }}
+        />
+        <rect
+          x="11"
+          y="18"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-200)" }}
+        />
+        <rect
+          x="18"
+          y="18"
+          width="6"
+          height="6"
+          rx="1.5"
+          style={{ fill: "var(--color-blue-500)" }}
+        />
       </svg>
       <span
         style={{
@@ -390,28 +470,102 @@ export function Chip({ tone = "blue", children, style }: ChipProps) {
 
 // ──── LivesPips ───────────────────────────────────────────────────────────────
 
+const HEART_PATH =
+  "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z";
+
+// How long a heart takes to break. Keep in sync with the
+// mp-heart-break-* animations in index.css.
+const HEART_BREAK_MS = 700;
+
+function HeartShape({ fill, className }: { fill: string; className?: string }) {
+  return (
+    <svg
+      width={18}
+      height={18}
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={className}
+      style={{ fill, transition: "fill 200ms ease", display: "block" }}
+    >
+      <path d={HEART_PATH} />
+    </svg>
+  );
+}
+
 interface LivesPipsProps {
   lives: number;
   max?: number;
 }
 
 export function LivesPips({ lives, max = 3 }: LivesPipsProps) {
+  // Indices of hearts currently playing the break animation.
+  const [breaking, setBreaking] = useState<number[]>([]);
+  const [prevLives, setPrevLives] = useState(lives);
+
+  // When lives drops, mark the newly lost hearts as breaking. Done during
+  // render (rather than in an effect) so the animation starts on the same
+  // frame the heart turns grey.
+  if (lives !== prevLives) {
+    setPrevLives(lives);
+    if (lives < prevLives) {
+      const lost: number[] = [];
+      for (let i = Math.max(0, lives); i < Math.min(prevLives, max); i++) {
+        lost.push(i);
+      }
+      setBreaking((b) => [...new Set([...b, ...lost])]);
+    } else {
+      // Lives went up (e.g. a new game started), so cancel any breaks.
+      setBreaking([]);
+    }
+  }
+
+  useEffect(() => {
+    if (breaking.length === 0) return;
+    const t = setTimeout(() => setBreaking([]), HEART_BREAK_MS);
+    return () => clearTimeout(t);
+  }, [breaking]);
+
   return (
-    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-      {Array.from({ length: max }, (_, i) => (
-        <div
-          key={i}
-          style={{
-            width: 18,
-            height: 18,
-            borderRadius: "50%",
-            background:
-              i < lives ? "var(--color-coral-400)" : "var(--color-line-strong)",
-            transition: "background 200ms ease",
-            flexShrink: 0,
-          }}
-        />
-      ))}
+    <div
+      role="img"
+      aria-label={`${Math.max(0, lives)} of ${max} lives left`}
+      style={{ display: "flex", gap: 8, alignItems: "center" }}
+    >
+      {Array.from({ length: max }, (_, i) => {
+        const alive = i < lives;
+        const isBreaking = !alive && breaking.includes(i);
+        return (
+          <span
+            key={i}
+            className={isBreaking ? "mp-heart-breaking" : undefined}
+            style={{
+              position: "relative",
+              width: 18,
+              height: 18,
+              flexShrink: 0,
+            }}
+          >
+            {/* The heart that stays behind: coral while alive, grey once lost */}
+            <HeartShape
+              className={isBreaking ? "mp-heart-break-base" : undefined}
+              fill={
+                alive ? "var(--color-coral-400)" : "var(--color-line-strong)"
+              }
+            />
+            {/* Two coral halves that crack apart and fall away */}
+            {isBreaking && (
+              <>
+                <span className="mp-heart-half mp-heart-half--left">
+                  <HeartShape fill="var(--color-coral-400)" />
+                </span>
+                <span className="mp-heart-half mp-heart-half--right">
+                  <HeartShape fill="var(--color-coral-400)" />
+                </span>
+              </>
+            )}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -457,12 +611,25 @@ export function StatTile({ icon, label, children }: StatTileProps) {
 
 interface UserDropdownProps {
   handle: string | null;
+  accent: string;
   onSignOut: () => void;
+}
+
+function getContrastTextColor(background: string) {
+  const hex = background.replace("#", "");
+
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  return luminance > 0.55 ? "#1c1c1e" : "#ffffff";
 }
 
 // Every account is now routed to /welcome until it has a handle, so this
 // fallback is defensive and should not appear.
-export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
+export function UserDropdown({ handle, accent, onSignOut }: UserDropdownProps) {
   const displayName = handle ?? "Account";
   const [open, setOpen] = useState(false);
   const [panelMounted, setPanelMounted] = useState(false);
@@ -547,8 +714,8 @@ export function UserDropdown({ handle, onSignOut }: UserDropdownProps) {
             height: 30,
             borderRadius: "50%",
             flexShrink: 0,
-            background: "var(--color-blue-100)",
-            color: "var(--color-blue-600)",
+            background: accent,
+            color: getContrastTextColor(accent),
             display: "flex",
             alignItems: "center",
             justifyContent: "center",

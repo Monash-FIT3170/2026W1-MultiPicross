@@ -1,3 +1,4 @@
+import { useAuth } from "../../auth/AuthContext";
 import {
   createContext,
   useContext,
@@ -68,12 +69,15 @@ type SettingsContextType = {
 const SettingsContext = createContext<SettingsContextType | null>(null);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>("light");
   const [animationLevel, setAnimationLevel] = useState<AnimationLevel>("full");
   const [cellFillPop, setCellFillPop] = useState(true);
   const [showOpponentProgress, setShowOpponentProgress] = useState(true);
-  const [profileAccent, setProfileAccent] = useState<ProfileAccent>("#3D5A80");
+  const [profileAccent, setProfileAccent] = useState<ProfileAccent>(
+    user?.profileAccent ?? "#3D5A80",
+  );
   const [primaryClick, setPrimaryClick] = useState<PrimaryClick>("fill");
   const [dragToFill, setDragToFill] = useState(true);
   const [autoCrossSolvedLines, setAutoCrossSolvedLines] = useState(true);

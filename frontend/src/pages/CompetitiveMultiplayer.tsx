@@ -17,7 +17,7 @@ import shieldIcon from "../assets/shield.svg";
 const RANKED_BOARD_SIZES = [5, 10, 15, 20] as const;
 type RankedBoardSize = (typeof RANKED_BOARD_SIZES)[number];
 
-export function RankedMultiplayer() {
+export function CompetitiveMultiplayer() {
   const navigate = useNavigate();
   const { status } = useAuth();
   const isAuth = status === "authenticated";
@@ -82,12 +82,14 @@ export function RankedMultiplayer() {
       room.onMessage(
         "matched",
         ({ roomId, boardSize }: { roomId: string; boardSize?: number }) => {
+          // Cleared first so unmounting does not send leaveQueue for a player
+          // who has already been matched out of the waiting list.
           queueRoomRef.current = null;
           setSearching(false);
           setTimedOut(false);
           void room.leave();
           navigate(
-            `/room/${roomId}?mode=ranked${boardSize ? `&size=${boardSize}` : ""}`,
+            `/room/${roomId}?mode=competitive${boardSize ? `&size=${boardSize}` : ""}`,
           );
         },
       );
@@ -112,7 +114,7 @@ export function RankedMultiplayer() {
 
       room.send("joinQueue", { boardSize: selectedBoardSize });
     } catch (error) {
-      console.error("Failed to join ranked matchmaking:", error);
+      console.error("Failed to join matchmaking:", error);
       queueRoomRef.current = null;
       setSearching(false);
       const errorMessage =
@@ -123,7 +125,7 @@ export function RankedMultiplayer() {
       setRequiresLogin(isUnauthorized);
       setQueueMessage(
         isUnauthorized
-          ? "Please login to play Ranked"
+          ? "Please login to play Competitive Picross"
           : "We've been unable to find an opponent.",
       );
       setTimedOut(true);
@@ -189,7 +191,7 @@ export function RankedMultiplayer() {
             letterSpacing: "-0.01em",
           }}
         >
-          Picross Ranked
+          Competitive Picross
         </h1>
 
         <p
