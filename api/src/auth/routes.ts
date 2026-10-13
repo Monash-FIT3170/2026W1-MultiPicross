@@ -1067,6 +1067,7 @@ auth.get(
         LEFT JOIN latest_elo ON latest_elo.account_id = accounts.id
         LEFT JOIN wins ON wins.account_id = accounts.id
         LEFT JOIN losses ON losses.account_id = accounts.id
+        WHERE accounts.kind = 'sso'
       )
       SELECT *
       FROM ranked
