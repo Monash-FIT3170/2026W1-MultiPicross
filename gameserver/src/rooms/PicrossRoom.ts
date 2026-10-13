@@ -10,6 +10,8 @@ import {
   type DoubleEliminationResult,
 } from "../elo/ratedResults.js";
 
+import { recordMpResults, type MpMode } from "../results/recordResults.js";
+
 interface RoomAuth {
   username: string | null;
   accountId: string | null;
@@ -90,6 +92,7 @@ interface PlayerData {
   livesLeft: number;
   done: boolean;
   won: boolean;
+  finishedAt: number | null;
   /** False while the player is inside their reconnection window. */
   connected: boolean;
 }
@@ -121,6 +124,10 @@ export class PicrossRoom extends Room {
         playerTwoSessionId: string;
       })
     | null = null;
+  private puzzleId = "";
+  private mode: MpMode = "unrated";
+  private startedAt = 0;
+  private resultsRecorded = false;
 
   async onCreate(options: {
     width?: number;
@@ -129,11 +136,16 @@ export class PicrossRoom extends Room {
     isPublic?: boolean;
   }) {
     this.isRanked = options.isRanked === true;
+    this.mode = this.isRanked
+      ? "ranked"
+      : options.isPublic
+        ? "public"
+        : "unrated";
     const width = options.width ?? 10;
     const height = options.height ?? 10;
 
     const rows = await sql`
-      SELECT width, height, row_clues, col_clues, solution, colors
+      SELECT id, width, height, row_clues, col_clues, solution, colors
       FROM nonograms
       WHERE width = ${width} AND height = ${height}
       ORDER BY RANDOM()
@@ -148,6 +160,7 @@ export class PicrossRoom extends Room {
     }
 
     const puzzle = rows[0];
+    this.puzzleId = puzzle.id as string;
     this.width = puzzle.width as number;
     this.height = puzzle.height as number;
     this.solution = puzzle.solution as number[];
@@ -243,6 +256,7 @@ export class PicrossRoom extends Room {
       livesLeft: 3,
       done: false,
       won: false,
+      finishedAt: null,
       connected: true,
     };
     this.players.set(client.sessionId, player);
@@ -326,9 +340,11 @@ export class PicrossRoom extends Room {
   // in one place instead of every phase-transition call site.
   private setPhase(phase: "waiting" | "playing" | "finished") {
     this.state.phase = phase;
+    if (phase === "playing") this.startedAt = Date.now();
     if (phase === "finished") {
       this.lock();
       void this.recordRankedResult();
+      void this.recordResults();
     }
   }
 
@@ -421,6 +437,38 @@ export class PicrossRoom extends Room {
     }
   }
 
+  // Rows are built synchronously: onLeave() deletes the leaver right after
+  // setPhase("finished"), so the player map must be read before any await.
+  private async recordResults(): Promise<void> {
+    if (this.resultsRecorded || !this.startedAt) return;
+    this.resultsRecorded = true;
+
+    const now = Date.now();
+    const rows = [...this.players.entries()].flatMap(([sessionId, p]) =>
+      p.accountId
+        ? [
+            {
+              accountId: p.accountId,
+              puzzleId: this.puzzleId,
+              mode: this.mode,
+              solved: p.won,
+              won: sessionId === this.winnerId,
+              elapsedSeconds: Math.round(
+                ((p.finishedAt ?? now) - this.startedAt) / 1000,
+              ),
+              livesLeft: p.livesLeft,
+            },
+          ]
+        : [],
+    );
+
+    try {
+      await recordMpResults(rows);
+    } catch (error) {
+      console.error("mp result error", error);
+    }
+  }
+
   private handleFill(sessionId: string, row: number, col: number) {
     if (this.state.phase !== "playing") return;
     const player = this.players.get(sessionId);
@@ -448,6 +496,7 @@ export class PicrossRoom extends Room {
       if (isComplete) {
         player.done = true;
         player.won = true;
+        player.finishedAt = Date.now();
         this.winnerId = sessionId;
         this.setPhase("finished");
       }
@@ -456,6 +505,7 @@ export class PicrossRoom extends Room {
       player.livesLeft = Math.max(0, player.livesLeft - 1);
       if (player.livesLeft === 0) {
         player.done = true;
+        player.finishedAt = Date.now();
         const allDone = [...this.players.values()].every((p) => p.done);
         if (allDone) this.setPhase("finished");
       }
@@ -500,10 +550,12 @@ export class PicrossRoom extends Room {
       if (isComplete) {
         player.done = true;
         player.won = true;
+        player.finishedAt = Date.now();
         this.winnerId = sessionId;
         this.setPhase("finished");
       } else if (player.livesLeft === 0) {
         player.done = true;
+        player.finishedAt = Date.now();
         const allDone = [...this.players.values()].every((p) => p.done);
         if (allDone) this.setPhase("finished");
       }

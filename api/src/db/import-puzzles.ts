@@ -4,6 +4,7 @@ import path from "path";
 import { PNG } from "pngjs";
 import { db } from "./client.js";
 import { nonograms } from "./schema.js";
+import { sql } from "drizzle-orm";
 
 function runLengths(cells: number[]): number[] {
   const clues: number[] = [];
@@ -84,14 +85,19 @@ export async function importPuzzles() {
       .update(`${width}x${height}:${solution.join("")}`)
       .digest("hex");
 
+    // Upsert only when the name differs, so unchanged puzzles return no row.
     const inserted = await db
       .insert(nonograms)
-      .values({ id, width, height, solution, rowClues, colClues, colors })
-      .onConflictDoNothing()
+      .values({ id, name, width, height, solution, rowClues, colClues, colors })
+      .onConflictDoUpdate({
+        target: nonograms.id,
+        set: { name },
+        setWhere: sql`${nonograms.name} IS DISTINCT FROM ${name}`,
+      })
       .returning({ id: nonograms.id });
 
     if (inserted.length > 0) {
-      console.log(`Imported puzzle "${name}" (${id.slice(0, 8)}…)`);
+      console.log(`Saved puzzle "${name}" (${id.slice(0, 8)})`);
     }
   }
 }
