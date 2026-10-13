@@ -109,7 +109,7 @@ function writeCachedAppearance(appearance: AppearanceSettings) {
 }
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  const { status } = useAuth();
+  const { status, user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [appearance, setAppearance] =
     useState<AppearanceSettings>(readCachedAppearance);
@@ -119,7 +119,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // overwrite a choice the user just made.
   const changedWhileLoading = useRef(new Set<keyof AppearanceSettings>());
   const loading = useRef(false);
-  const [profileAccent, setProfileAccent] = useState<ProfileAccent>("#3D5A80");
+  const [profileAccent, setProfileAccent] = useState<ProfileAccent>(
+    user?.profileAccent ?? "#3D5A80",
+  );
   const [primaryClick, setPrimaryClick] = useState<PrimaryClick>("fill");
   const [dragToFill, setDragToFill] = useState(true);
   const [autoCrossSolvedLines, setAutoCrossSolvedLines] = useState(true);

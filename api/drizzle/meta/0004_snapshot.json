@@ -1,5 +1,5 @@
 {
-  "id": "8600f298-1b58-4097-9fa9-eac24cb22980",
+  "id": "9369a4ee-5fc6-4e52-89b3-30216fe5fa58",
   "prevId": "e072b9cf-d8ca-4ae3-9c12-eae811ef8e60",
   "version": "7",
   "dialect": "postgresql",
@@ -29,6 +29,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "profile_accent": {
+          "name": "profile_accent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'#3D5A80'"
+        },
         "username": {
           "name": "username",
           "type": "text",
@@ -40,13 +47,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "settings": {
-          "name": "settings",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::jsonb"
         },
         "created_at": {
           "name": "created_at",

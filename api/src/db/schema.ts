@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -18,6 +19,7 @@ export const accounts = pgTable("accounts", {
   id: uuid("id").defaultRandom().primaryKey(),
   kind: accountKind("kind").notNull().default("sso"),
   handle: text("handle").unique(),
+  profileAccent: text("profile_accent").notNull().default("#3D5A80"),
   username: text("username").unique(),
   passwordHash: text("password_hash"),
   // User preferences (appearance for now), validated by settings/routes.ts.
@@ -74,6 +76,7 @@ export const refreshTokens = pgTable("refresh_tokens", {
 
 export const nonograms = pgTable("nonograms", {
   id: text("id").primaryKey(),
+  name: text("name"),
   width: smallint("width").notNull(),
   height: smallint("height").notNull(),
   solution: jsonb("solution").notNull(),
@@ -117,6 +120,9 @@ export const spCompletions = pgTable(
     uniqueIndex("sp_completions_account_active_idx")
       .on(table.accountId)
       .where(sql`state = 'active'`),
+    index("sp_completions_account_completed_idx")
+      .on(table.accountId)
+      .where(sql`state = 'completed'`),
   ],
 );
 
@@ -149,3 +155,27 @@ export const ratedWaitingList = pgTable("rated_waiting_list", {
     .references(() => accounts.id, { onDelete: "cascade" }),
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
 });
+
+export const mpMode = pgEnum("mp_mode", ["unrated", "public", "ranked"]);
+
+// One row per signed-in player per finished multiplayer game. `solved` means
+// the player completed the grid themselves; a forfeit win leaves it false.
+export const mpResults = pgTable(
+  "mp_results",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    puzzleId: text("puzzle_id")
+      .notNull()
+      .references(() => nonograms.id, { onDelete: "cascade" }),
+    mode: mpMode("mode").notNull(),
+    solved: boolean("solved").notNull(),
+    won: boolean("won").notNull(),
+    elapsedSeconds: integer("elapsed_seconds").notNull(),
+    livesLeft: smallint("lives_left").notNull(),
+    finishedAt: timestamp("finished_at").defaultNow().notNull(),
+  },
+  (t) => [index("mp_results_account_puzzle_idx").on(t.accountId, t.puzzleId)],
+);

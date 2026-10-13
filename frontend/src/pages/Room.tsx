@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { type ComponentProps, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import type { Room as ColyseusRoom } from "@colyseus/sdk";
 import { gameserverClient } from "../colyseus";
@@ -47,10 +47,60 @@ interface RoomSnapshot {
   colors?: string[];
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
 function buildGrid(p: PlayerSnapshot): CellValue[] {
   return cellsToGrid(p.confirmedFilled, p.crosses, p.revealedEmpty);
+}
+
+const OPPONENT_BOARD_DELAY_MS = 5000;
+
+function useLaggedValue<T>(
+  value: T,
+  key: string,
+  delayMs: number,
+  live: boolean,
+): T {
+  const [lagged, setLagged] = useState(value);
+  const timersRef = useRef(new Set<number>());
+
+  useEffect(() => {
+    if (live) return;
+    const timers = timersRef.current;
+    const id = window.setTimeout(() => {
+      timers.delete(id);
+      setLagged(value);
+    }, delayMs);
+    timers.add(id);
+  }, [key, delayMs, live]);
+
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => timers.forEach((id) => window.clearTimeout(id));
+  }, []);
+
+  return live ? value : lagged;
+}
+
+type NonogramGridProps = ComponentProps<typeof NonogramGrid>;
+
+function LaggedOpponentGrid({
+  live,
+  grid,
+  mistakeCrossIndices = [],
+  ...rest
+}: NonogramGridProps & { live: boolean }) {
+  const board = useLaggedValue(
+    { grid, mistakeCrossIndices },
+    `${grid.join("")}|${mistakeCrossIndices.join(",")}`,
+    OPPONENT_BOARD_DELAY_MS,
+    live,
+  );
+  return (
+    <NonogramGrid
+      {...rest}
+      grid={board.grid}
+      mistakeCrossIndices={board.mistakeCrossIndices}
+    />
+  );
 }
 
 // leave() throws while a socket is mid-handshake — an SDK reconnect in
@@ -85,6 +135,14 @@ export function Room() {
   const intentionalLeaveRef = useRef(false);
   const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
   const mistakeCrossTimerRef = useRef<number | undefined>(undefined);
+  const [actionMode, setActionMode] = useState<"fill" | "cross">("fill");
+  const [lifeLostNotice, setLifeLostNotice] = useState<{
+    id: number;
+    livesLeft: number;
+  } | null>(null);
+  const lifeLostTimerRef = useRef<number | undefined>(undefined);
+  const lifeLostNoticeIdRef = useRef(0);
+  const previousLivesRef = useRef<number | null>(null);
 
   // ── Auth, captured once ────────────────────────────────────────────────────
 
@@ -193,7 +251,10 @@ export function Room() {
       roomRef.current = null;
       // A pending index would shake a cell on whatever board renders next.
       window.clearTimeout(mistakeCrossTimerRef.current);
+      window.clearTimeout(lifeLostTimerRef.current);
       setMistakeCrossIdx(null);
+      setLifeLostNotice(null);
+      previousLivesRef.current = null;
     };
   }, [roomId, authReady, retryNonce]);
 
@@ -216,6 +277,41 @@ export function Room() {
     return () => clearInterval(id);
   }, [snapshot?.phase]);
 
+  // ── Life lost overlay ─────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!snapshot || snapshot.phase === "waiting") {
+      previousLivesRef.current = null;
+      window.clearTimeout(lifeLostTimerRef.current);
+      return;
+    }
+
+    const sessionIds = Object.keys(snapshot.players);
+    const currentId = mySessionId ?? sessionIds[0];
+    const currentLives = currentId
+      ? snapshot.players[currentId]?.livesLeft
+      : undefined;
+
+    if (typeof currentLives !== "number") {
+      previousLivesRef.current = null;
+      return;
+    }
+
+    const previousLives = previousLivesRef.current;
+    previousLivesRef.current = currentLives;
+
+    if (previousLives === null || currentLives >= previousLives) return;
+
+    window.clearTimeout(lifeLostTimerRef.current);
+    setLifeLostNotice({
+      id: ++lifeLostNoticeIdRef.current,
+      livesLeft: currentLives,
+    });
+    lifeLostTimerRef.current = window.setTimeout(() => {
+      setLifeLostNotice(null);
+    }, 1200);
+  }, [snapshot, mySessionId]);
+
   // ── Actions ────────────────────────────────────────────────────────────────
 
   function handleFill(row: number, col: number) {
@@ -231,6 +327,9 @@ export function Room() {
     setReconnecting(false);
     setSnapshot(null);
     setMistakeCrossIdx(null);
+    setLifeLostNotice(null);
+    previousLivesRef.current = null;
+    window.clearTimeout(lifeLostTimerRef.current);
     setRetryNonce((n) => n + 1);
   }
 
@@ -252,7 +351,7 @@ export function Room() {
     if (snapshot?.phase === "playing") {
       setConfirmingAbandon(true);
     } else {
-      navigate("/multiplayer/unrated");
+      navigate("/multiplayer/casual");
     }
   }
 
@@ -273,7 +372,7 @@ export function Room() {
       /* ignore — navigating away regardless */
     }
     roomRef.current = null;
-    navigate("/multiplayer/unrated");
+    navigate("/multiplayer/casual");
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -292,7 +391,7 @@ export function Room() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate("/multiplayer/unrated")}
+            onClick={() => navigate("/multiplayer/casual")}
           >
             Back to lobby
           </Button>
@@ -608,7 +707,7 @@ export function Room() {
           fontSize: 13,
         }}
       >
-        Left-click to fill · Right-click to mark empty
+        Use the switch to pick fill or cross · right-click always marks empty
       </p>
 
       <div
@@ -640,6 +739,7 @@ export function Room() {
             completed={me.won}
             mistakeCrossIdx={mistakeCrossIdx}
             mistakeCrossIndices={myMistakeCrossIndices}
+            actionMode={actionMode}
             onFill={handleFill}
             onCross={handleCross}
           />
@@ -650,7 +750,9 @@ export function Room() {
           style={{
             paddingTop: clueOffset,
             display: "flex",
-            alignItems: "flex-start",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 12,
           }}
         >
           <div
@@ -685,6 +787,29 @@ export function Room() {
               </>
             )}
           </div>
+
+          <div className="mp-action-mode" role="group" aria-label="Cell action">
+            <button
+              type="button"
+              className={actionMode === "fill" ? "is-active" : undefined}
+              onClick={() => setActionMode("fill")}
+              aria-pressed={actionMode === "fill"}
+              aria-label="Fill cells"
+              title="Fill cells"
+            >
+              <Icon name="check" size={22} />
+            </button>
+            <button
+              type="button"
+              className={actionMode === "cross" ? "is-active" : undefined}
+              onClick={() => setActionMode("cross")}
+              aria-pressed={actionMode === "cross"}
+              aria-label="Cross cells"
+              title="Cross cells"
+            >
+              <Icon name="x" size={22} />
+            </button>
+          </div>
         </div>
 
         {/* Opponent board */}
@@ -708,7 +833,8 @@ export function Room() {
                 borderRadius: 6,
               }}
             >
-              <NonogramGrid
+              <LaggedOpponentGrid
+                live={isFinished}
                 rowClues={rowClues}
                 colClues={colClues}
                 grid={opponentGrid}
@@ -753,6 +879,23 @@ export function Room() {
         <div className="mp-toast">
           <Icon name="refresh" size={16} color="var(--color-butter-300)" />
           <span>Connection lost — reconnecting…</span>
+        </div>
+      )}
+
+      {/* Life lost overlay */}
+      {lifeLostNotice && (
+        <div key={lifeLostNotice.id} className="mp-life-lost-overlay">
+          <div className="mp-life-lost-card" role="status" aria-live="polite">
+            <Icon name="x" size={24} color="var(--color-coral-500)" />
+            <div>
+              <div className="mp-life-lost-title">Life lost</div>
+              <div className="mp-life-lost-subtitle">
+                {lifeLostNotice.livesLeft > 0
+                  ? `${lifeLostNotice.livesLeft}/3 lives remaining`
+                  : "No lives remaining"}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -828,7 +971,7 @@ export function Room() {
               size="sm"
               onClick={() =>
                 navigate(
-                  isRanked ? "/multiplayer/ranked" : "/multiplayer/unrated",
+                  isRanked ? "/multiplayer/competitive" : "/multiplayer/casual",
                 )
               }
             >

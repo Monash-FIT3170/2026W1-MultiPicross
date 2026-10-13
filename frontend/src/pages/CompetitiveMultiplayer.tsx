@@ -9,7 +9,7 @@ import statsIcon from "../assets/stats.svg";
 import trohpyIcon from "../assets/trophy.svg";
 import shieldIcon from "../assets/shield.svg";
 
-export function RankedMultiplayer() {
+export function CompetitiveMultiplayer() {
   const navigate = useNavigate();
   const [searching, setSearching] = useState(false);
   const [timedOut, setTimedOut] = useState(false);
@@ -70,7 +70,7 @@ export function RankedMultiplayer() {
         setSearching(false);
         setTimedOut(false);
         void room.leave();
-        navigate(`/room/${roomId}?mode=ranked`);
+        navigate(`/room/${roomId}?mode=competitive`);
       });
 
       // The server keeps us queued past the timeout, so this asks whether to
@@ -88,7 +88,7 @@ export function RankedMultiplayer() {
 
       room.send("joinQueue");
     } catch (error) {
-      console.error("Failed to join ranked matchmaking:", error);
+      console.error("Failed to join matchmaking:", error);
       queueRoomRef.current = null;
       setSearching(false);
       const errorMessage =
@@ -99,7 +99,7 @@ export function RankedMultiplayer() {
       setRequiresLogin(isUnauthorized);
       setQueueMessage(
         isUnauthorized
-          ? "Please login to play Ranked"
+          ? "Please login to play Competitive Picross"
           : "We've been unable to find an opponent.",
       );
       setTimedOut(true);
@@ -173,7 +173,7 @@ export function RankedMultiplayer() {
             letterSpacing: "-0.01em",
           }}
         >
-          Picross Ranked
+          Competitive Picross
         </h1>
 
         <p
