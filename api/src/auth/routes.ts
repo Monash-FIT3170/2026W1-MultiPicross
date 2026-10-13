@@ -129,7 +129,7 @@ const rankedStatsProperties: NonNullable<OpenAPIV3.SchemaObject["properties"]> =
     losses: { type: "integer" },
     totalGames: { type: "integer" },
     winRate: { type: "integer" },
-    rank: { type: "integer" },
+    rank: { type: "integer", nullable: true },
   };
 
 const rankedStatsSchema: OpenAPIV3.SchemaObject = {
@@ -173,7 +173,7 @@ type RankedStatsRow = {
   wins: number;
   losses: number;
   totalGames: number;
-  rank: number;
+  rank: number | null;
 };
 
 type RankedMatchDetailRow = {
@@ -201,7 +201,7 @@ function rankedStatsPayload(row: RankedStatsRow) {
     losses,
     totalGames,
     winRate: totalGames === 0 ? 0 : Math.round((wins / totalGames) * 100),
-    rank: Number(row.rank),
+    rank: row.rank === null ? null : Number(row.rank),
   };
 }
 
@@ -981,29 +981,33 @@ auth.get(
         GROUP BY loser_account_id
       ),
       ranked AS (
-        SELECT
-          accounts.id AS "accountId",
-          COALESCE(NULLIF(accounts.handle, ''), 'Anonymous') AS "displayName",
-          COALESCE(latest_elo.elo, ${DEFAULT_ELO}::int) AS elo,
-          COALESCE(wins.wins, 0)::int AS wins,
-          COALESCE(losses.losses, 0)::int AS losses,
-          (COALESCE(wins.wins, 0) + COALESCE(losses.losses, 0))::int AS "totalGames",
+        SELECT *,
           CAST(RANK() OVER (
             ORDER BY
-              COALESCE(latest_elo.elo, ${DEFAULT_ELO}::int) DESC,
-              COALESCE(wins.wins, 0) DESC,
-              COALESCE(NULLIF(accounts.handle, ''), 'Anonymous') ASC,
-              accounts.id ASC
+              elo DESC,
+              wins DESC,
+              losses ASC,
+              "totalGames" DESC
           ) AS int) AS rank
-        FROM accounts
-        LEFT JOIN latest_elo ON latest_elo.account_id = accounts.id
-        LEFT JOIN wins ON wins.account_id = accounts.id
-        LEFT JOIN losses ON losses.account_id = accounts.id
-        WHERE accounts.kind = 'sso'
+        FROM (
+          SELECT
+            accounts.id AS "accountId",
+            COALESCE(NULLIF(accounts.handle, ''), 'Anonymous') AS "displayName",
+            COALESCE(latest_elo.elo, ${DEFAULT_ELO}::int) AS elo,
+            COALESCE(wins.wins, 0)::int AS wins,
+            COALESCE(losses.losses, 0)::int AS losses,
+            (COALESCE(wins.wins, 0) + COALESCE(losses.losses, 0))::int AS "totalGames"
+          FROM accounts
+          LEFT JOIN latest_elo ON latest_elo.account_id = accounts.id
+          LEFT JOIN wins ON wins.account_id = accounts.id
+          LEFT JOIN losses ON losses.account_id = accounts.id
+          WHERE accounts.kind = 'sso'
+        ) account_stats
+        WHERE "totalGames" > 0
       )
       SELECT *
       FROM ranked
-      ORDER BY rank
+      ORDER BY rank, "displayName", "accountId"
       LIMIT ${limit}
     `;
 
@@ -1048,30 +1052,44 @@ auth.get(
         FROM ranked_match_results
         GROUP BY loser_account_id
       ),
-      ranked AS (
+      account_stats AS (
         SELECT
           accounts.id AS "accountId",
           COALESCE(NULLIF(accounts.handle, ''), 'Anonymous') AS "displayName",
+          accounts.kind,
           COALESCE(latest_elo.elo, ${DEFAULT_ELO}::int) AS elo,
           COALESCE(wins.wins, 0)::int AS wins,
           COALESCE(losses.losses, 0)::int AS losses,
-          (COALESCE(wins.wins, 0) + COALESCE(losses.losses, 0))::int AS "totalGames",
-          CAST(RANK() OVER (
-            ORDER BY
-              COALESCE(latest_elo.elo, ${DEFAULT_ELO}::int) DESC,
-              COALESCE(wins.wins, 0) DESC,
-              COALESCE(NULLIF(accounts.handle, ''), 'Anonymous') ASC,
-              accounts.id ASC
-          ) AS int) AS rank
+          (COALESCE(wins.wins, 0) + COALESCE(losses.losses, 0))::int AS "totalGames"
         FROM accounts
         LEFT JOIN latest_elo ON latest_elo.account_id = accounts.id
         LEFT JOIN wins ON wins.account_id = accounts.id
         LEFT JOIN losses ON losses.account_id = accounts.id
-        WHERE accounts.kind = 'sso'
+      ),
+      ranked AS (
+        SELECT
+          "accountId",
+          CAST(RANK() OVER (
+            ORDER BY
+              elo DESC,
+              wins DESC,
+              losses ASC,
+              "totalGames" DESC
+          ) AS int) AS rank
+        FROM account_stats
+        WHERE kind = 'sso' AND "totalGames" > 0
       )
-      SELECT *
-      FROM ranked
-      WHERE "accountId" = ${accountId}
+      SELECT
+        account_stats."accountId",
+        account_stats."displayName",
+        account_stats.elo,
+        account_stats.wins,
+        account_stats.losses,
+        account_stats."totalGames",
+        ranked.rank
+      FROM account_stats
+      LEFT JOIN ranked ON ranked."accountId" = account_stats."accountId"
+      WHERE account_stats."accountId" = ${accountId}
       LIMIT 1
     `;
 
