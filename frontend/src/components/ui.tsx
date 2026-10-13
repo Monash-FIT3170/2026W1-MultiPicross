@@ -369,7 +369,7 @@ const BTN_BASE: CSSProperties = {
 const VARIANT_STYLES: Record<ButtonVariant, CSSProperties> = {
   primary: {
     background: "var(--color-blue-500)",
-    color: "var(--color-blue-50)",
+    color: "var(--color-white)",
   },
   dark: { background: "var(--color-paper)", color: "var(--color-ink)" },
   ghost: {
