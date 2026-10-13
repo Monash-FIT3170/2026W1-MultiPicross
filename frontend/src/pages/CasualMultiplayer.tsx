@@ -297,9 +297,13 @@ export function CasualMultiplayer() {
                       flexDirection: "column",
                       alignItems: "center",
                       background:
-                        createMode === mode ? "var(--color-blue-500)" : "#fff",
+                        createMode === mode
+                          ? "var(--color-blue-500)"
+                          : "var(--color-surface)",
                       color:
-                        createMode === mode ? "#fff" : "var(--color-ink-soft)",
+                        createMode === mode
+                          ? "var(--color-surface)"
+                          : "var(--color-ink-soft)",
                       border: `1px solid ${createMode === mode ? "var(--color-blue-500)" : "var(--color-line)"}`,
                       borderRadius: 12,
                       cursor: "pointer",

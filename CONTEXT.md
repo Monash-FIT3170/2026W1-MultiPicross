@@ -8,7 +8,7 @@ Each Game Mode implies a derived configuration: player count (`maxPlayers`), whe
 
 ## Free-for-All (FFA)
 
-The non-team-based Game Modes (`1v1`, `1v1v1`, `1v1v1v1`): every player competes individually on their own board. The first player to complete the puzzle wins immediately (match ends for everyone). If no one has finished yet, the match continues until every player has either finished (won) or been eliminated (out of lives / left).
+The non-team-based Game Modes (`1v1`, `1v1v1`, `1v1v1v1`): every player competes individually on their own board. The first player to complete the puzzle wins immediately (match ends for everyone). There is no 2nd/3rd place: everyone else simply did not win. Until someone finishes, the match continues; if every player is eliminated (out of lives / left) first, it ends with no winner.
 
 ## Team (2v2 only)
 
@@ -35,10 +35,6 @@ In 2v2, lives stay per-player even though the board is shared: each teammate has
 ## Sole Survivor (FFA) / Sole Surviving Team (2v2)
 
 If every other player (FFA) or every member of the opposing team (2v2) has left or been eliminated while at least one player (FFA) or one full team (2v2, i.e. at least one of its two members) remains active, that remaining party is declared the winner immediately, without needing to actually complete the puzzle. This generalizes the original 1v1 "opponent left, sole player remaining wins" rule.
-
-## Placement (FFA only)
-
-Only players who actually complete the puzzle receive a numbered placement (1st, 2nd, 3rd, ...), ordered by completion time. Players who are eliminated without finishing are not ranked relative to each other — they are simply "did not finish." (2v2 has no placement concept beyond team win/loss, since teammates share their team's outcome.)
 
 ## Ranked / Unranked (Game Type)
 
