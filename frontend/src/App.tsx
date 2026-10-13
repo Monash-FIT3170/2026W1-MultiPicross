@@ -5,6 +5,7 @@ import { Singleplayer } from "./pages/Singleplayer";
 import { CasualMultiplayer } from "./pages/CasualMultiplayer";
 import { Room } from "./pages/Room";
 import { Statistics } from "./pages/Statistics";
+import { Collection } from "./pages/Collection";
 import { Tutorial } from "./pages/Tutorial";
 import { Settings } from "./pages/Settings";
 import { AuthLayout } from "./pages/AuthLayout";
@@ -64,6 +65,7 @@ export default function App() {
         <Route path="/auth/error" element={<AuthError />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/statistics" element={<Statistics />} />
+          <Route path="/collection" element={<Collection />} />
         </Route>
         <Route element={<GuestOnly />}>
           <Route path="/nickname" element={<GuestNickname />} />
