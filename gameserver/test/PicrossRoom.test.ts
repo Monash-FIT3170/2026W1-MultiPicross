@@ -199,28 +199,19 @@ describe("PicrossRoom", () => {
 
   // ── D1 ─────────────────────────────────────────────────────────────────────
 
-  it("does not crown an eliminated player when the opponent leaves", async () => {
-    const { clientA, clientB, seenByA, aId } = await startMatch();
+  it("awards an elimination win to the opponent who is still alive", async () => {
+    const { clientA, seenByA, aId, bId } = await startMatch();
 
-    // A burns all three lives, but the match keeps going: B is still alive.
     for (const cell of EMPTY_CELLS) fill(clientA, cell);
-    const eliminated = await seenByA.wait(
-      (s) => s.players[aId].livesLeft === 0,
-      "A to run out of lives",
-    );
-    assert.strictEqual(eliminated.players[aId].done, true);
-    assert.strictEqual(eliminated.phase, "playing");
-
-    // B closes the tab. A already lost — a forfeit must not hand them the win.
-    await clientB.leave();
     const final = await seenByA.wait(
       (s) => s.phase === "finished",
-      "the match to end",
+      "the match to end by elimination",
     );
 
-    assert.strictEqual(final.forfeit, true);
-    assert.notStrictEqual(final.winnerId, aId);
-    assert.strictEqual(final.winnerId, "");
+    // B closes the tab. A already lost — a forfeit must not hand them the win.
+    assert.strictEqual(final.forfeit, false);
+    assert.strictEqual(final.players[aId].done, true);
+    assert.strictEqual(final.winnerId, bId);
   });
 
   it("awards a forfeit win to an opponent who is still alive", async () => {

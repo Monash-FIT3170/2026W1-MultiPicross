@@ -8,51 +8,33 @@ export type RankedResultInput = {
   loserAccountId: string;
   winnerMistakes: number;
   loserMistakes: number;
+  boardSize: number;
 };
 
-export async function getRankedRatingHistory(
-  accountId: string,
-  limit = 15,
-): Promise<number[]> {
-  const rows = await sql`
-    SELECT elo
-    FROM player_elo_history
-    WHERE account_id = ${accountId}
-    ORDER BY recorded_at DESC
-    LIMIT ${limit}
-  `;
+const ELO_MULTIPLIER_BY_BOARD_SIZE = new Map<number, number>([
+  [5, 0.5],
+  [10, 0.8],
+  [15, 1],
+  [20, 1.5],
+]);
 
-  return rows.map((row) => Number(row.elo)).reverse();
+export function eloMultiplierForBoardSize(boardSize: number): number {
+  return ELO_MULTIPLIER_BY_BOARD_SIZE.get(boardSize) ?? 1;
 }
-
-export type RankedResult = {
-  winnerAccountId: string;
-  loserAccountId: string;
-
-  winnerEloBefore: number;
-  winnerEloAfter: number;
-  winnerEloChange: number;
-
-  loserEloBefore: number;
-  loserEloAfter: number;
-  loserEloChange: number;
-
-  winnerRatingHistory: number[];
-  loserRatingHistory: number[];
-};
 
 export async function recordRankedResult({
   winnerAccountId,
   loserAccountId,
   winnerMistakes,
   loserMistakes,
-}: RankedResultInput): Promise<RankedResult> {
+  boardSize,
+}: RankedResultInput): Promise<void> {
   const [winnerElo, loserElo] = await Promise.all([
     getPlayerElo(winnerAccountId),
     getPlayerElo(loserAccountId),
   ]);
 
-  const winnerGain = calculateWinningEloGain({
+  const baseWinnerGain = calculateWinningEloGain({
     winnerElo,
     opponentElo: loserElo,
     winnerMistakes,
@@ -60,11 +42,18 @@ export async function recordRankedResult({
   });
 
   const loserLoss = calculateLoosingEloGain({
+  const baseLoserLoss = calculateLoosingEloGain({
     loosingElo: loserElo,
     opponentElo: winnerElo,
     loosingMistakes: loserMistakes,
     opponentMistakes: winnerMistakes,
   });
+  const eloMultiplier = eloMultiplierForBoardSize(boardSize);
+  const eloMultiplierPercent = Math.round(eloMultiplier * 100);
+  const winnerGain = Math.round(baseWinnerGain * eloMultiplier);
+  const loserLoss = Math.round(baseLoserLoss * eloMultiplier);
+  const winnerEloAfter = winnerElo + winnerGain;
+  const loserEloAfter = Math.max(0, loserElo - loserLoss);
 
   const winnerEloAfter = winnerElo + winnerGain;
   const loserEloAfter = Math.max(0, loserElo - loserLoss);
@@ -154,12 +143,38 @@ export async function recordDoubleEliminationResult({
   await sql.begin(async (transaction) => {
     await transaction`
       INSERT INTO player_elo_history (account_id, elo)
-      VALUES (${playerOneAccountId}, ${playerOneEloAfter})
+      VALUES (${winnerAccountId}, ${winnerEloAfter})
     `;
 
     await transaction`
       INSERT INTO player_elo_history (account_id, elo)
-      VALUES (${playerTwoAccountId}, ${playerTwoEloAfter})
+      VALUES (${loserAccountId}, ${loserEloAfter})
+    `;
+    await transaction`
+      INSERT INTO ranked_match_results (
+        winner_account_id,
+        loser_account_id,
+        winner_elo_before,
+        winner_elo_after,
+        loser_elo_before,
+        loser_elo_after,
+        winner_mistakes,
+        loser_mistakes,
+        board_size,
+        elo_multiplier_percent
+      )
+      VALUES (
+        ${winnerAccountId},
+        ${loserAccountId},
+        ${winnerElo},
+        ${winnerEloAfter},
+        ${loserElo},
+        ${loserEloAfter},
+        ${winnerMistakes},
+        ${loserMistakes},
+        ${boardSize},
+        ${eloMultiplierPercent}
+      )
     `;
   });
 
