@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useSettings } from "./settings/SettingsContext";
 
 export type ArtView = "grid" | "picture";
 
@@ -19,6 +20,8 @@ export const PuzzleArt = memo(function PuzzleArt({
   cellSize,
   view,
 }: PuzzleArtProps) {
+  const { theme } = useSettings();
+  const darkMode = theme === "dark";
   const picture = view === "picture";
   const size = picture ? cellSize + 1 : cellSize;
   return (
@@ -38,8 +41,15 @@ export const PuzzleArt = memo(function PuzzleArt({
           key={i}
           style={{
             borderRadius: picture ? 0 : cellSize > 12 ? 2 : 1,
-            background:
-              picture || solution[i] === 1 ? color : "var(--color-surface)",
+            background: picture
+              ? color
+              : solution[i] === 1
+                ? darkMode
+                  ? "#ffffff"
+                  : "#000000"
+                : darkMode
+                  ? "var(--color-paper)"
+                  : "#ffffff",
           }}
         />
       ))}
