@@ -58,6 +58,11 @@ interface RoomSnapshot {
   colClues: number[][];
   players: Record<string, PlayerSnapshot>;
   winnerId: string;
+  // Recorded by the server when the match ends. The winner may since have
+  // left the room, so the result is read from these, never from `players`.
+  /** 2v2 only: the Team that won. */
+  winnerTeam: number | null;
+  winnerName: string;
   forfeit: boolean;
   colors?: string[];
   mode: string;
@@ -90,6 +95,16 @@ function boardOf(snapshot: RoomSnapshot, p: PlayerSnapshot): BoardSnapshot {
 }
 
 const OPPONENT_BOARD_DELAY_MS = 5000;
+
+// Late joins are not supported in any Game Mode, so a locked room is one whose
+// match has started or finished, and retrying can never get in.
+const MATCH_UNJOINABLE =
+  "This match has already started or finished, so it can't be joined.";
+
+/** Colyseus refuses a locked room with `room "<id>" is locked`. */
+function isRoomLockedError(err: unknown): boolean {
+  return err instanceof Error && /\bis locked\b/.test(err.message);
+}
 
 function useLaggedValue<T>(
   value: T,
@@ -319,8 +334,11 @@ export function Room() {
         });
       } catch (err: unknown) {
         if (!cancelled) {
-          const msg =
-            err instanceof Error ? err.message : "Could not join room.";
+          const msg = isRoomLockedError(err)
+            ? MATCH_UNJOINABLE
+            : err instanceof Error
+              ? err.message
+              : "Could not join room.";
           setError(msg);
         }
       }
@@ -499,10 +517,16 @@ export function Room() {
           {error}
         </p>
         <div style={{ display: "flex", gap: 8 }}>
-          <Button variant="primary" size="sm" onClick={retryConnection}>
-            Try again
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => navigate(lobbyPath)}>
+          {error !== MATCH_UNJOINABLE && (
+            <Button variant="primary" size="sm" onClick={retryConnection}>
+              Try again
+            </Button>
+          )}
+          <Button
+            variant={error === MATCH_UNJOINABLE ? "primary" : "ghost"}
+            size="sm"
+            onClick={() => navigate(lobbyPath)}
+          >
             Back to lobby
           </Button>
         </div>
@@ -536,6 +560,8 @@ export function Room() {
     colClues,
     players,
     winnerId,
+    winnerTeam,
+    winnerName,
     forfeit,
     colors,
     mode,
@@ -762,7 +788,6 @@ export function Room() {
   const myBoard = boardOf(snapshot, me);
   const myGrid = buildGrid(myBoard);
   const myMistakeCrossIndices = mistakeCrossIndicesOf(myBoard);
-  const winnerPlayer = winnerId ? players[winnerId] : null;
 
   // 2v2: the teammate shares my Team Board, so they get a status line under
   // it rather than a sidebar card; the opposing pair share one card.
@@ -787,10 +812,7 @@ export function Room() {
   // 2v2 wins belong to the team as a whole — whoever placed the final cell
   // is never singled out — so the team outcome replaces the individual one.
   const myTeamWon =
-    isFinished &&
-    isTeamMode &&
-    winnerPlayer !== null &&
-    winnerPlayer.team === me.team;
+    isFinished && isTeamMode && winnerTeam !== null && winnerTeam === me.team;
   const iWon = isFinished && !isTeamMode && winnerId === myId;
   const someoneElseWon = isFinished && !iWon && !myTeamWon && winnerId !== "";
   const noWinner = isFinished && !winnerId;
@@ -798,15 +820,22 @@ export function Room() {
   // to winning because the other team left or ran out of lives.
   const winningTeamSolved =
     isTeamMode &&
-    winnerPlayer !== null &&
-    snapshot.teamBoards?.[String(winnerPlayer.team ?? 0)]?.progress === 1;
+    winnerTeam !== null &&
+    snapshot.teamBoards?.[String(winnerTeam)]?.progress === 1;
+  // Likewise in FFA: a 1v1 win can come from the opponent running out of
+  // lives, which is not a solve.
+  const iSolved = iWon && myBoard.progress === 1;
 
   // Abandon-dialog warning, generalized per mode. 1v1 keeps its original
   // wording verbatim (a single named opponent either wins or can't).
+  // In 2v2, leaving with no active teammate wipes out my team, which hands
+  // the win to the other team for as long as it has an active player.
   const abandonBody = isTeamMode
     ? myTeammateActive
       ? "Leaving now removes you from your team — your teammate can still win."
-      : "Your team has already been eliminated, so leaving now ends the game with no winner."
+      : someoneElseCanStillWin
+        ? "You are your team's last active player, so leaving now gives the other team the win."
+        : "Nobody on the other team is still active, so leaving now ends the game with no winner."
     : otherPlayers.length > 1
       ? "Leaving now eliminates you from the race."
       : someoneElseCanStillWin
@@ -1076,7 +1105,13 @@ export function Room() {
               color="var(--color-line-strong)"
               style={{ marginBottom: 8 }}
             />
-            <div style={{ fontSize: 13 }}>Waiting for opponent…</div>
+            <div style={{ fontSize: 13 }}>
+              {isFinished
+                ? mode === "1v1"
+                  ? "Opponent has left"
+                  : "Opponents have left"
+                : "Waiting for opponent…"}
+            </div>
           </div>
         )}
       </div>
@@ -1155,7 +1190,9 @@ export function Room() {
               {iWon
                 ? forfeit
                   ? "Opponent left — you win!"
-                  : "You win!"
+                  : iSolved
+                    ? "You win!"
+                    : "Opponent is out of lives — you win!"
                 : myTeamWon
                   ? winningTeamSolved
                     ? "Your team solved it!"
@@ -1165,16 +1202,16 @@ export function Room() {
                   : someoneElseWon
                     ? isTeamMode
                       ? winningTeamSolved
-                        ? `Team ${(winnerPlayer?.team ?? 0) + 1} solved it first`
-                        : `Team ${(winnerPlayer?.team ?? 0) + 1} wins`
-                      : `${winnerPlayer?.username ?? "Opponent"} wins`
+                        ? `Team ${(winnerTeam ?? 0) + 1} solved it first`
+                        : `Team ${(winnerTeam ?? 0) + 1} wins`
+                      : `${winnerName || "Opponent"} wins`
                     : noWinner
                       ? forfeit
                         ? "Opponent left — no winner"
                         : "Everyone's out of lives"
                       : "Game over"}
             </div>
-            {(iWon ? !forfeit : myTeamWon && winningTeamSolved) && (
+            {(iWon ? !forfeit && iSolved : myTeamWon && winningTeamSolved) && (
               <div style={{ fontSize: 12, color: "var(--color-sage-500)" }}>
                 Solved in {fmtSeconds(displaySeconds)}
               </div>

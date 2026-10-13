@@ -144,6 +144,11 @@ export class PicrossRoom extends Room {
   private width = 0;
   private height = 0;
   private winnerId = "";
+  // Recorded once, when the match ends, so the result outlives the winner's
+  // seat: players leaving the results screen must not change the outcome.
+  /** Team modes only: the Team that won. Null in FFA or with no winner. */
+  private winnerTeam: number | null = null;
+  private winnerName = "";
   private forfeit = false;
   private isRanked = false;
   private rankedResultRecorded = false;
@@ -322,8 +327,9 @@ export class PicrossRoom extends Room {
   // Map's insertion-order iteration) means a pre-match leave-and-replace
   // naturally slots the newcomer into the vacated team instead of always
   // joining Team 2, since indices shift for everyone once a player is gone.
+  // Once the match has started a player's Team never changes again.
   private assignTeams() {
-    if (!this.modeConfig.teamBased) return;
+    if (!this.modeConfig.teamBased || this.state.phase !== "waiting") return;
     let index = 0;
     for (const player of this.players.values()) {
       player.team = Math.floor(index / 2);
@@ -390,7 +396,8 @@ export class PicrossRoom extends Room {
     }
     // Pre-match: team assignment is derived fresh from current join order,
     // so a departure here must be reflected immediately rather than waiting
-    // for the next join to recompute it.
+    // for the next join to recompute it. A leave from a finished room lands
+    // here too, where assignTeams() leaves the Teams as they were.
     this.players.delete(client.sessionId);
     this.assignTeams();
     this.broadcastState();
@@ -408,6 +415,10 @@ export class PicrossRoom extends Room {
       this.lock();
     }
     if (phase === "finished") {
+      // Every caller sets winnerId first, and the winner is still seated.
+      const winner = this.players.get(this.winnerId);
+      this.winnerTeam = winner?.team ?? null;
+      this.winnerName = winner?.username ?? "";
       // Every 2v2 player has a teammate whose pointer should now disappear.
       if (this.modeConfig.teamBased) this.broadcast("teammateCursor", null);
       this.lock();
@@ -775,6 +786,8 @@ export class PicrossRoom extends Room {
       colClues: this.colClues,
       players,
       winnerId: this.winnerId,
+      winnerTeam: this.winnerTeam,
+      winnerName: this.winnerName,
       forfeit: this.forfeit,
       mode: this.mode,
     };

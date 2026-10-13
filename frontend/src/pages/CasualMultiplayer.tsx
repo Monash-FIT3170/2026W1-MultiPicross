@@ -16,6 +16,15 @@ const GAME_MODES: { mode: GameMode; players: number }[] = [
   { mode: "2v2", players: 4 },
 ];
 
+const FFA_SUBTITLE = "Free-for-All. First player to complete the puzzle wins.";
+
+const MODE_SUBTITLES: Record<GameMode, string> = {
+  "1v1": "1v1 head-to-head. First to fill every cell wins.",
+  "1v1v1": FFA_SUBTITLE,
+  "1v1v1v1": FFA_SUBTITLE,
+  "2v2": "Two teams of two. First team to complete its Team Board wins.",
+};
+
 function sizeToWH(size: string): { width: number; height: number } {
   const [w, h] = size.split(" × ").map(Number);
   return { width: w, height: h };
@@ -183,7 +192,7 @@ export function CasualMultiplayer() {
             fontSize: 18,
           }}
         >
-          1v1 head-to-head. First to fill every cell wins.
+          {MODE_SUBTITLES[createMode]}
         </p>
 
         <div

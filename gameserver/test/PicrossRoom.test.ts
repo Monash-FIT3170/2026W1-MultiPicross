@@ -61,6 +61,10 @@ interface Snapshot {
   colClues: number[][];
   players: Record<string, PlayerView>;
   winnerId: string;
+  /** 2v2 only: the Team that won, recorded when the match ended. */
+  winnerTeam: number | null;
+  /** The winner's display name, recorded when the match ended. */
+  winnerName: string;
   forfeit: boolean;
   colors?: string[];
   mode: string;
@@ -848,6 +852,102 @@ describe("PicrossRoom", () => {
     assert.strictEqual(final.players[final.winnerId].team, 1);
     assert.strictEqual(final.players[final.winnerId].won, true);
     assert.ok(final.winnerId === dId || final.winnerId === clientC.sessionId);
+  });
+
+  // ── Results survive post-match leaves ────────────────────────────────────
+
+  it("keeps Team assignment and the winning Team when the winner's teammate leaves a finished 2v2 match", async () => {
+    const { clientA, clientB, seenByC, bId, cId, dId } =
+      await startSquadMatch();
+
+    for (const cell of FILLED_CELLS) fill(clientB, cell);
+    const final = await seenByC.wait(
+      (s) => s.phase === "finished",
+      "the match to end once B finishes",
+    );
+    assert.strictEqual(final.winnerTeam, 0);
+
+    // A (B's teammate) leaves the results screen. Recomputing teams from
+    // join order here would shift C up into Team 1.
+    await clientA.leave();
+    const after = await seenByC.wait(
+      (s) => Object.keys(s.players).length === 3,
+      "A's departure to be reflected",
+    );
+
+    assert.strictEqual(after.phase, "finished");
+    assert.strictEqual(after.winnerTeam, 0);
+    assert.strictEqual(after.players[bId].team, 0);
+    assert.strictEqual(after.players[cId].team, 1);
+    assert.strictEqual(after.players[dId].team, 1);
+  });
+
+  it("keeps Team assignment and the winning Team when the recorded winner leaves a finished 2v2 match", async () => {
+    const { clientB, seenByC, aId, bId, cId, dId } = await startSquadMatch();
+
+    for (const cell of FILLED_CELLS) fill(clientB, cell);
+    await seenByC.wait(
+      (s) => s.phase === "finished",
+      "the match to end once B finishes",
+    );
+
+    await clientB.leave();
+    const after = await seenByC.wait(
+      (s) => Object.keys(s.players).length === 3,
+      "B's departure to be reflected",
+    );
+
+    assert.strictEqual(after.phase, "finished");
+    assert.strictEqual(after.winnerId, bId);
+    assert.strictEqual(after.winnerTeam, 0);
+    assert.strictEqual(after.players[aId].team, 0);
+    assert.strictEqual(after.players[cId].team, 1);
+    assert.strictEqual(after.players[dId].team, 1);
+  });
+
+  it("keeps the winning Team when the Sole Surviving Team's recorded winner leaves", async () => {
+    const { clientA, clientB, clientC, clientD, seenByC, seenByD, cId, dId } =
+      await startSquadMatch();
+
+    await clientA.leave();
+    await clientB.leave();
+    const final = await seenByC.wait(
+      (s) => s.phase === "finished",
+      "the match to end once Team 1 is wiped out",
+    );
+    assert.strictEqual(final.winnerTeam, 1);
+
+    const winnerIsC = final.winnerId === cId;
+    await (winnerIsC ? clientC : clientD).leave();
+    const remainingId = winnerIsC ? dId : cId;
+    const after = await (winnerIsC ? seenByD : seenByC).wait(
+      (s) => Object.keys(s.players).length === 1,
+      "the winner's departure to be reflected",
+    );
+
+    assert.strictEqual(after.winnerTeam, 1);
+    assert.strictEqual(after.players[remainingId].team, 1);
+  });
+
+  it("keeps the winner's name in the snapshot after the winner leaves a finished FFA match", async () => {
+    const { clientA, seenByB, aId } = await startMatch();
+
+    for (const cell of FILLED_CELLS) fill(clientA, cell);
+    const final = await seenByB.wait(
+      (s) => s.phase === "finished",
+      "the match to end once A finishes",
+    );
+    assert.strictEqual(final.winnerName, "A");
+    assert.strictEqual(final.winnerTeam, null);
+
+    await clientA.leave();
+    const after = await seenByB.wait(
+      (s) => !(aId in s.players),
+      "A's departure to be reflected",
+    );
+
+    assert.strictEqual(after.winnerId, aId);
+    assert.strictEqual(after.winnerName, "A");
   });
 
   // ── 2v2 shared Team Board ───────────────────────────────────────────────
