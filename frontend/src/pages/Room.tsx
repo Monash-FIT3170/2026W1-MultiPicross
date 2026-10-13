@@ -120,7 +120,12 @@ export function Room() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { status, playerName } = useAuth();
-  const isRanked = searchParams.get("mode") === "ranked";
+  const isRanked =
+    searchParams.get("mode") === "competitive" ||
+    searchParams.get("mode") === "ranked";
+  const lobbyPath = isRanked
+    ? "/multiplayer/competitive"
+    : "/multiplayer/casual";
 
   const roomRef = useRef<ColyseusRoom | null>(null);
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
@@ -351,7 +356,7 @@ export function Room() {
     if (snapshot?.phase === "playing") {
       setConfirmingAbandon(true);
     } else {
-      navigate("/multiplayer/casual");
+      navigate(lobbyPath);
     }
   }
 
@@ -372,7 +377,7 @@ export function Room() {
       /* ignore — navigating away regardless */
     }
     roomRef.current = null;
-    navigate("/multiplayer/casual");
+    navigate(lobbyPath);
   }
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -388,11 +393,7 @@ export function Room() {
           <Button variant="primary" size="sm" onClick={retryConnection}>
             Try again
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/multiplayer/casual")}
-          >
+          <Button variant="ghost" size="sm" onClick={() => navigate(lobbyPath)}>
             Back to lobby
           </Button>
         </div>

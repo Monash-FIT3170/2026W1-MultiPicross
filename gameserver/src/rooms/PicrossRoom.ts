@@ -319,6 +319,21 @@ export class PicrossRoom extends Room {
     }
   }
 
+  private finishByElimination(eliminatedSessionId: string) {
+    const survivors = [...this.players.entries()].filter(
+      ([sessionId, player]) =>
+        sessionId !== eliminatedSessionId &&
+        !player.done &&
+        player.livesLeft > 0,
+    );
+
+    if (survivors.length === 1) {
+      this.winnerId = survivors[0][0];
+    }
+
+    this.setPhase("finished");
+  }
+
   private async recordRankedResult(): Promise<void> {
     if (!this.isRanked || this.rankedResultRecorded || !this.winnerId) return;
 
@@ -336,6 +351,7 @@ export class PicrossRoom extends Room {
         loserAccountId: loser.accountId,
         winnerMistakes: 3 - winner.livesLeft,
         loserMistakes: 3 - loser.livesLeft,
+        boardSize: this.width,
       });
     } catch (error) {
       this.rankedResultRecorded = false;
@@ -412,8 +428,7 @@ export class PicrossRoom extends Room {
       if (player.livesLeft === 0) {
         player.done = true;
         player.finishedAt = Date.now();
-        const allDone = [...this.players.values()].every((p) => p.done);
-        if (allDone) this.setPhase("finished");
+        this.finishByElimination(sessionId);
       }
     }
 
@@ -462,8 +477,7 @@ export class PicrossRoom extends Room {
       } else if (player.livesLeft === 0) {
         player.done = true;
         player.finishedAt = Date.now();
-        const allDone = [...this.players.values()].every((p) => p.done);
-        if (allDone) this.setPhase("finished");
+        this.finishByElimination(sessionId);
       }
 
       // Must precede the broadcast: the client needs the index before the grid
