@@ -8,7 +8,7 @@ export interface RankedStats {
   losses: number;
   totalGames: number;
   winRate: number;
-  rank: number;
+  rank: number | null;
   averageMistakes?: number;
   totalMistakes?: number;
   lastEloChange?: number;

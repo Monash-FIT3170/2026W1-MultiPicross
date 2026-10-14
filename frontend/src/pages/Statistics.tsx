@@ -82,7 +82,7 @@ export function Statistics() {
                 }}
               >
                 <StatCard label="Rating" value={stats?.elo ?? 100} />
-                <StatCard label="Rank" value={stats ? `#${stats.rank}` : "-"} />
+                <StatCard label="Rank" value={formatRank(stats?.rank)} />
                 <StatCard
                   label="Record"
                   value={`${stats?.wins ?? 0}-${stats?.losses ?? 0}`}
@@ -329,6 +329,10 @@ const mutedNumberStyle: CSSProperties = {
 function formatEloChange(value: number) {
   if (value > 0) return `+${value}`;
   return String(value);
+}
+
+function formatRank(rank: number | null | undefined) {
+  return rank === null || rank === undefined ? "N/A" : `#${rank}`;
 }
 
 function formatDate(value: string) {
