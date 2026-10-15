@@ -179,7 +179,7 @@
   --color-result-win: var(--color-sage-400);
   --color-result-loss: var(#ff0000);
   --color-result-win-background: #ffffff;
-  --color-result-loss-background: #161010;
+  --color-result-loss-background: #ffffff;
 }
 .high-contrast .icons {
   filter: brightness(0);
