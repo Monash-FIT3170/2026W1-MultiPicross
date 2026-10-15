@@ -874,7 +874,7 @@ export function RankedMultiplayerResults() {
             {/* PLAY AGAIN */}
 
             <button
-              onClick={() => navigate("/multiplayer/ranked")}
+              onClick={() => navigate("/multiplayer/competitive")}
               style={{
                 width: "100%",
                 height: 46,

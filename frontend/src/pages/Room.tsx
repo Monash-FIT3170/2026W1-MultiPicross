@@ -318,10 +318,12 @@ export function Room() {
 
   // ── Ranked results navigation ───────────────────────────────────────────────
 
+  
+  // ── Ranked results navigation ───────────────────────────────────────────────
+
   useEffect(() => {
     if (!isRanked) return;
     if (snapshot?.phase !== "finished") return;
-    if (!snapshot.rankedResult) return;
     if (resultsNavigatedRef.current) return;
 
     const sessionIds = Object.keys(snapshot.players);
@@ -333,9 +335,13 @@ export function Room() {
 
     if (!me || !opponent) return;
 
+    // The results page needs the completed Elo calculation.
+    // Wait for the server's follow-up snapshot if it is not ready yet.
+    if (!snapshot.rankedResult) return;
+
     resultsNavigatedRef.current = true;
 
-    navigate(lobbyPath, {
+    navigate("/multiplayer/competitive/results", {
       state: {
         winnerId: snapshot.winnerId,
         mySessionId: myId,
@@ -353,6 +359,7 @@ export function Room() {
       replace: true,
     });
   }, [isRanked, snapshot, mySessionId, displaySeconds, navigate]);
+
   // ── Life lost overlay ─────────────────────────────────────────────────────
 
   useEffect(() => {
