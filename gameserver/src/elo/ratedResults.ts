@@ -129,7 +129,6 @@ export async function recordRankedResult({
     getRankedRatingHistory(loserAccountId),
   ]);
 
-
   return {
     winnerAccountId,
     loserAccountId,

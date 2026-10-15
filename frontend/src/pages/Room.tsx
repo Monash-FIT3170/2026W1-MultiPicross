@@ -318,7 +318,6 @@ export function Room() {
 
   // ── Ranked results navigation ───────────────────────────────────────────────
 
-  
   // ── Ranked results navigation ───────────────────────────────────────────────
 
   useEffect(() => {
@@ -471,11 +470,7 @@ export function Room() {
           <Button variant="primary" size="sm" onClick={retryConnection}>
             Try again
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate(lobbyPath)}
-          >
+          <Button variant="ghost" size="sm" onClick={() => navigate(lobbyPath)}>
             Back to lobby
           </Button>
         </div>
