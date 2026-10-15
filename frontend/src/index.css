@@ -177,9 +177,9 @@
   --color-accent-win: var(--color-contrast-accent-win);
 
   --color-result-win: var(--color-sage-400);
-  --color-result-loss: var(--color-coral-500);
+  --color-result-loss: var(#ff0000);
   --color-result-win-background: #ffffff;
-  --color-result-loss-background: #ffffff;
+  --color-result-loss-background: #161010;
 }
 .high-contrast .icons {
   filter: brightness(0);
