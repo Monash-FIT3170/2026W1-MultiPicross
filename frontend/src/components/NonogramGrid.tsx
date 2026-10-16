@@ -374,7 +374,7 @@ export default function NonogramGrid({
         const isMC = !completed && mistakeCrossIndices?.includes(idx);
         return {
           ...base,
-          backgroundColor: "var(--color-blue-500)",
+          backgroundColor: "var(--color-blue-400)",
           backgroundImage: isMC
             ? "repeating-linear-gradient(-45deg, rgba(220,38,38,0.38) 0px, rgba(220,38,38,0.38) 4px, transparent 4px, transparent 11px)"
             : "none",

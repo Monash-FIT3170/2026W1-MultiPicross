@@ -15,7 +15,7 @@ import {
   buildAuthorizationUrl,
   authorizationCodeGrant,
 } from "openid-client";
-import { db } from "../db/client.js";
+import { db, pgClient } from "../db/client.js";
 import {
   accounts,
   identities,
@@ -120,6 +120,118 @@ const eloSchema: OpenAPIV3.SchemaObject = {
 };
 const eloContent = { "application/json": { schema: eloSchema } };
 const DEFAULT_ELO = 100;
+
+const rankedStatsProperties: NonNullable<OpenAPIV3.SchemaObject["properties"]> =
+  {
+    displayName: { type: "string" },
+    elo: { type: "integer" },
+    wins: { type: "integer" },
+    losses: { type: "integer" },
+    totalGames: { type: "integer" },
+    winRate: { type: "integer" },
+    rank: { type: "integer", nullable: true },
+  };
+
+const rankedStatsSchema: OpenAPIV3.SchemaObject = {
+  type: "object",
+  properties: rankedStatsProperties,
+};
+
+const rankedStatsDetailSchema: OpenAPIV3.SchemaObject = {
+  type: "object",
+  properties: {
+    ...rankedStatsProperties,
+    averageMistakes: { type: "number" },
+    totalMistakes: { type: "integer" },
+    lastEloChange: { type: "integer" },
+    recentMatches: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          id: { type: "string" },
+          opponentName: { type: "string" },
+          result: { type: "string", enum: ["win", "loss"] },
+          eloBefore: { type: "integer" },
+          eloAfter: { type: "integer" },
+          eloChange: { type: "integer" },
+          mistakes: { type: "integer" },
+          opponentMistakes: { type: "integer" },
+          boardSize: { type: "integer" },
+          eloMultiplierPercent: { type: "integer" },
+          completedAt: { type: "string" },
+        },
+      },
+    },
+  },
+};
+
+type RankedStatsRow = {
+  accountId: string;
+  displayName: string;
+  elo: number;
+  wins: number;
+  losses: number;
+  totalGames: number;
+  rank: number | null;
+};
+
+type RankedMatchDetailRow = {
+  id: string;
+  opponentName: string;
+  result: "win" | "loss";
+  eloBefore: number;
+  eloAfter: number;
+  eloChange: number;
+  mistakes: number;
+  opponentMistakes: number;
+  boardSize: number;
+  eloMultiplierPercent: number;
+  completedAt: Date | string;
+};
+
+function rankedStatsPayload(row: RankedStatsRow) {
+  const wins = Number(row.wins);
+  const losses = Number(row.losses);
+  const totalGames = Number(row.totalGames);
+  return {
+    displayName: row.displayName,
+    elo: Number(row.elo),
+    wins,
+    losses,
+    totalGames,
+    winRate: totalGames === 0 ? 0 : Math.round((wins / totalGames) * 100),
+    rank: row.rank === null ? null : Number(row.rank),
+  };
+}
+
+function rankedMatchDetailPayload(row: RankedMatchDetailRow) {
+  return {
+    id: row.id,
+    opponentName: row.opponentName,
+    result: row.result,
+    eloBefore: Number(row.eloBefore),
+    eloAfter: Number(row.eloAfter),
+    eloChange: Number(row.eloChange),
+    mistakes: Number(row.mistakes),
+    opponentMistakes: Number(row.opponentMistakes),
+    boardSize: Number(row.boardSize),
+    eloMultiplierPercent: Number(row.eloMultiplierPercent),
+    completedAt: toUtcIsoString(row.completedAt),
+  };
+}
+
+function toUtcIsoString(value: Date | string) {
+  if (value instanceof Date) return value.toISOString();
+
+  // postgres.js can return `timestamp without time zone` as a plain string.
+  // The database stores these ranked completion times as UTC values, so attach
+  // a timezone marker before sending them to browsers. Otherwise `new Date()`
+  // treats the string as the user's local time and displays UTC as-is.
+  const hasTimezone = /(?:z|[+-]\d{2}:?\d{2})$/i.test(value);
+  const isoLike = value.includes("T") ? value : value.replace(" ", "T");
+  return hasTimezone ? isoLike : `${isoLike}Z`;
+}
 
 async function issueSession(
   c: Parameters<typeof setAuthCookies>[0],
@@ -817,6 +929,249 @@ auth.post(
     }
     clearAuthCookies(c);
     return c.json({ success: true });
+  },
+);
+
+auth.get(
+  "/ranked-leaderboard",
+  describeRoute({
+    tags: ["Auth"],
+    summary: "Get the public ranked leaderboard",
+    responses: {
+      200: {
+        description: "Top ranked players",
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                entries: {
+                  type: "array",
+                  items: rankedStatsSchema,
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  }),
+  async (c) => {
+    const limit = Math.min(
+      Math.max(Number.parseInt(c.req.query("limit") ?? "10", 10) || 10, 1),
+      50,
+    );
+
+    const rows = await pgClient<RankedStatsRow[]>`
+      WITH latest_elo AS (
+        SELECT DISTINCT ON (account_id)
+          account_id,
+          elo
+        FROM player_elo_history
+        ORDER BY account_id, recorded_at DESC
+      ),
+      wins AS (
+        SELECT winner_account_id AS account_id, COUNT(*)::int AS wins
+        FROM ranked_match_results
+        GROUP BY winner_account_id
+      ),
+      losses AS (
+        SELECT loser_account_id AS account_id, COUNT(*)::int AS losses
+        FROM ranked_match_results
+        GROUP BY loser_account_id
+      ),
+      ranked AS (
+        SELECT *,
+          CAST(RANK() OVER (
+            ORDER BY
+              elo DESC,
+              wins DESC,
+              losses ASC,
+              "totalGames" DESC
+          ) AS int) AS rank
+        FROM (
+          SELECT
+            accounts.id AS "accountId",
+            COALESCE(NULLIF(accounts.handle, ''), 'Anonymous') AS "displayName",
+            COALESCE(latest_elo.elo, ${DEFAULT_ELO}::int) AS elo,
+            COALESCE(wins.wins, 0)::int AS wins,
+            COALESCE(losses.losses, 0)::int AS losses,
+            (COALESCE(wins.wins, 0) + COALESCE(losses.losses, 0))::int AS "totalGames"
+          FROM accounts
+          LEFT JOIN latest_elo ON latest_elo.account_id = accounts.id
+          LEFT JOIN wins ON wins.account_id = accounts.id
+          LEFT JOIN losses ON losses.account_id = accounts.id
+          WHERE accounts.kind = 'sso'
+        ) account_stats
+        WHERE "totalGames" > 0
+      )
+      SELECT *
+      FROM ranked
+      ORDER BY rank, "displayName", "accountId"
+      LIMIT ${limit}
+    `;
+
+    return c.json({ entries: rows.map(rankedStatsPayload) });
+  },
+);
+
+auth.get(
+  "/ranked-stats/me",
+  requireAuth,
+  describeRoute({
+    tags: ["Auth"],
+    summary: "Get the current player's ranked stats and position",
+    responses: {
+      200: {
+        description: "Current player ranked stats",
+        content: {
+          "application/json": { schema: rankedStatsDetailSchema },
+        },
+      },
+      401: { description: "Not authenticated", content: errorContent },
+      404: { description: "Account not found", content: errorContent },
+    },
+  }),
+  async (c) => {
+    const { sub: accountId } = c.get("jwtPayload") as { sub: string };
+    const rows = await pgClient<RankedStatsRow[]>`
+      WITH latest_elo AS (
+        SELECT DISTINCT ON (account_id)
+          account_id,
+          elo
+        FROM player_elo_history
+        ORDER BY account_id, recorded_at DESC
+      ),
+      wins AS (
+        SELECT winner_account_id AS account_id, COUNT(*)::int AS wins
+        FROM ranked_match_results
+        GROUP BY winner_account_id
+      ),
+      losses AS (
+        SELECT loser_account_id AS account_id, COUNT(*)::int AS losses
+        FROM ranked_match_results
+        GROUP BY loser_account_id
+      ),
+      account_stats AS (
+        SELECT
+          accounts.id AS "accountId",
+          COALESCE(NULLIF(accounts.handle, ''), 'Anonymous') AS "displayName",
+          accounts.kind,
+          COALESCE(latest_elo.elo, ${DEFAULT_ELO}::int) AS elo,
+          COALESCE(wins.wins, 0)::int AS wins,
+          COALESCE(losses.losses, 0)::int AS losses,
+          (COALESCE(wins.wins, 0) + COALESCE(losses.losses, 0))::int AS "totalGames"
+        FROM accounts
+        LEFT JOIN latest_elo ON latest_elo.account_id = accounts.id
+        LEFT JOIN wins ON wins.account_id = accounts.id
+        LEFT JOIN losses ON losses.account_id = accounts.id
+      ),
+      ranked AS (
+        SELECT
+          "accountId",
+          CAST(RANK() OVER (
+            ORDER BY
+              elo DESC,
+              wins DESC,
+              losses ASC,
+              "totalGames" DESC
+          ) AS int) AS rank
+        FROM account_stats
+        WHERE kind = 'sso' AND "totalGames" > 0
+      )
+      SELECT
+        account_stats."accountId",
+        account_stats."displayName",
+        account_stats.elo,
+        account_stats.wins,
+        account_stats.losses,
+        account_stats."totalGames",
+        ranked.rank
+      FROM account_stats
+      LEFT JOIN ranked ON ranked."accountId" = account_stats."accountId"
+      WHERE account_stats."accountId" = ${accountId}
+      LIMIT 1
+    `;
+
+    const stats = rows[0];
+    if (!stats) return c.json({ error: "Account not found" }, 404);
+
+    const [detailStats] = await pgClient<
+      { totalMistakes: number; averageMistakes: number }[]
+    >`
+      WITH player_matches AS (
+        SELECT
+          CASE
+            WHEN winner_account_id = ${accountId} THEN winner_mistakes
+            ELSE loser_mistakes
+          END AS mistakes
+        FROM ranked_match_results
+        WHERE winner_account_id = ${accountId} OR loser_account_id = ${accountId}
+      )
+      SELECT
+        COALESCE(SUM(mistakes), 0)::int AS "totalMistakes",
+        COALESCE(ROUND(AVG(mistakes)::numeric, 1), 0)::float AS "averageMistakes"
+      FROM player_matches
+    `;
+
+    const recentMatches = await pgClient<RankedMatchDetailRow[]>`
+      SELECT
+        ranked_match_results.id,
+        COALESCE(NULLIF(opponent.handle, ''), 'Anonymous') AS "opponentName",
+        CASE
+          WHEN ranked_match_results.winner_account_id = ${accountId} THEN 'win'
+          ELSE 'loss'
+        END AS result,
+        CASE
+          WHEN ranked_match_results.winner_account_id = ${accountId}
+            THEN ranked_match_results.winner_elo_before
+          ELSE ranked_match_results.loser_elo_before
+        END AS "eloBefore",
+        CASE
+          WHEN ranked_match_results.winner_account_id = ${accountId}
+            THEN ranked_match_results.winner_elo_after
+          ELSE ranked_match_results.loser_elo_after
+        END AS "eloAfter",
+        CASE
+          WHEN ranked_match_results.winner_account_id = ${accountId}
+            THEN ranked_match_results.winner_elo_after - ranked_match_results.winner_elo_before
+          ELSE ranked_match_results.loser_elo_after - ranked_match_results.loser_elo_before
+        END AS "eloChange",
+        CASE
+          WHEN ranked_match_results.winner_account_id = ${accountId}
+            THEN ranked_match_results.winner_mistakes
+          ELSE ranked_match_results.loser_mistakes
+        END AS mistakes,
+        CASE
+          WHEN ranked_match_results.winner_account_id = ${accountId}
+            THEN ranked_match_results.loser_mistakes
+          ELSE ranked_match_results.winner_mistakes
+        END AS "opponentMistakes",
+        ranked_match_results.board_size AS "boardSize",
+        ranked_match_results.elo_multiplier_percent AS "eloMultiplierPercent",
+        ranked_match_results.completed_at AS "completedAt"
+      FROM ranked_match_results
+      JOIN accounts opponent ON opponent.id = CASE
+        WHEN ranked_match_results.winner_account_id = ${accountId}
+          THEN ranked_match_results.loser_account_id
+        ELSE ranked_match_results.winner_account_id
+      END
+      WHERE
+        ranked_match_results.winner_account_id = ${accountId}
+        OR ranked_match_results.loser_account_id = ${accountId}
+      ORDER BY ranked_match_results.completed_at DESC
+    `;
+
+    const detailedMatches = recentMatches.map(rankedMatchDetailPayload);
+    const lastMatch = detailedMatches[0] ?? null;
+
+    return c.json({
+      ...rankedStatsPayload(stats),
+      averageMistakes: Number(detailStats?.averageMistakes ?? 0),
+      totalMistakes: Number(detailStats?.totalMistakes ?? 0),
+      lastEloChange: lastMatch?.eloChange ?? 0,
+      recentMatches: detailedMatches,
+    });
   },
 );
 
