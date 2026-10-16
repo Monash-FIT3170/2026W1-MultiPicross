@@ -57,6 +57,13 @@
       "when": 1791850700000,
       "tag": "0007_ranked_board_sizes",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791851290504,
+      "tag": "0008_account_settings",
+      "breakpoints": true
     }
   ]
 }

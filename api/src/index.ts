@@ -7,6 +7,7 @@ import { runMigrations } from "./db/migrate.js";
 import { importPuzzles } from "./db/import-puzzles.js";
 import authRoutes from "./auth/routes.js";
 import spRoutes from "./singleplayer/routes.js";
+import settingsRoutes from "./settings/routes.js";
 import collectionRoutes from "./collection/routes.js";
 import { assertOidcEnv, getOidcConfig } from "./auth/oidc.js";
 import { createServiceAccount } from "./auth/service-account.js";
@@ -17,6 +18,7 @@ app.get("/health", (c) => c.json({ ok: true }));
 
 app.route("/auth", authRoutes);
 app.route("/singleplayer", spRoutes);
+app.route("/settings", settingsRoutes);
 app.route("/collection", collectionRoutes);
 
 app.get(
