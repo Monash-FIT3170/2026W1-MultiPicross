@@ -154,8 +154,10 @@
   --color-line-strong: black;
 
   --color-blue-50: white;
+  --color-blue-200: lightgray;
   --color-blue-400: var(--color-contrast-accent-primary);
   --color-blue-500: var(--color-contrast-accent-primary);
+  --color-blue-600: var(--color-contrast-accent-primary);
   --color-logo: var(--color-contrast-accent-primary);
 
   --color-butter-50: white;
