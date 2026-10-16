@@ -98,7 +98,7 @@
 /* Dark mode colours */
 .dark {
   --color-paper: #18191d;
-  --color-background: "var(--color-paper)";
+  --color-background: var(--color-paper);
   --color-surface: #222328;
   --color-surface-sunk: #2b2c32;
 
