@@ -12,7 +12,7 @@ import { useAuth } from "../auth/AuthContext";
 import { SSO_BUTTON_LABEL } from "../auth/ssoLabel";
 
 const inputCls =
-  "rounded-xl border border-[var(--color-line)] px-4 py-2 text-sm outline-none focus:border-[var(--color-accent-primary)] focus:ring-2 focus:ring-[var(--color-accent-primary)]/20";
+  "rounded-xl border border-[var(--color-line)] px-4 py-2 text-sm outline-none focus:border-[var(--color-accent-primary)] focus:ring-2 focus:ring-[var(--color-accent-primary)]/20 bg-[var(--color-surface-sunk)]";
 const labelCls = "text-sm font-medium text-[var(--color-ink-soft)]";
 
 // gap-4 = 1rem = 16px, cancelled via marginTop while the credentials block is
@@ -428,6 +428,6 @@ export function AuthLayout() {
           )}
         </form>
       </div>
-    </div >
+    </div>
   );
 }

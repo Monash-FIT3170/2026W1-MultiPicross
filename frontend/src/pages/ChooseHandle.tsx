@@ -51,7 +51,7 @@ export function ChooseHandle() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--color-background)]">
-      <div className="w-full max-w-sm rounded-2xl bg-[var(--color-surface-sunk)] shadow-lg">
+      <div className="w-full max-w-sm rounded-2xl bg-[var(--color-surface)] shadow-lg">
         <form
           onSubmit={handleSubmit}
           noValidate
