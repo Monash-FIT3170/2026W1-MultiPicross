@@ -3,7 +3,13 @@ import { PicrossRoomState } from "./schema/PicrossRoomState.js";
 import { sql } from "../db/client.js";
 import { verifyRoomToken } from "../auth/roomToken.js";
 import { requireEnv } from "../env.js";
-import { recordRankedResult } from "../elo/ratedResults.js";
+import {
+  recordRankedResult,
+  recordDoubleEliminationResult,
+  type RankedResult,
+  type DoubleEliminationResult,
+} from "../elo/ratedResults.js";
+
 import { recordMpResults, type MpMode } from "../results/recordResults.js";
 import {
   DEFAULT_GAME_MODE,
@@ -152,6 +158,18 @@ export class PicrossRoom extends Room {
   private forfeit = false;
   private isRanked = false;
   private rankedResultRecorded = false;
+  // private rankedResult: RankedResult | null = null;
+
+  private rankedResult:
+    | (RankedResult & {
+        resultType: "normal";
+      })
+    | (DoubleEliminationResult & {
+        resultType: "double-elimination";
+        playerOneSessionId: string;
+        playerTwoSessionId: string;
+      })
+    | null = null;
   private puzzleId = "";
   private mpMode: MpMode = "unrated";
   private startedAt = 0;
@@ -374,6 +392,13 @@ export class PicrossRoom extends Room {
   }
 
   onLeave(client: Client) {
+    // Ranked is always 1v1 and keeps both players seated after the match
+    // ends: the results page needs both snapshots, and Elo calculation needs
+    // both players' account IDs and statistics.
+    if (this.isRanked) {
+      this.onRankedLeave(client);
+      return;
+    }
     if (this.state.phase === "playing") {
       const leaving = this.players.get(client.sessionId);
       if (leaving) this.clearCursorOf(client.sessionId, leaving);
@@ -400,6 +425,33 @@ export class PicrossRoom extends Room {
     // here too, where assignTeams() leaves the Teams as they were.
     this.players.delete(client.sessionId);
     this.assignTeams();
+    this.broadcastState();
+  }
+
+  private onRankedLeave(client: Client) {
+    if (this.state.phase === "playing") {
+      // A forfeit win may only go to a player who is still alive. If the last
+      // player standing had already burned all three lives their elimination
+      // stands and nobody wins — crowning them was reporting a loss as a win.
+      // Never overwrite an already-decided winner either.
+      if (!this.winnerId) {
+        const survivors = [...this.players.entries()].filter(
+          ([sessionId, player]) =>
+            sessionId !== client.sessionId && !player.done,
+        );
+
+        if (survivors.length === 1) {
+          this.winnerId = survivors[0][0];
+        }
+      }
+
+      this.forfeit = true;
+      this.setPhase("finished");
+    } else if (this.state.phase !== "finished") {
+      // A player leaving the waiting lobby is not a match result.
+      this.players.delete(client.sessionId);
+    }
+
     this.broadcastState();
   }
 
@@ -529,24 +581,89 @@ export class PicrossRoom extends Room {
   }
 
   private async recordRankedResult(): Promise<void> {
-    if (!this.isRanked || this.rankedResultRecorded || !this.winnerId) return;
+    if (!this.isRanked || this.rankedResultRecorded) {
+      return;
+    }
+
+    const players = [...this.players.entries()];
+
+    if (players.length !== 2) {
+      return;
+    }
+
+    const [firstSessionId, firstPlayer] = players[0];
+    const [secondSessionId, secondPlayer] = players[1];
+
+    // Both players were eliminated: both lose Elo.
+    if (!this.winnerId && firstPlayer.done && secondPlayer.done) {
+      if (!firstPlayer.accountId || !secondPlayer.accountId) {
+        return;
+      }
+
+      this.rankedResultRecorded = true;
+
+      try {
+        const result = await recordDoubleEliminationResult({
+          playerOneAccountId: firstPlayer.accountId,
+          playerTwoAccountId: secondPlayer.accountId,
+          playerOneMistakes: 3 - firstPlayer.livesLeft,
+          playerTwoMistakes: 3 - secondPlayer.livesLeft,
+        });
+
+        this.rankedResult = {
+          ...result,
+          resultType: "double-elimination",
+          playerOneSessionId: firstSessionId,
+          playerTwoSessionId: secondSessionId,
+        };
+
+        // Send a new snapshot after both Elo updates have completed.
+        this.broadcastState();
+
+        console.log("Double-elimination Elo recorded.");
+      } catch (error) {
+        this.rankedResultRecorded = false;
+        console.error("Double-elimination Elo error", error);
+      }
+
+      return;
+    }
+
+    // Normal ranked result: one player won.
+    if (!this.winnerId) {
+      return;
+    }
 
     const winner = this.players.get(this.winnerId);
-    const loser = [...this.players.entries()].find(
-      ([sessionId]) => sessionId !== this.winnerId,
-    )?.[1];
 
-    if (!winner?.accountId || !loser?.accountId) return;
+    const loser =
+      this.winnerId === firstSessionId
+        ? secondPlayer
+        : this.winnerId === secondSessionId
+          ? firstPlayer
+          : undefined;
+
+    if (!winner?.accountId || !loser?.accountId) {
+      return;
+    }
 
     this.rankedResultRecorded = true;
+
     try {
-      await recordRankedResult({
+      const result = await recordRankedResult({
         winnerAccountId: winner.accountId,
         loserAccountId: loser.accountId,
         winnerMistakes: 3 - winner.livesLeft,
         loserMistakes: 3 - loser.livesLeft,
         boardSize: this.width,
       });
+
+      this.rankedResult = {
+        ...result,
+        resultType: "normal",
+      };
+
+      this.broadcastState();
     } catch (error) {
       this.rankedResultRecorded = false;
       console.error("ranked result error", error);
@@ -790,6 +907,7 @@ export class PicrossRoom extends Room {
       winnerName: this.winnerName,
       forfeit: this.forfeit,
       mode: this.mode,
+      rankedResult: this.isRanked ? this.rankedResult : undefined,
     };
 
     if (this.modeConfig.teamBased) {
@@ -803,6 +921,7 @@ export class PicrossRoom extends Room {
 
     if (this.state.phase === "finished") {
       snapshot.colors = this.colors;
+      snapshot.solution = [...this.solution];
     }
 
     return snapshot;

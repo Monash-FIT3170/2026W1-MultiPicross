@@ -247,7 +247,7 @@ export function CompetitiveMultiplayer() {
                   <MetricRow
                     icon={trophyIcon}
                     label="Rank"
-                    value={myStats ? `#${myStats.rank}` : "-"}
+                    value={formatRank(myStats?.rank)}
                   />
                   <MetricRow
                     icon={shieldIcon}
@@ -724,7 +724,7 @@ function PlayerStatsDialog({
               {player.displayName}
             </div>
             <div style={{ color: "var(--color-ink-muted)", marginTop: 4 }}>
-              Rank #{player.rank}
+              Rank {formatRank(player.rank)}
             </div>
           </div>
           <button
@@ -801,4 +801,8 @@ function ProfileStat({
       </div>
     </div>
   );
+}
+
+function formatRank(rank: number | null | undefined) {
+  return rank === null || rank === undefined ? "N/A" : `#${rank}`;
 }

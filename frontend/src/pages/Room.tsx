@@ -49,6 +49,38 @@ interface PlayerSnapshot extends Partial<BoardSnapshot> {
   team: number | null;
 }
 
+interface NormalRankedResult {
+  resultType: "normal";
+  winnerAccountId: string;
+  loserAccountId: string;
+  winnerEloBefore: number;
+  winnerEloAfter: number;
+  winnerEloChange: number;
+  loserEloBefore: number;
+  loserEloAfter: number;
+  loserEloChange: number;
+  winnerRatingHistory: number[];
+  loserRatingHistory: number[];
+}
+
+interface DoubleEliminationResult {
+  resultType: "double-elimination";
+  playerOneSessionId: string;
+  playerTwoSessionId: string;
+  playerOneAccountId: string;
+  playerTwoAccountId: string;
+  playerOneEloBefore: number;
+  playerOneEloAfter: number;
+  playerOneEloChange: number;
+  playerOneRatingHistory: number[];
+  playerTwoEloBefore: number;
+  playerTwoEloAfter: number;
+  playerTwoEloChange: number;
+  playerTwoRatingHistory: number[];
+}
+
+type RankedResult = NormalRankedResult | DoubleEliminationResult;
+
 interface RoomSnapshot {
   phase: "waiting" | "playing" | "finished";
   inviteCode: string;
@@ -68,6 +100,8 @@ interface RoomSnapshot {
   mode: string;
   /** 2v2 only: the shared Team Board of each team, keyed by team index. */
   teamBoards?: Record<string, BoardSnapshot>;
+  rankedResult?: RankedResult;
+  solution?: number[];
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -205,7 +239,6 @@ export function Room() {
   const lobbyPath = isRanked
     ? "/multiplayer/competitive"
     : "/multiplayer/casual";
-
   const roomRef = useRef<ColyseusRoom | null>(null);
   const [snapshot, setSnapshot] = useState<RoomSnapshot | null>(null);
   const [mySessionId, setMySessionId] = useState<string | null>(null);
@@ -219,6 +252,7 @@ export function Room() {
   const intentionalLeaveRef = useRef(false);
   const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
   const mistakeCrossTimerRef = useRef<number | undefined>(undefined);
+  const resultsNavigatedRef = useRef(false);
   const [actionMode, setActionMode] = useState<"fill" | "cross">("fill");
   const [lifeLostNotice, setLifeLostNotice] = useState<{
     id: number;
@@ -378,6 +412,49 @@ export function Room() {
     );
     return () => clearInterval(id);
   }, [snapshot?.phase]);
+
+  // ── Ranked results navigation ───────────────────────────────────────────────
+
+  // ── Ranked results navigation ───────────────────────────────────────────────
+
+  useEffect(() => {
+    if (!isRanked) return;
+    if (snapshot?.phase !== "finished") return;
+    if (resultsNavigatedRef.current) return;
+
+    const sessionIds = Object.keys(snapshot.players);
+    const myId = mySessionId ?? sessionIds[0];
+    const opponentId = sessionIds.find((id) => id !== myId) ?? null;
+
+    const me = snapshot.players[myId];
+    const opponent = opponentId ? snapshot.players[opponentId] : null;
+
+    if (!me || !opponent) return;
+
+    // The results page needs the completed Elo calculation.
+    // Wait for the server's follow-up snapshot if it is not ready yet.
+    if (!snapshot.rankedResult) return;
+
+    resultsNavigatedRef.current = true;
+
+    navigate("/multiplayer/competitive/results", {
+      state: {
+        winnerId: snapshot.winnerId,
+        mySessionId: myId,
+        opponentId,
+        me,
+        opponent,
+        width: snapshot.width,
+        height: snapshot.height,
+        colors: snapshot.colors,
+        forfeit: snapshot.forfeit,
+        displaySeconds,
+        rankedResult: snapshot.rankedResult,
+        solution: snapshot.solution,
+      },
+      replace: true,
+    });
+  }, [isRanked, snapshot, mySessionId, displaySeconds, navigate]);
 
   // ── Life lost overlay ─────────────────────────────────────────────────────
 
@@ -1124,6 +1201,9 @@ export function Room() {
           <span>Connection lost — reconnecting…</span>
         </div>
       )}
+
+      {/* Outcome banner - only used for unranked games
+      {isFinished && !isRanked && ( )} */}
 
       {/* Life lost overlay */}
       {lifeLostNotice && (
