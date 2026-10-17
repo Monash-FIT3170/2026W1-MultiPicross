@@ -45,7 +45,7 @@ export function AudioSettings() {
           step="1"
           value={volume}
           onChange={(e) => setVolume(Number(e.target.value))}
-          className="w-full accent-[var(--color-blue-500)]"
+          className="w-full accent-[var(--color-blue-400)]"
           aria-label="Volume"
         />
       </div>
