@@ -306,6 +306,44 @@ body {
   color: var(--color-ink-muted);
 }
 
+.mp-achievement-toast-count {
+  margin-left: 8px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.mp-achievement-toast-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 4px;
+}
+
+.mp-achievement-toast-btn {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-ink-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.mp-achievement-toast-btn:hover:not(:disabled) {
+  background: var(--color-butter-100);
+  color: var(--color-ink);
+}
+
+.mp-achievement-toast-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
 /* ──── Animations ──── */
 @keyframes mp-toast-in {
   from {
