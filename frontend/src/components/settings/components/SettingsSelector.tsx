@@ -28,7 +28,7 @@ export function SettingsSelector({
             aria-pressed={isSelected}
             className={`min-h-8 rounded-full px-3 text-[13px] font-ui transition ${
               isSelected
-                ? "bg-[var(--color-surface)] font-medium text-[var(--color-blue-500)] shadow-sm"
+                ? "bg-[var(--color-surface)] font-semibold text-[var(--color-blue-400)] shadow-sm border border-[var(--color-line)]"
                 : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]"
             }`}
           >
