@@ -1,4 +1,4 @@
-CREATE TABLE "ranked_match_results" (
+CREATE TABLE IF NOT EXISTS "ranked_match_results" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"winner_account_id" uuid NOT NULL,
 	"loser_account_id" uuid NOT NULL,
