@@ -26,6 +26,37 @@ interface NonogramGridProps {
   onCross?: (row: number, col: number, markCross: boolean) => void;
 }
 
+/**
+ * Re-renders caller whenever the viewport is resized or the device is
+ * rotated.
+ *
+ * autoCellSize() reads window.innerWidth on every call, but React has no reason
+ * to call it again once a screen has rendered. Without this the grid keeps
+ * its desktop cell size after a rotation into portrait. Any component that
+ * sizes layout from autoCellSize should call this.
+ */
+export function useViewportWidth(): number {
+  const [width, setWidth] = useState(() =>
+    typeof window === "undefined" ? 1200 : window.innerWidth,
+  );
+
+  useEffect(() => {
+    function onResize() {
+      setWidth(window.innerWidth);
+    }
+    window.addEventListener("resize", onResize);
+    // orientationchange fires before innerWidth settles on some mobile
+    // browsers, so resize alone can miss a rotation.
+    window.addEventListener("orientationchange", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+    };
+  }, []);
+
+  return width;
+}
+
 export function autoCellSize(w: number, h: number): number {
   const dim = Math.max(w, h);
   const isMobile = window.innerWidth <= 600;
@@ -82,6 +113,7 @@ export default function NonogramGrid({
   onFill,
   onCross,
 }: NonogramGridProps) {
+  useViewportWidth();
   const cs = cellSize ?? autoCellSize(width, height);
 
   const maxRowClueLen = Math.max(1, ...rowClues.map((r) => r.length));

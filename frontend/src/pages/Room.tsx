@@ -9,6 +9,7 @@ import NonogramGrid, {
   autoCellSize,
   cellsToGrid,
   fmtSeconds,
+  useViewportWidth,
 } from "../components/NonogramGrid";
 import {
   Logo,
@@ -229,6 +230,7 @@ function leaveQuietly(room: ColyseusRoom | null) {
 // ── Main component ───────────────────────────────────────────────────────────
 
 export function Room() {
+  useViewportWidth();
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
