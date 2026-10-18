@@ -96,6 +96,14 @@ function writeCachedSettings(settings: Settings) {
 }
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
+  // Near the top of your state declarations inside SettingsProvider:
+  const [appearance, setAppearance] = useState<AppearanceSettings>(() => {
+    return readCachedAppearance() || defaultAppearance;
+  });
+
+  useEffect(() => {
+    writeCachedAppearance(appearance);
+  }, [appearance]);
   const { status, user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [settings, setSettings] = useState<Settings>(readCachedSettings);
@@ -281,6 +289,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         closeSettings: () => setIsOpen(false),
         profileAccent,
         setProfileAccent,
+        setTheme,                  // <-- Make sure these are included in the provider value object
+        setAnimationLevel,         // <-- so TypeScript recognizes they are being "read/used"
+        setCellFillPop,
+        setShowOpponentProgress,
       }}
     >
       {children}

@@ -234,7 +234,8 @@ export function Room() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { status, playerName } = useAuth();
-  const { primaryClick, autoCrossSolvedLines, confirmBeforeAbandoning } = useSettings();
+  const { primaryClick, autoCrossSolvedLines, confirmBeforeAbandoning } =
+    useSettings();
 
   const isRanked =
     searchParams.get("mode") === "competitive" ||
@@ -256,6 +257,7 @@ export function Room() {
   const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
   const mistakeCrossTimerRef = useRef<number | undefined>(undefined);
   const [actionMode, setActionMode] = useState<"fill" | "cross">(primaryClick);
+  const resultsNavigatedRef = useRef(false);
   const [lifeLostNotice, setLifeLostNotice] = useState<{
     id: number;
     livesLeft: number;
