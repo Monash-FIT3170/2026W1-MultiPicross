@@ -1,5 +1,5 @@
 {
-  "id": "479f2ec0-2037-4601-8b1b-ecdcfe403d7a",
+  "id": "1f84e59c-ca34-45ec-82b8-a7b20b78ec55",
   "prevId": "9369a4ee-5fc6-4e52-89b3-30216fe5fa58",
   "version": "7",
   "dialect": "postgresql",
@@ -47,13 +47,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
-        },
-        "settings": {
-          "name": "settings",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'{}'::jsonb"
         },
         "created_at": {
           "name": "created_at",
@@ -241,6 +234,117 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.mp_results": {
+      "name": "mp_results",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "puzzle_id": {
+          "name": "puzzle_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mode": {
+          "name": "mode",
+          "type": "mp_mode",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "solved": {
+          "name": "solved",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "won": {
+          "name": "won",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "elapsed_seconds": {
+          "name": "elapsed_seconds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lives_left": {
+          "name": "lives_left",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "mp_results_account_puzzle_idx": {
+          "name": "mp_results_account_puzzle_idx",
+          "columns": [
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "puzzle_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "mp_results_account_id_accounts_id_fk": {
+          "name": "mp_results_account_id_accounts_id_fk",
+          "tableFrom": "mp_results",
+          "tableTo": "accounts",
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "mp_results_puzzle_id_nonograms_id_fk": {
+          "name": "mp_results_puzzle_id_nonograms_id_fk",
+          "tableFrom": "mp_results",
+          "tableTo": "nonograms",
+          "columnsFrom": ["puzzle_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.nonograms": {
       "name": "nonograms",
       "schema": "",
@@ -250,6 +354,12 @@
           "type": "text",
           "primaryKey": true,
           "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "width": {
           "name": "width",
@@ -583,6 +693,22 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "sp_completions_account_completed_idx": {
+          "name": "sp_completions_account_completed_idx",
+          "columns": [
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "state = 'completed'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -617,6 +743,11 @@
       "name": "account_kind",
       "schema": "public",
       "values": ["sso", "service"]
+    },
+    "public.mp_mode": {
+      "name": "mp_mode",
+      "schema": "public",
+      "values": ["unrated", "public", "ranked"]
     },
     "public.sp_completion_state": {
       "name": "sp_completion_state",

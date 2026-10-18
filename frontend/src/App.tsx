@@ -5,6 +5,7 @@ import { Singleplayer } from "./pages/Singleplayer";
 import { CasualMultiplayer } from "./pages/CasualMultiplayer";
 import { Room } from "./pages/Room";
 import { Statistics } from "./pages/Statistics";
+import { Collection } from "./pages/Collection";
 import { Tutorial } from "./pages/Tutorial";
 import { Settings } from "./pages/Settings";
 import { AuthLayout } from "./pages/AuthLayout";
@@ -18,6 +19,7 @@ import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { useAuth } from "./auth/AuthContext";
 
 import { SettingsModal } from "./components/settings/SettingsModal";
+import { RankedMultiplayerResults } from "./pages/RankedMultiplayerResult";
 
 export default function App() {
   const { status, user } = useAuth();
@@ -51,6 +53,10 @@ export default function App() {
           {/* Guests arriving on an invite link are bounced to /nickname, which
               navigates back here once a name is set. */}
           <Route path="/room/:roomId" element={<Room />} />
+          <Route
+            path="/multiplayer/competitive/results"
+            element={<RankedMultiplayerResults />}
+          />
         </Route>
         {/* Bare /multiplayer has no page of its own; without this it would hit the
             catch-all below and silently land on the main menu. */}
@@ -64,6 +70,7 @@ export default function App() {
         <Route path="/auth/error" element={<AuthError />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/statistics" element={<Statistics />} />
+          <Route path="/collection" element={<Collection />} />
         </Route>
         <Route element={<GuestOnly />}>
           <Route path="/nickname" element={<GuestNickname />} />

@@ -1,0 +1,1 @@
+ALTER TABLE "accounts" ADD COLUMN "settings" jsonb DEFAULT '{}'::jsonb NOT NULL;

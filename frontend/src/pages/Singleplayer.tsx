@@ -200,9 +200,12 @@ export function Singleplayer() {
 
   // ── Timer ──────────────────────────────────────────────────────────────────
 
+  // Restarts the clock when the server hands back a fresh elapsed time
+  const baseElapsed = phase.kind === "playing" ? phase.game.baseElapsed : 0;
+
   useEffect(() => {
     if (phase.kind !== "playing" || phase.outcome !== null) return;
-    const startWall = Date.now() - phase.game.baseElapsed * 1000;
+    const startWall = Date.now() - baseElapsed * 1000;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing; seeds the clock so it doesn't read 0 for the first second
     setDisplaySeconds(Math.floor((Date.now() - startWall) / 1000));
     const id = setInterval(() => {
@@ -212,9 +215,57 @@ export function Singleplayer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     phase.kind === "playing" ? (phase.game.completionId ?? "guest") : null,
+    baseElapsed,
     phase.kind,
     phase.kind === "playing" ? phase.outcome : null,
   ]);
+
+  // ── Pause on leave ─────────────────────────────────────────────────────────
+
+  const runningCompletionId =
+    phase.kind === "playing" && phase.outcome === null
+      ? phase.game.completionId
+      : undefined;
+
+  useEffect(() => {
+    if (!runningCompletionId) return;
+
+    function pause() {
+      void apiFetch("/singleplayer/pause", {
+        method: "POST",
+        keepalive: true,
+      }).catch(() => {
+        /* ignore */
+      });
+    }
+
+    async function resumeFromCache(e: PageTransitionEvent) {
+      if (!e.persisted) return;
+      try {
+        const res = await apiFetch("/singleplayer/resume", { method: "POST" });
+        if (!res.ok) return;
+        const { elapsedSeconds } = (await res.json()) as {
+          elapsedSeconds: number;
+        };
+        setPhase((cur) =>
+          cur.kind === "playing" &&
+          cur.game.completionId === runningCompletionId
+            ? { ...cur, game: { ...cur.game, baseElapsed: elapsedSeconds } }
+            : cur,
+        );
+      } catch {
+        /* ignore */
+      }
+    }
+
+    window.addEventListener("pagehide", pause);
+    window.addEventListener("pageshow", resumeFromCache);
+    return () => {
+      window.removeEventListener("pagehide", pause);
+      window.removeEventListener("pageshow", resumeFromCache);
+      pause();
+    };
+  }, [runningCompletionId]);
 
   // ── Start game ─────────────────────────────────────────────────────────────
   function autoComplete(grid: CellValue[], g: GameState): CellValue[] {
@@ -244,6 +295,31 @@ export function Singleplayer() {
       setPhase({
         kind: "playing",
         game: completionToGameState(completion, autoCrossSolvedLines),
+        outcome: null,
+      });
+    } catch (e) {
+      setPhase({ kind: "error", message: String(e) });
+    }
+  }
+
+  async function continueAuthGame(completion: ActiveCompletion) {
+    setPhase({ kind: "loading-puzzle" });
+    try {
+      const res = await apiFetch("/singleplayer/resume", { method: "POST" });
+      if (!res.ok) {
+        setPhase({ kind: "error", message: await parseApiError(res) });
+        return;
+      }
+      const { elapsedSeconds } = (await res.json()) as {
+        elapsedSeconds: number;
+      };
+      gameKeyRef.current++;
+      setPhase({
+        kind: "playing",
+        game: {
+          ...completionToGameState(completion),
+          baseElapsed: elapsedSeconds,
+        },
         outcome: null,
       });
     } catch (e) {
