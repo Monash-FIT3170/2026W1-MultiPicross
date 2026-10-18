@@ -305,7 +305,7 @@ export function Singleplayer() {
   // async function continueAuthGame(completion: ActiveCompletion, token?: string) {
   //   setPhase({ kind: "loading-puzzle" });
   //   try {
-  //     const res = await apiFetch("/singleplayer/resume", { 
+  //     const res = await apiFetch("/singleplayer/resume", {
   //       method: "POST",
   //       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
   //     });

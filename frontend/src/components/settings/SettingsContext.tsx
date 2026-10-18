@@ -209,23 +209,22 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     );
   }, [cellFillPop]);
 
-
-return (
-  <SettingsContext.Provider
-    value={{
-      ...settings,
-      ...setters,
-      isOpen,
-      openSettings: () => setIsOpen(true),
-      closeSettings: () => setIsOpen(false),
-      profileAccent,
-      setProfileAccent,
-    }}
-  >
-    {children}
-  </SettingsContext.Provider>
-);
-
+  return (
+    <SettingsContext.Provider
+      value={{
+        ...settings,
+        ...setters,
+        isOpen,
+        openSettings: () => setIsOpen(true),
+        closeSettings: () => setIsOpen(false),
+        profileAccent,
+        setProfileAccent,
+      }}
+    >
+      {children}
+    </SettingsContext.Provider>
+  );
+}
 
 export function useSettings() {
   const context = useContext(SettingsContext);
