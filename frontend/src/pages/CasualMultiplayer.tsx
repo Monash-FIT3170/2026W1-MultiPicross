@@ -196,7 +196,6 @@ export function CasualMultiplayer() {
         </p>
 
         <div
-          className="mp-multiplayer-options"
           style={{
             display: "flex",
             alignItems: "center",
@@ -215,6 +214,7 @@ export function CasualMultiplayer() {
 
         {/* Options */}
         <div
+          className="mp-multiplayer-options"
           style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr",

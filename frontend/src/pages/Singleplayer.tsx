@@ -7,6 +7,7 @@ import NonogramGrid, {
   cellsToGrid,
   fmtSeconds,
   autoCellSize,
+  useViewportWidth,
 } from "../components/NonogramGrid";
 import {
   Logo,
@@ -833,6 +834,7 @@ function SizeSelectScreen({
 }) {
   return (
     <div
+      className="mp-size-select"
       style={{
         minHeight: "100vh",
         background: "var(--color-paper)",
@@ -895,6 +897,7 @@ function SizeSelectScreen({
       )}
 
       <div
+        className="mp-size-grid"
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(2, 260px)",
@@ -906,7 +909,7 @@ function SizeSelectScreen({
         {sizes.map((s) => (
           <button
             key={`${s.width}x${s.height}`}
-            className="tile"
+            className="tile mp-size-tile"
             onClick={() => onSelectSize(s.width, s.height)}
             style={{
               width: 260,
@@ -954,6 +957,7 @@ function ActiveChoiceScreen({
 }) {
   return (
     <div
+      className="mp-active-choice"
       style={{
         minHeight: "100vh",
         background: "var(--color-paper)",
@@ -1048,6 +1052,8 @@ function PlayingScreen({
   onPlayAgain: () => void;
   onMainMenu: () => void;
 }) {
+  // The sidebar offset below is derived from cs, so this screen rerenders on resize too
+  useViewportWidth();
   const cs = autoCellSize(game.width, game.height);
   const maxRowClueLen = Math.max(1, ...game.rowClues.map((r) => r.length));
   const rowClueWidth = maxRowClueLen * cs;
