@@ -96,14 +96,6 @@ function writeCachedSettings(settings: Settings) {
 }
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-  // Near the top of your state declarations inside SettingsProvider:
-  const [appearance, setAppearance] = useState<AppearanceSettings>(() => {
-    return readCachedAppearance() || defaultAppearance;
-  });
-
-  useEffect(() => {
-    writeCachedAppearance(appearance);
-  }, [appearance]);
   const { status, user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [settings, setSettings] = useState<Settings>(readCachedSettings);
@@ -190,68 +182,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const { theme, animationLevel, cellFillPop, reducedMotion } = settings;
 
   useEffect(() => {
-    writeCachedAppearance(appearance);
-  }, [appearance]);
-
-  useEffect(() => {
-    if (status !== "authenticated") return;
-    let cancelled = false;
-    loading.current = true;
-    changedWhileLoading.current.clear();
-
-    apiFetch("/settings")
-      .then(async (res) => {
-        if (!res.ok || cancelled) return;
-        const saved = (await res.json()) as Partial<AppearanceSettings>;
-        if (cancelled) return;
-        for (const key of changedWhileLoading.current) delete saved[key];
-        setAppearance((prev) => ({ ...prev, ...saved }));
-      })
-      .catch((err: unknown) => {
-        console.warn("Failed to load saved settings:", err);
-      })
-      .finally(() => {
-        if (!cancelled) loading.current = false;
-      });
-
-    return () => {
-      cancelled = true;
-      loading.current = false;
-    };
-  }, [status]);
-
-  const updateAppearance = useCallback(
-    <K extends keyof AppearanceSettings>(
-      key: K,
-      value: AppearanceSettings[K],
-    ) => {
-      setAppearance((prev) => ({ ...prev, [key]: value }));
-      if (status !== "authenticated") return;
-      if (loading.current) changedWhileLoading.current.add(key);
-
-      apiFetch("/settings", {
-        method: "PATCH",
-        body: JSON.stringify({ [key]: value }),
-      })
-        .then((res) => {
-          if (!res.ok) console.warn(`Failed to save ${key} (${res.status})`);
-        })
-        .catch((err: unknown) => {
-          console.warn(`Failed to save ${key}:`, err);
-        });
-    },
-    [status],
-  );
-
-  const setTheme = (value: Theme) => updateAppearance("theme", value);
-  const setAnimationLevel = (value: AnimationLevel) =>
-    updateAppearance("animationLevel", value);
-  const setCellFillPop = (value: boolean) =>
-    updateAppearance("cellFillPop", value);
-  const setShowOpponentProgress = (value: boolean) =>
-    updateAppearance("showOpponentProgress", value);
-
-  useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
     document.documentElement.classList.toggle(
       "high-contrast",
@@ -279,26 +209,23 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     );
   }, [cellFillPop]);
 
-  return (
-    <SettingsContext.Provider
-      value={{
-        ...settings,
-        ...setters,
-        isOpen,
-        openSettings: () => setIsOpen(true),
-        closeSettings: () => setIsOpen(false),
-        profileAccent,
-        setProfileAccent,
-        setTheme,                  // <-- Make sure these are included in the provider value object
-        setAnimationLevel,         // <-- so TypeScript recognizes they are being "read/used"
-        setCellFillPop,
-        setShowOpponentProgress,
-      }}
-    >
-      {children}
-    </SettingsContext.Provider>
-  );
-}
+
+return (
+  <SettingsContext.Provider
+    value={{
+      ...settings,
+      ...setters,
+      isOpen,
+      openSettings: () => setIsOpen(true),
+      closeSettings: () => setIsOpen(false),
+      profileAccent,
+      setProfileAccent,
+    }}
+  >
+    {children}
+  </SettingsContext.Provider>
+);
+
 
 export function useSettings() {
   const context = useContext(SettingsContext);
