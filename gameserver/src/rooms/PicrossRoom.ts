@@ -856,20 +856,16 @@ export class PicrossRoom extends Room {
       board.crosses[idx] = false;
       board.mistakeCross[idx] = true;
       player.livesLeft = Math.max(0, player.livesLeft - 1);
-<<<<<<< HEAD
-      if (player.autoCross) {
-        player.crosses = applyAutoComplete(
-          player.confirmedFilled,
-          player.crosses,
-          this.rowClues,
-          this.colClues,
-          this.width,
-          this.height,
-        );
-      }
-=======
-      this.autoCross(board);
->>>>>>> 2418fb9bacec214ac946c6b5aedbda488780381c
+    if (player.autoCross) {
+      board.crosses = applyAutoComplete(
+        board.confirmedFilled,
+        board.crosses,
+        this.rowClues,
+        this.colClues,
+        this.width,
+        this.height,
+      );
+    }
 
       // Solved is checked first: a mistake that reveals the final cell wins,
       // even when it also costs the player their last life.

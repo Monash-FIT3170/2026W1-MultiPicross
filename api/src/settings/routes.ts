@@ -17,7 +17,6 @@ export const SettingsPatch = v.strictObject({
   animationLevel: v.optional(v.picklist(["full", "subtle", "off"])),
   cellFillPop: v.optional(v.boolean()),
   showOpponentProgress: v.optional(v.boolean()),
-<<<<<<< HEAD
   // Gameplay
   primaryClick: v.optional(v.picklist(["fill", "cross"])),
   dragToFill: v.optional(v.boolean()),
@@ -34,8 +33,6 @@ export const SettingsPatch = v.strictObject({
   reducedMotion: v.optional(v.boolean()),
   largerClueNumbers: v.optional(v.boolean()),
   boldGridLines: v.optional(v.boolean()),
-=======
->>>>>>> 2418fb9bacec214ac946c6b5aedbda488780381c
 });
 
 export type Settings = v.InferOutput<typeof SettingsPatch>;
