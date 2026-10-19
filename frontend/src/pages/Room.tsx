@@ -695,6 +695,7 @@ export function Room() {
     );
   }
 
+  const totalFilledCells = rowClues.flat().reduce((sum, clue) => sum + clue, 0);
   const myGrid = buildGrid(me);
   const opponentGrid = opponent ? buildGrid(opponent) : null;
   const myMistakeCrossIndices = (me.mistakeCross ?? []).reduce<number[]>(
@@ -853,6 +854,12 @@ export function Room() {
                 {fmtSeconds(displaySeconds)}
               </span>
             </StatTile>
+            <div style={{ display: "grid", gap: 14, width: "100%" }}>
+              <PlayerProgress player={me} total={totalFilledCells} isMe />
+              {opponent && (
+                <PlayerProgress player={opponent} total={totalFilledCells} />
+              )}
+            </div>
             <StatTile icon="grid" label="Size">
               {width} × {height}
             </StatTile>
@@ -1101,6 +1108,66 @@ function CenteredMessage({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
+    </div>
+  );
+}
+
+function PlayerProgress({
+  player,
+  total,
+  isMe = false,
+}: {
+  player: PlayerSnapshot;
+  total: number;
+  isMe?: boolean;
+}) {
+  const filled = player.confirmedFilled.filter(Boolean).length;
+  const percent = player.won
+    ? 100
+    : total > 0
+      ? Math.min(100, Math.floor((filled / total) * 100))
+      : 0;
+  const name = isMe ? "You" : player.username;
+
+  return (
+    <div style={{ minWidth: 0 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          gap: 12,
+          marginBottom: 6,
+          fontSize: 12,
+          color: "var(--color-ink-muted)",
+        }}
+      >
+        <span
+          style={{
+            maxWidth: 120,
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          }}
+          title={name}
+        >
+          {name}
+        </span>
+        <span style={{ fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+          {percent}%
+        </span>
+      </div>
+      <progress
+        aria-label={`${name} puzzle progress`}
+        max={100}
+        value={percent}
+        style={{
+          display: "block",
+          width: "100%",
+          height: 10,
+          accentColor: isMe ? "var(--color-blue-500)" : "var(--color-sage-500)",
+        }}
+      />
     </div>
   );
 }
