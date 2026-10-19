@@ -4,6 +4,7 @@ import MainMenu from "./pages/MainMenu";
 import { Singleplayer } from "./pages/Singleplayer";
 import { CasualMultiplayer } from "./pages/CasualMultiplayer";
 import { Room } from "./pages/Room";
+import { Achievements } from "./pages/Achievements";
 import { Statistics } from "./pages/Statistics";
 import { Collection } from "./pages/Collection";
 import { Tutorial } from "./pages/Tutorial";
@@ -69,6 +70,7 @@ export default function App() {
         <Route path="/welcome" element={<ChooseHandle />} />
         <Route path="/auth/error" element={<AuthError />} />
         <Route element={<ProtectedRoute />}>
+          <Route path="/achievements" element={<Achievements />} />
           <Route path="/statistics" element={<Statistics />} />
           <Route path="/collection" element={<Collection />} />
         </Route>

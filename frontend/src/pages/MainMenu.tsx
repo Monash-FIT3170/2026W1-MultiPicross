@@ -422,6 +422,15 @@ export default function MainMenu() {
               badge={!isAuth ? <SignInHint /> : undefined}
             />
 
+            {/* Achievements */}
+            <SecondaryTile
+              disabled={!isAuth}
+              icon={<Icon name="trophy" size={20} color="var(--color-ink)" />}
+              label="Achievements"
+              onClick={isAuth ? () => navigate("/achievements") : undefined}
+              badge={!isAuth ? <SignInHint /> : undefined}
+            />
+
             {/* Tutorial */}
             <SecondaryTile
               icon={

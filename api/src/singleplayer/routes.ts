@@ -9,6 +9,7 @@ import { db } from "../db/client.js";
 import { nonograms, spCompletions } from "../db/schema.js";
 import { requireAuth } from "../auth/middleware.js";
 import { csrf } from "../auth/csrf.js";
+import { evaluateSingleplayerCompletion } from "../achievements/evaluate.js";
 
 function schema<T extends v.BaseSchema<unknown, unknown, v.BaseIssue<unknown>>>(
   s: T,
@@ -417,6 +418,13 @@ sp.post(
           livesLeft: spCompletions.livesLeft,
           elapsedSeconds: spCompletions.elapsedSeconds,
           lastResumedAt: spCompletions.lastResumedAt,
+          // Computed in the DB: created_at is a timestamp without time zone
+          // written by now(), so comparing it to a JS clock would depend on
+          // the server's TimeZone setting.
+          wallSeconds:
+            sql<number>`extract(epoch from now() - ${spCompletions.createdAt})`.mapWith(
+              Number,
+            ),
           width: nonograms.width,
           height: nonograms.height,
           solution: nonograms.solution,
@@ -524,6 +532,17 @@ sp.post(
                 completedAt: new Date(),
               })
               .where(eq(spCompletions.id, gameRow.id));
+            const unlockedAchievements = await evaluateSingleplayerCompletion(
+              tx,
+              accountId,
+              {
+                livesLeft: newLives,
+                elapsedSeconds: finalElapsed,
+                wallSeconds: gameRow.wallSeconds,
+                width: gameRow.width,
+                height: gameRow.height,
+              },
+            );
             return {
               status: 200,
               body: {
@@ -531,6 +550,7 @@ sp.post(
                 livesLeft: newLives,
                 completed: true,
                 colors: gameRow.colors,
+                unlockedAchievements,
               },
             };
           }
@@ -591,6 +611,17 @@ sp.post(
               completedAt: new Date(),
             })
             .where(eq(spCompletions.id, gameRow.id));
+          const unlockedAchievements = await evaluateSingleplayerCompletion(
+            tx,
+            accountId,
+            {
+              livesLeft: gameRow.livesLeft,
+              elapsedSeconds: finalElapsed,
+              wallSeconds: gameRow.wallSeconds,
+              width: gameRow.width,
+              height: gameRow.height,
+            },
+          );
           return {
             status: 200,
             body: {
@@ -598,6 +629,7 @@ sp.post(
               livesLeft: gameRow.livesLeft,
               completed: true,
               colors: gameRow.colors,
+              unlockedAchievements,
             },
           };
         }

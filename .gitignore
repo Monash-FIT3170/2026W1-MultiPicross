@@ -19,3 +19,6 @@ tools/environments.json
 
 # Tools
 CLAUDE.md
+
+# Build output
+dist/
