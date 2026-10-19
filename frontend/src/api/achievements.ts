@@ -28,6 +28,7 @@ export function useAchievementDefinitions() {
   const [definitions, setDefinitions] = useState<AchievementDef[] | null>(
     definitionsCache,
   );
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     if (definitionsCache) return;
@@ -35,7 +36,7 @@ export function useAchievementDefinitions() {
     let cancelled = false;
     apiFetch("/achievements/definitions")
       .then(async (res) => {
-        if (!res.ok) return;
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const body = (await res.json()) as { achievements: AchievementDef[] };
         if (!cancelled) {
           definitionsCache = body.achievements;
@@ -43,7 +44,8 @@ export function useAchievementDefinitions() {
         }
       })
       .catch(() => {
-        /* leave null; callers treat missing defs as "unknown achievement" */
+        // Definitions stay null; the toast falls back to a generic label.
+        if (!cancelled) setError(true);
       });
 
     return () => {
@@ -51,13 +53,14 @@ export function useAchievementDefinitions() {
     };
   }, []);
 
-  return { definitions };
+  return { definitions, error };
 }
 
 export function useMyAchievements(enabled: boolean) {
   const [achievements, setAchievements] = useState<MyAchievement[] | null>(
     null,
   );
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     if (!enabled) return;
@@ -66,13 +69,14 @@ export function useMyAchievements(enabled: boolean) {
 
     apiFetch("/achievements/mine")
       .then(async (res) => {
-        if (!res.ok) return;
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const body = (await res.json()) as { achievements: MyAchievement[] };
         if (!cancelled) setAchievements(body.achievements);
       })
       .catch(() => {
         // Leave achievements as-is; a transient failure shouldn't wipe an
         // already-loaded list.
+        if (!cancelled) setError(true);
       });
 
     return () => {
@@ -80,5 +84,5 @@ export function useMyAchievements(enabled: boolean) {
     };
   }, [enabled]);
 
-  return { achievements };
+  return { achievements, error };
 }

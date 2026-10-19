@@ -21,20 +21,21 @@ interface Completion {
 export function Achievements() {
   const navigate = useNavigate();
   const [completions, setCompletions] = useState<Completion[] | null>(null);
+  const [historyError, setHistoryError] = useState(false);
 
-  const { definitions } = useAchievementDefinitions();
-  const { achievements } = useMyAchievements(true);
+  const { definitions, error: definitionsError } = useAchievementDefinitions();
+  const { achievements, error: achievementsError } = useMyAchievements(true);
 
   useEffect(() => {
     let cancelled = false;
     apiFetch("/singleplayer/history")
       .then(async (res) => {
-        if (!res.ok) return;
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const body = (await res.json()) as { completions: Completion[] };
         if (!cancelled) setCompletions(body.completions);
       })
       .catch(() => {
-        if (!cancelled) setCompletions([]);
+        if (!cancelled) setHistoryError(true);
       });
     return () => {
       cancelled = true;
@@ -93,10 +94,11 @@ export function Achievements() {
           gap: 40,
         }}
       >
-        <StatsSection completions={completions} />
+        <StatsSection completions={completions} error={historyError} />
         <AchievementsSection
           definitions={definitions}
           achievements={achievements}
+          error={definitionsError || achievementsError}
         />
       </div>
     </div>
@@ -120,7 +122,16 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
-function StatsSection({ completions }: { completions: Completion[] | null }) {
+function StatsSection({
+  completions,
+  error,
+}: {
+  completions: Completion[] | null;
+  error: boolean;
+}) {
+  if (error) {
+    return <EmptyState label="Couldn't load your stats. Try again later." />;
+  }
   if (completions === null) {
     return <EmptyState label="Loading…" />;
   }
@@ -200,15 +211,21 @@ function StatsSection({ completions }: { completions: Completion[] | null }) {
 function AchievementsSection({
   definitions,
   achievements,
+  error,
 }: {
   definitions: import("../api/achievements").AchievementDef[] | null;
   achievements: import("../api/achievements").MyAchievement[] | null;
+  error: boolean;
 }) {
   return (
     <div>
       <SectionHeading>Achievements</SectionHeading>
       {definitions === null || achievements === null ? (
-        <EmptyState label="Loading…" />
+        <EmptyState
+          label={
+            error ? "Couldn't load achievements. Try again later." : "Loading…"
+          }
+        />
       ) : (
         <AchievementsGrid
           definitions={definitions}
