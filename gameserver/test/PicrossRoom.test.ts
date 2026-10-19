@@ -355,12 +355,13 @@ describe("PicrossRoom", () => {
     const bId = clientB.sessionId;
     const snapshot = await seenByA.wait(
       (s) =>
-        s.players[aId].confirmedFilled[2] && s.players[bId].confirmedFilled[2],
+        s.players[aId]?.confirmedFilled?.[2] === true &&
+        s.players[bId]?.confirmedFilled?.[2] === true,
       "both players to solve row 0",
     );
 
-    assert.strictEqual(snapshot.players[aId].crosses[1], false);
-    assert.strictEqual(snapshot.players[bId].crosses[1], true);
+    assert.strictEqual(snapshot.players[aId]?.crosses?.[1], false);
+    assert.strictEqual(snapshot.players[bId]?.crosses?.[1], true);
   });
 
   // ── D5 ─────────────────────────────────────────────────────────────────────
