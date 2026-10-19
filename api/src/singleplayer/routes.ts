@@ -547,6 +547,7 @@ sp.post(
               accountId,
               {
                 livesLeft: newLives,
+                livesEnabled: gameRow.livesEnabled,
                 elapsedSeconds: finalElapsed,
                 wallSeconds: gameRow.wallSeconds,
                 width: gameRow.width,
@@ -626,6 +627,7 @@ sp.post(
             accountId,
             {
               livesLeft: gameRow.livesLeft,
+              livesEnabled: gameRow.livesEnabled,
               elapsedSeconds: finalElapsed,
               wallSeconds: gameRow.wallSeconds,
               width: gameRow.width,

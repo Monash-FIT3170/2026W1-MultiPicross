@@ -10,6 +10,8 @@ type Tx = Parameters<Parameters<typeof dbType.transaction>[0]>[0];
 
 export interface CompletionContext {
   livesLeft: number;
+  /** False when "Singleplayer lives" was off, so livesLeft never dropped. */
+  livesEnabled: boolean;
   elapsedSeconds: number;
   /** Wall-clock seconds since the game was started, pauses included. */
   wallSeconds: number;
@@ -23,7 +25,9 @@ const LARGE_PUZZLE_MIN_SIDE = 20;
 
 function computeIncrements(ctx: CompletionContext): Record<string, number> {
   const increments: Record<string, number> = { sp_completions_count: 1 };
-  if (ctx.livesLeft === MAX_LIVES) increments.sp_perfect_clears = 1;
+  if (ctx.livesEnabled && ctx.livesLeft === MAX_LIVES) {
+    increments.sp_perfect_clears = 1;
+  }
   // The in-game timer stops while the client reports the game as paused, so
   // on its own it can be gamed by pausing between moves. Also require the
   // wall-clock time since the game started to be under the threshold.
