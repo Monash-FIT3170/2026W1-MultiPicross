@@ -44,38 +44,48 @@ export async function evaluateSingleplayerCompletion(
 ): Promise<string[]> {
   const increments = computeIncrements(ctx);
 
-  const newProgress = new Map<string, number>();
-  for (const [statKey, amount] of Object.entries(increments)) {
-    const [row] = await tx
-      .insert(accountAchievementProgress)
-      .values({ accountId, achievementKey: statKey, progress: amount })
-      .onConflictDoUpdate({
-        target: [
-          accountAchievementProgress.accountId,
-          accountAchievementProgress.achievementKey,
-        ],
-        set: {
-          progress: sql`${accountAchievementProgress.progress} + ${amount}`,
-          updatedAt: new Date(),
-        },
-      })
-      .returning({ progress: accountAchievementProgress.progress });
-    newProgress.set(statKey, row.progress);
-  }
+  // One multi-row upsert for every bumped counter instead of a round trip per
+  // stat.
+  const progressRows = await tx
+    .insert(accountAchievementProgress)
+    .values(
+      Object.entries(increments).map(([statKey, amount]) => ({
+        accountId,
+        achievementKey: statKey,
+        progress: amount,
+      })),
+    )
+    .onConflictDoUpdate({
+      target: [
+        accountAchievementProgress.accountId,
+        accountAchievementProgress.achievementKey,
+      ],
+      set: {
+        progress: sql`${accountAchievementProgress.progress} + excluded.progress`,
+        updatedAt: new Date(),
+      },
+    })
+    .returning({
+      statKey: accountAchievementProgress.achievementKey,
+      progress: accountAchievementProgress.progress,
+    });
+  const newProgress = new Map(progressRows.map((r) => [r.statKey, r.progress]));
 
-  const unlocked: string[] = [];
-  for (const def of ACHIEVEMENTS) {
+  const eligible = ACHIEVEMENTS.filter((def) => {
     const progress = newProgress.get(def.statKey);
-    if (progress === undefined || progress < def.goal) continue;
+    return progress !== undefined && progress >= def.goal;
+  }).map((def) => def.key);
+  if (eligible.length === 0) return [];
 
-    const [inserted] = await tx
-      .insert(accountAchievements)
-      .values({ accountId, achievementKey: def.key })
-      .onConflictDoNothing()
-      .returning({ key: accountAchievements.achievementKey });
+  // ON CONFLICT DO NOTHING returns only the rows actually inserted, i.e. the
+  // achievements unlocked by this completion.
+  const inserted = await tx
+    .insert(accountAchievements)
+    .values(eligible.map((achievementKey) => ({ accountId, achievementKey })))
+    .onConflictDoNothing()
+    .returning({ key: accountAchievements.achievementKey });
+  const insertedKeys = new Set(inserted.map((r) => r.key));
 
-    if (inserted) unlocked.push(def.key);
-  }
-
-  return unlocked;
+  // Keep catalog order for the client's toast queue.
+  return eligible.filter((key) => insertedKeys.has(key));
 }
