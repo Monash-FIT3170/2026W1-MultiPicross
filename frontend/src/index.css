@@ -98,6 +98,7 @@
 /* Dark mode colours */
 .dark {
   --color-paper: #18191d;
+  --color-background: var(--color-paper);
   --color-surface: #222328;
   --color-surface-sunk: #2b2c32;
 
@@ -143,6 +144,7 @@
   --color-paper: var(--color-contrast-background);
   --color-surface: var(--color-contrast-background);
   --color-surface-sunk: var(--color-contrast-background);
+  --color-background: var(--color-contrast-background);
 
   --color-ink: black;
   --color-ink-soft: black;
