@@ -881,6 +881,11 @@ body {
 
   .mp-game-topbar {
     margin-inline: 0 !important;
+    padding-inline: 16px !important;
+  }
+
+  .mp-playing-screen > h1 {
+    padding-inline: 16px !important;
   }
 
   .mp-game-hint {

@@ -1010,7 +1010,7 @@ export function ConfirmDialog({
     >
       <div
         ref={dialogRef}
-        className="mp-surface"
+        className="mp-surface mp-dialog-card"
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
