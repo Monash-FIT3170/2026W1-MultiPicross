@@ -311,7 +311,7 @@ export function CasualMultiplayer() {
                           : "var(--color-surface)",
                       color:
                         createMode === mode
-                          ? "var(--color-surface)"
+                          ? "var(--color-on-accent)"
                           : "var(--color-ink-soft)",
                       border: `1px solid ${createMode === mode ? "var(--color-blue-500)" : "var(--color-line)"}`,
                       borderRadius: 12,

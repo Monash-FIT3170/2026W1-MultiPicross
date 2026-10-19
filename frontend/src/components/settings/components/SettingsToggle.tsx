@@ -21,7 +21,7 @@ export function SettingsToggle({
       <span
         className={`flex h-7 w-12 items-center rounded-full p-1 transition ${
           checked
-            ? "bg-[var(--color-blue-500)]"
+            ? "bg-[var(--color-blue-400)]"
             : "bg-[var(--color-line-strong)]"
         }`}
       >

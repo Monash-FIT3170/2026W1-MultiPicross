@@ -113,10 +113,10 @@ export function AccountSettings() {
             onClick={handleSignIn}
             className="
               mt-6 min-h-11 rounded-xl
-              bg-[var(--color-blue-500)]
+              bg-[var(--color-blue-400)]
               px-6
               text-sm font-semibold
-              text-white font-ui
+              text-[var(--color-on-accent)] font-ui
               transition
               hover:opacity-90
             "
