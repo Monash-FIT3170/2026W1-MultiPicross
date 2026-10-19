@@ -64,6 +64,13 @@
       "when": 1791851290504,
       "tag": "0008_account_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792386744469,
+      "tag": "0009_achievements",
+      "breakpoints": true
     }
   ]
 }

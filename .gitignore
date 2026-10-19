@@ -16,3 +16,6 @@ tools/environments.json
 
 # Playwright CLI scratch output (console logs, page snapshots, screenshots)
 .playwright-cli/
+
+# Build output
+dist/
