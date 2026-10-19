@@ -15,6 +15,7 @@ export function RankedMultiplayerResults() {
     displaySeconds,
     rankedResult,
     solution,
+    colors,
     forfeit,
   } = location.state;
 
@@ -359,9 +360,11 @@ export function RankedMultiplayerResults() {
                   <div
                     key={`${rowIndex}-${columnIndex}`}
                     style={{
-                      background: cell
-                        ? "var(--color-ink)"
-                        : "var(--color-surface-sunk)",
+                      background:
+                        colors?.[rowIndex * width + columnIndex] ??
+                        (cell
+                          ? "var(--color-ink)"
+                          : "var(--color-surface-sunk)"),
                       borderRight:
                         columnIndex === row.length - 1
                           ? "none"
@@ -610,7 +613,7 @@ export function RankedMultiplayerResults() {
                         border: "1px solid var(--color-line)",
                       }}
                     >
-                      S
+                      {opponentResult.username?.charAt(0).toUpperCase() || "?"}
                     </div>
 
                     <span
