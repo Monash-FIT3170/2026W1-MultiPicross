@@ -418,6 +418,13 @@ sp.post(
           livesLeft: spCompletions.livesLeft,
           elapsedSeconds: spCompletions.elapsedSeconds,
           lastResumedAt: spCompletions.lastResumedAt,
+          // Computed in the DB: created_at is a timestamp without time zone
+          // written by now(), so comparing it to a JS clock would depend on
+          // the server's TimeZone setting.
+          wallSeconds:
+            sql<number>`extract(epoch from now() - ${spCompletions.createdAt})`.mapWith(
+              Number,
+            ),
           width: nonograms.width,
           height: nonograms.height,
           solution: nonograms.solution,
@@ -531,6 +538,7 @@ sp.post(
               {
                 livesLeft: newLives,
                 elapsedSeconds: finalElapsed,
+                wallSeconds: gameRow.wallSeconds,
                 width: gameRow.width,
                 height: gameRow.height,
               },
@@ -609,6 +617,7 @@ sp.post(
             {
               livesLeft: gameRow.livesLeft,
               elapsedSeconds: finalElapsed,
+              wallSeconds: gameRow.wallSeconds,
               width: gameRow.width,
               height: gameRow.height,
             },
