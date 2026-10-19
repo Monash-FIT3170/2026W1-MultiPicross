@@ -17,5 +17,8 @@ tools/environments.json
 # Playwright CLI scratch output (console logs, page snapshots, screenshots)
 .playwright-cli/
 
+# Tools
+CLAUDE.md
+
 # Build output
 dist/
