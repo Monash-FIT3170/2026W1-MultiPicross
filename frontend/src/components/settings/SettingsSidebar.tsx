@@ -19,6 +19,7 @@ const sections: { id: SettingsSection; label: string; icon: string }[] = [
   { id: "gameplay", label: "Gameplay", icon: gameplayIcon },
   { id: "audio", label: "Audio", icon: audioIcon },
   { id: "accessibility", label: "Accessibility", icon: accessibilityIcon },
+  { id: "account", label: "Account", icon: accountIcon },
 ];
 
 const getButtonClass = (isActive: boolean) =>
@@ -47,7 +48,7 @@ export function SettingsSidebar({
                 src={section.icon}
                 alt=""
                 aria-hidden="true"
-                className="settings-icon h-4 w-4 shrink-0 opacity-60"
+                className="icons   h-4 w-4 shrink-0 opacity-60"
               />
               <span>{section.label}</span>
             </span>
@@ -65,7 +66,7 @@ export function SettingsSidebar({
             src={accountIcon}
             alt=""
             aria-hidden="true"
-            className="settings-icon h-4 w-4 shrink-0 opacity-60"
+            className="icons h-4 w-4 shrink-0 opacity-60"
           />
           <span>Account</span>
         </span>

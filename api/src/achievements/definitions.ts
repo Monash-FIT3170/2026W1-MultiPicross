@@ -6,13 +6,7 @@ export interface AchievementDef {
   name: string;
   description: string;
   category: "singleplayer";
-  icon:
-    | "check"
-    | "grid"
-    | "trophy"
-    | "heart"
-    | "clock"
-    | "bar-chart";
+  icon: "check" | "grid" | "trophy" | "heart" | "clock" | "bar-chart";
   /** Progress value (see evaluate.ts) at which this unlocks. */
   goal: number;
   /** Which counter in account_achievement_progress this reads. */
@@ -76,6 +70,4 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   },
 ];
 
-export const ACHIEVEMENTS_BY_KEY = new Map(
-  ACHIEVEMENTS.map((a) => [a.key, a]),
-);
+export const ACHIEVEMENTS_BY_KEY = new Map(ACHIEVEMENTS.map((a) => [a.key, a]));

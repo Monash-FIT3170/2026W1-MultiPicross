@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../api/client";
-import { useAchievementDefinitions, useMyAchievements } from "../api/achievements";
+import {
+  useAchievementDefinitions,
+  useMyAchievements,
+} from "../api/achievements";
 import { fmtSeconds } from "../components/NonogramGrid";
 import { Logo, BackButton, Icon, StatTile } from "../components/ui";
 
@@ -91,7 +94,10 @@ export function Achievements() {
         }}
       >
         <StatsSection completions={completions} />
-        <AchievementsSection definitions={definitions} achievements={achievements} />
+        <AchievementsSection
+          definitions={definitions}
+          achievements={achievements}
+        />
       </div>
     </div>
   );
@@ -119,11 +125,16 @@ function StatsSection({ completions }: { completions: Completion[] | null }) {
     return <EmptyState label="Loading…" />;
   }
   if (completions.length === 0) {
-    return <EmptyState label="Complete a singleplayer puzzle to see stats here." />;
+    return (
+      <EmptyState label="Complete a singleplayer puzzle to see stats here." />
+    );
   }
 
   const totalCompleted = completions.length;
-  const totalSeconds = completions.reduce((sum, c) => sum + c.elapsedSeconds, 0);
+  const totalSeconds = completions.reduce(
+    (sum, c) => sum + c.elapsedSeconds,
+    0,
+  );
   const avgSeconds = Math.round(totalSeconds / totalCompleted);
   const bestSeconds = Math.min(...completions.map((c) => c.elapsedSeconds));
   const perfectClears = completions.filter((c) => c.livesLeft === 3).length;
@@ -199,7 +210,10 @@ function AchievementsSection({
       {definitions === null || achievements === null ? (
         <EmptyState label="Loading…" />
       ) : (
-        <AchievementsGrid definitions={definitions} achievements={achievements} />
+        <AchievementsGrid
+          definitions={definitions}
+          achievements={achievements}
+        />
       )}
     </div>
   );
@@ -261,18 +275,34 @@ function AchievementsGrid({
                 />
               </div>
               <div
-                style={{ fontWeight: 700, fontSize: 14, color: "var(--color-ink)" }}
+                style={{
+                  fontWeight: 700,
+                  fontSize: 14,
+                  color: "var(--color-ink)",
+                }}
               >
                 {def.name}
               </div>
             </div>
 
-            <p style={{ margin: 0, fontSize: 12, color: "var(--color-ink-muted)" }}>
+            <p
+              style={{
+                margin: 0,
+                fontSize: 12,
+                color: "var(--color-ink-muted)",
+              }}
+            >
               {def.description}
             </p>
 
             {unlocked ? (
-              <div style={{ fontSize: 11, color: "var(--color-sage-500)", fontWeight: 600 }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "var(--color-sage-500)",
+                  fontWeight: 600,
+                }}
+              >
                 Unlocked {new Date(mine!.unlockedAt!).toLocaleDateString()}
               </div>
             ) : (

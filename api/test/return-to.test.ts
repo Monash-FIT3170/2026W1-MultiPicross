@@ -53,8 +53,9 @@ test("every allowlisted path resolves to itself", () => {
   for (const path of [
     "/",
     "/singleplayer",
-    "/multiplayer/unrated",
-    "/multiplayer/ranked",
+    "/multiplayer/casual",
+    "/multiplayer/competitive",
+    "/statistics",
     "/achievements",
     "/tutorial",
     "/settings",

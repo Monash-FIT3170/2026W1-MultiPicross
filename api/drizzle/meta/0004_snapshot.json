@@ -1,166 +1,9 @@
 {
-  "id": "0c3f2944-188f-4848-a77d-bd50efffd477",
+  "id": "9369a4ee-5fc6-4e52-89b3-30216fe5fa58",
   "prevId": "e072b9cf-d8ca-4ae3-9c12-eae811ef8e60",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.account_achievement_progress": {
-      "name": "account_achievement_progress",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "account_id": {
-          "name": "account_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "achievement_key": {
-          "name": "achievement_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "progress": {
-          "name": "progress",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 0
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "account_achievement_progress_account_key_idx": {
-          "name": "account_achievement_progress_account_key_idx",
-          "columns": [
-            {
-              "expression": "account_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "achievement_key",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "account_achievement_progress_account_id_accounts_id_fk": {
-          "name": "account_achievement_progress_account_id_accounts_id_fk",
-          "tableFrom": "account_achievement_progress",
-          "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.account_achievements": {
-      "name": "account_achievements",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "account_id": {
-          "name": "account_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "achievement_key": {
-          "name": "achievement_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "unlocked_at": {
-          "name": "unlocked_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "account_achievements_account_key_idx": {
-          "name": "account_achievements_account_key_idx",
-          "columns": [
-            {
-              "expression": "account_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "achievement_key",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "account_achievements_account_id_accounts_id_fk": {
-          "name": "account_achievements_account_id_accounts_id_fk",
-          "tableFrom": "account_achievements",
-          "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.accounts": {
       "name": "accounts",
       "schema": "",
@@ -185,6 +28,13 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false
+        },
+        "profile_accent": {
+          "name": "profile_accent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'#3D5A80'"
         },
         "username": {
           "name": "username",
@@ -213,16 +63,12 @@
         "accounts_handle_unique": {
           "name": "accounts_handle_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "handle"
-          ]
+          "columns": ["handle"]
         },
         "accounts_username_unique": {
           "name": "accounts_username_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "username"
-          ]
+          "columns": ["username"]
         }
       },
       "policies": {},
@@ -321,12 +167,8 @@
           "name": "identities_account_id_accounts_id_fk",
           "tableFrom": "identities",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -513,12 +355,8 @@
           "name": "player_elo_history_account_id_accounts_id_fk",
           "tableFrom": "player_elo_history",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -560,12 +398,8 @@
           "name": "rated_waiting_list_account_id_accounts_id_fk",
           "tableFrom": "rated_waiting_list",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -575,9 +409,7 @@
         "rated_waiting_list_account_id_unique": {
           "name": "rated_waiting_list_account_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "account_id"
-          ]
+          "columns": ["account_id"]
         }
       },
       "policies": {},
@@ -626,12 +458,8 @@
           "name": "refresh_tokens_account_id_accounts_id_fk",
           "tableFrom": "refresh_tokens",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -755,12 +583,8 @@
           "name": "sp_completions_account_id_accounts_id_fk",
           "tableFrom": "sp_completions",
           "tableTo": "accounts",
-          "columnsFrom": [
-            "account_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -768,12 +592,8 @@
           "name": "sp_completions_puzzle_id_nonograms_id_fk",
           "tableFrom": "sp_completions",
           "tableTo": "nonograms",
-          "columnsFrom": [
-            "puzzle_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["puzzle_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -789,20 +609,12 @@
     "public.account_kind": {
       "name": "account_kind",
       "schema": "public",
-      "values": [
-        "sso",
-        "service"
-      ]
+      "values": ["sso", "service"]
     },
     "public.sp_completion_state": {
       "name": "sp_completion_state",
       "schema": "public",
-      "values": [
-        "active",
-        "completed",
-        "failed",
-        "abandoned"
-      ]
+      "values": ["active", "completed", "failed", "abandoned"]
     }
   },
   "schemas": {},

@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -18,8 +19,14 @@ export const accounts = pgTable("accounts", {
   id: uuid("id").defaultRandom().primaryKey(),
   kind: accountKind("kind").notNull().default("sso"),
   handle: text("handle").unique(),
+  profileAccent: text("profile_accent").notNull().default("#3D5A80"),
   username: text("username").unique(),
   passwordHash: text("password_hash"),
+  // User preferences (appearance for now), validated by settings/routes.ts.
+  // jsonb rather than a column per setting so adding one needs no migration.
+  settings: jsonb("settings")
+    .notNull()
+    .default(sql`'{}'::jsonb`),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -69,6 +76,7 @@ export const refreshTokens = pgTable("refresh_tokens", {
 
 export const nonograms = pgTable("nonograms", {
   id: text("id").primaryKey(),
+  name: text("name"),
   width: smallint("width").notNull(),
   height: smallint("height").notNull(),
   solution: jsonb("solution").notNull(),
@@ -112,6 +120,9 @@ export const spCompletions = pgTable(
     uniqueIndex("sp_completions_account_active_idx")
       .on(table.accountId)
       .where(sql`state = 'active'`),
+    index("sp_completions_account_completed_idx")
+      .on(table.accountId)
+      .where(sql`state = 'completed'`),
   ],
 );
 
@@ -134,16 +145,76 @@ export const playerEloHistory = pgTable(
   ],
 );
 
-export const ratedWaitingList = pgTable("rated_waiting_list", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  // Unique so queueing can be a single ON CONFLICT DO NOTHING insert rather
-  // than a racy select-then-insert.
-  accountId: uuid("account_id")
-    .notNull()
-    .unique()
-    .references(() => accounts.id, { onDelete: "cascade" }),
-  joinedAt: timestamp("joined_at").defaultNow().notNull(),
-});
+export const ratedWaitingList = pgTable(
+  "rated_waiting_list",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    boardSize: smallint("board_size").notNull().default(15),
+    joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("rated_waiting_list_account_board_size_unique").on(
+      t.accountId,
+      t.boardSize,
+    ),
+  ],
+);
+
+export const mpMode = pgEnum("mp_mode", ["unrated", "public", "ranked"]);
+
+// One row per signed-in player per finished multiplayer game. `solved` means
+// the player completed the grid themselves; a forfeit win leaves it false.
+export const mpResults = pgTable(
+  "mp_results",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    accountId: uuid("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    puzzleId: text("puzzle_id")
+      .notNull()
+      .references(() => nonograms.id, { onDelete: "cascade" }),
+    mode: mpMode("mode").notNull(),
+    solved: boolean("solved").notNull(),
+    won: boolean("won").notNull(),
+    elapsedSeconds: integer("elapsed_seconds").notNull(),
+    livesLeft: smallint("lives_left").notNull(),
+    finishedAt: timestamp("finished_at").defaultNow().notNull(),
+  },
+  (t) => [index("mp_results_account_puzzle_idx").on(t.accountId, t.puzzleId)],
+);
+
+export const rankedMatchResults = pgTable(
+  "ranked_match_results",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    winnerAccountId: uuid("winner_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    loserAccountId: uuid("loser_account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    winnerEloBefore: integer("winner_elo_before").notNull(),
+    winnerEloAfter: integer("winner_elo_after").notNull(),
+    loserEloBefore: integer("loser_elo_before").notNull(),
+    loserEloAfter: integer("loser_elo_after").notNull(),
+    winnerMistakes: smallint("winner_mistakes").notNull(),
+    loserMistakes: smallint("loser_mistakes").notNull(),
+    boardSize: smallint("board_size").notNull().default(15),
+    eloMultiplierPercent: smallint("elo_multiplier_percent")
+      .notNull()
+      .default(100),
+    completedAt: timestamp("completed_at").defaultNow().notNull(),
+  },
+  (t) => [
+    index("ranked_match_results_winner_idx").on(t.winnerAccountId),
+    index("ranked_match_results_loser_idx").on(t.loserAccountId),
+    index("ranked_match_results_completed_idx").on(t.completedAt.desc()),
+  ],
+);
 
 // One row per (account, achievement), holding the running counter that
 // achievement thresholds are compared against. Separate from

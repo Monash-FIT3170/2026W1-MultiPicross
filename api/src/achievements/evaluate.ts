@@ -1,6 +1,9 @@
 import { sql } from "drizzle-orm";
 import type { db as dbType } from "../db/client.js";
-import { accountAchievementProgress, accountAchievements } from "../db/schema.js";
+import {
+  accountAchievementProgress,
+  accountAchievements,
+} from "../db/schema.js";
 import { ACHIEVEMENTS } from "./definitions.js";
 
 type Tx = Parameters<Parameters<typeof dbType.transaction>[0]>[0];
@@ -20,7 +23,10 @@ function computeIncrements(ctx: CompletionContext): Record<string, number> {
   const increments: Record<string, number> = { sp_completions_count: 1 };
   if (ctx.livesLeft === MAX_LIVES) increments.sp_perfect_clears = 1;
   if (ctx.elapsedSeconds < SPEED_CLEAR_SECONDS) increments.sp_speed_clears = 1;
-  if (ctx.width >= LARGE_PUZZLE_MIN_SIDE && ctx.height >= LARGE_PUZZLE_MIN_SIDE) {
+  if (
+    ctx.width >= LARGE_PUZZLE_MIN_SIDE &&
+    ctx.height >= LARGE_PUZZLE_MIN_SIDE
+  ) {
     increments.sp_large_clears = 1;
   }
   return increments;

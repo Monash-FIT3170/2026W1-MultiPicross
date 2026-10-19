@@ -2,7 +2,10 @@ import { Hono } from "hono";
 import { describeRoute } from "hono-openapi";
 import { eq } from "drizzle-orm";
 import { db } from "../db/client.js";
-import { accountAchievementProgress, accountAchievements } from "../db/schema.js";
+import {
+  accountAchievementProgress,
+  accountAchievements,
+} from "../db/schema.js";
 import { requireAuth } from "../auth/middleware.js";
 import { ACHIEVEMENTS } from "./definitions.js";
 
@@ -51,8 +54,12 @@ achievements.get(
         .where(eq(accountAchievements.accountId, accountId)),
     ]);
 
-    const progressByStat = new Map(progressRows.map((r) => [r.statKey, r.progress]));
-    const unlockedAtByKey = new Map(unlockRows.map((r) => [r.key, r.unlockedAt]));
+    const progressByStat = new Map(
+      progressRows.map((r) => [r.statKey, r.progress]),
+    );
+    const unlockedAtByKey = new Map(
+      unlockRows.map((r) => [r.key, r.unlockedAt]),
+    );
 
     return c.json({
       achievements: ACHIEVEMENTS.map((def) => ({

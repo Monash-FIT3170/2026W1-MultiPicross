@@ -327,7 +327,9 @@ export default function NonogramGrid({
     const isEveryFiveBottom = (row + 1) % 5 === 0 && !isLastRow;
 
     // undefined leaves the `border: "none"` below in force.
-    const innerBorder = hideGridlines ? undefined : "1px solid #d6d2c8";
+    const innerBorder = hideGridlines
+      ? undefined
+      : "1px solid var(--color-line)";
     const groupBorder = hideGridlines
       ? undefined
       : "2px solid var(--color-line-strong)";
@@ -337,7 +339,10 @@ export default function NonogramGrid({
       height: cs,
       border: "none",
       padding: 0,
-      cursor: interactive && val === 0 ? "pointer" : "default",
+      cursor:
+        interactive && (val === 0 || (actionMode === "cross" && val === 2))
+          ? "pointer"
+          : "default",
       position: "relative",
       transition: "background-color 80ms ease",
       boxSizing: "border-box",
@@ -369,7 +374,7 @@ export default function NonogramGrid({
         const isMC = !completed && mistakeCrossIndices?.includes(idx);
         return {
           ...base,
-          backgroundColor: "var(--color-blue-500)",
+          backgroundColor: "var(--color-blue-400)",
           backgroundImage: isMC
             ? "repeating-linear-gradient(-45deg, rgba(220,38,38,0.38) 0px, rgba(220,38,38,0.38) 4px, transparent 4px, transparent 11px)"
             : "none",
@@ -379,21 +384,43 @@ export default function NonogramGrid({
       case 3:
         return {
           ...base,
-          backgroundColor: "#faecea",
+          backgroundColor: "var(--color-coral-50)",
           backgroundImage: "none",
           cursor: "default",
         };
       default:
-        return { ...base, backgroundColor: "#ffffff", backgroundImage: "none" };
+        return {
+          ...base,
+          backgroundColor: "var(--color-surface)",
+          backgroundImage: "none",
+        };
     }
   }
 
   // ── Drag handlers ──────────────────────────────────────────────────────────
+  // Applies the active action mode to a single fresh (unmarked) cell during a drag.
+  function applyDragMark(row: number, col: number) {
+    if (actionMode === "cross") {
+      onCross?.(row, col, true);
+    } else {
+      onFill?.(row, col);
+    }
+  }
+
   function handleCellMouseDown(e: React.MouseEvent, row: number, col: number) {
     if (window.matchMedia("(pointer: coarse)").matches) return;
     if (e.button !== 0) return;
     if (!interactive) return;
     const val = grid[row * width + col];
+    if (actionMode === "cross") {
+      if (val === 1 || val === 3) return;
+      dragActiveRef.current = true;
+      dragStartRef.current = { row, col };
+      dragAxisRef.current = null;
+      lastFillRef.current = { row, col };
+      onCross?.(row, col, val !== 2);
+      return;
+    }
     if (val !== 0) return;
     dragActiveRef.current = true;
     dragStartRef.current = { row, col };
@@ -415,21 +442,21 @@ export default function NonogramGrid({
     if (dragAxisRef.current === "row" && row !== startRow) return;
     if (dragAxisRef.current === "col" && col !== startCol) return;
 
-    // Fill all cells between last filled position and current to cover fast-drag gaps.
-    // Duplicate onFill calls for already-filled cells are safely ignored (guest: functional
-    // update guard; auth: server returns 400 which is silently dropped).
+    // Mark all cells between last marked position and current to cover fast-drag gaps.
+    // Duplicate onFill/onCross calls for already-marked cells are safely ignored (guest:
+    // functional update guard; auth: server returns 400 which is silently dropped).
     const last = lastFillRef.current;
     if (dragAxisRef.current === "row") {
       const minC = Math.min(last ? last.col : col, col);
       const maxC = Math.max(last ? last.col : col, col);
       for (let c = minC; c <= maxC; c++) {
-        if (gridRef.current[row * width + c] === 0) onFill?.(row, c);
+        if (gridRef.current[row * width + c] === 0) applyDragMark(row, c);
       }
     } else {
       const minR = Math.min(last ? last.row : row, row);
       const maxR = Math.max(last ? last.row : row, row);
       for (let r = minR; r <= maxR; r++) {
-        if (gridRef.current[r * width + col] === 0) onFill?.(r, col);
+        if (gridRef.current[r * width + col] === 0) applyDragMark(r, col);
       }
     }
     lastFillRef.current = { row, col };

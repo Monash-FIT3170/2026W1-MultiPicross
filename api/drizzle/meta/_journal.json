@@ -33,8 +33,43 @@
     {
       "idx": 4,
       "version": "7",
-      "when": 1790648287106,
-      "tag": "0004_neat_carnage",
+      "when": 1791251252500,
+      "tag": "0004_brown_odin",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791850592497,
+      "tag": "0005_collection",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791850600000,
+      "tag": "0006_ranked_match_results",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791850700000,
+      "tag": "0007_ranked_board_sizes",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791851290504,
+      "tag": "0008_account_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792386744469,
+      "tag": "0009_achievements",
       "breakpoints": true
     }
   ]

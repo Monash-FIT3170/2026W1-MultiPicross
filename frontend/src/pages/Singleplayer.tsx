@@ -161,6 +161,7 @@ export function Singleplayer() {
   const [mistakeFlash, setMistakeFlash] = useState(false);
   const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
   const achievementToasts = useAchievementToastQueue();
+  const [confirmingAbandon, setConfirmingAbandon] = useState(false);
 
   // Stable key for PlayingScreen, increments each time a fresh game starts
   const gameKeyRef = useRef(0);
@@ -200,9 +201,12 @@ export function Singleplayer() {
 
   // ── Timer ──────────────────────────────────────────────────────────────────
 
+  // Restarts the clock when the server hands back a fresh elapsed time
+  const baseElapsed = phase.kind === "playing" ? phase.game.baseElapsed : 0;
+
   useEffect(() => {
     if (phase.kind !== "playing" || phase.outcome !== null) return;
-    const startWall = Date.now() - phase.game.baseElapsed * 1000;
+    const startWall = Date.now() - baseElapsed * 1000;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing; seeds the clock so it doesn't read 0 for the first second
     setDisplaySeconds(Math.floor((Date.now() - startWall) / 1000));
     const id = setInterval(() => {
@@ -212,9 +216,57 @@ export function Singleplayer() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     phase.kind === "playing" ? (phase.game.completionId ?? "guest") : null,
+    baseElapsed,
     phase.kind,
     phase.kind === "playing" ? phase.outcome : null,
   ]);
+
+  // ── Pause on leave ─────────────────────────────────────────────────────────
+
+  const runningCompletionId =
+    phase.kind === "playing" && phase.outcome === null
+      ? phase.game.completionId
+      : undefined;
+
+  useEffect(() => {
+    if (!runningCompletionId) return;
+
+    function pause() {
+      void apiFetch("/singleplayer/pause", {
+        method: "POST",
+        keepalive: true,
+      }).catch(() => {
+        /* ignore */
+      });
+    }
+
+    async function resumeFromCache(e: PageTransitionEvent) {
+      if (!e.persisted) return;
+      try {
+        const res = await apiFetch("/singleplayer/resume", { method: "POST" });
+        if (!res.ok) return;
+        const { elapsedSeconds } = (await res.json()) as {
+          elapsedSeconds: number;
+        };
+        setPhase((cur) =>
+          cur.kind === "playing" &&
+          cur.game.completionId === runningCompletionId
+            ? { ...cur, game: { ...cur.game, baseElapsed: elapsedSeconds } }
+            : cur,
+        );
+      } catch {
+        /* ignore */
+      }
+    }
+
+    window.addEventListener("pagehide", pause);
+    window.addEventListener("pageshow", resumeFromCache);
+    return () => {
+      window.removeEventListener("pagehide", pause);
+      window.removeEventListener("pageshow", resumeFromCache);
+      pause();
+    };
+  }, [runningCompletionId]);
 
   // ── Start game ─────────────────────────────────────────────────────────────
 
@@ -236,6 +288,31 @@ export function Singleplayer() {
       setPhase({
         kind: "playing",
         game: completionToGameState(completion),
+        outcome: null,
+      });
+    } catch (e) {
+      setPhase({ kind: "error", message: String(e) });
+    }
+  }
+
+  async function continueAuthGame(completion: ActiveCompletion) {
+    setPhase({ kind: "loading-puzzle" });
+    try {
+      const res = await apiFetch("/singleplayer/resume", { method: "POST" });
+      if (!res.ok) {
+        setPhase({ kind: "error", message: await parseApiError(res) });
+        return;
+      }
+      const { elapsedSeconds } = (await res.json()) as {
+        elapsedSeconds: number;
+      };
+      gameKeyRef.current++;
+      setPhase({
+        kind: "playing",
+        game: {
+          ...completionToGameState(completion),
+          baseElapsed: elapsedSeconds,
+        },
         outcome: null,
       });
     } catch (e) {
@@ -612,11 +689,7 @@ export function Singleplayer() {
       {phase.kind === "active-choice" && (
         <ActiveChoiceScreen
           completion={phase.completion}
-          onContinue={() => {
-            const game = completionToGameState(phase.completion);
-            gameKeyRef.current++;
-            setPhase({ kind: "playing", game, outcome: null });
-          }}
+          onContinue={() => void continueAuthGame(phase.completion)}
           onNewGame={() =>
             setPhase({
               kind: "size-select",
@@ -640,9 +713,19 @@ export function Singleplayer() {
           interactive={phase.outcome === null}
           onFill={handleFill}
           onCross={handleCross}
-          onAbandon={() => void handleAbandon()}
+          onAbandon={() => setConfirmingAbandon(true)}
           onPlayAgain={handlePlayAgain}
           onMainMenu={() => navigate("/")}
+        />
+      )}
+
+      {confirmingAbandon && (
+        <AbandonConfirmModal
+          onCancel={() => setConfirmingAbandon(false)}
+          onConfirm={() => {
+            setConfirmingAbandon(false);
+            void handleAbandon();
+          }}
         />
       )}
     </div>
@@ -665,6 +748,84 @@ function CenteredSpinner() {
     >
       <Icon name="refresh" size={18} color="var(--color-ink-faint)" />
       <span style={{ fontSize: 14 }}>Loading…</span>
+    </div>
+  );
+}
+
+function AbandonConfirmModal({
+  onCancel,
+  onConfirm,
+}: {
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onCancel();
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [onCancel]);
+
+  return (
+    <div
+      onClick={onCancel}
+      style={{
+        position: "fixed",
+        inset: 0,
+        background: "rgba(28,28,30,0.35)",
+        backdropFilter: "blur(4px)",
+        WebkitBackdropFilter: "blur(4px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: 300,
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="mp-surface"
+        style={{
+          padding: 32,
+          maxWidth: 380,
+          width: "calc(100% - 32px)",
+          textAlign: "center",
+        }}
+      >
+        <Icon
+          name="info"
+          size={32}
+          color="var(--color-coral-400)"
+          style={{ margin: "0 auto 16px" }}
+        />
+        <h2
+          style={{
+            margin: "0 0 8px",
+            fontSize: 20,
+            fontWeight: 700,
+            color: "var(--color-ink)",
+          }}
+        >
+          Abandon game?
+        </h2>
+        <p
+          style={{
+            margin: "0 0 24px",
+            color: "var(--color-ink-muted)",
+            fontSize: 14,
+          }}
+        >
+          You'll lose your progress on this puzzle. This can't be undone.
+        </p>
+        <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+          <Button variant="ghost" size="sm" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button variant="danger-soft" size="sm" onClick={onConfirm}>
+            Abandon
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -747,10 +908,11 @@ function SizeSelectScreen({
 
       <div
         style={{
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 14,
+          display: "grid",
+          gridTemplateColumns: "repeat(2, 260px)",
+          gap: 24,
           justifyContent: "center",
+          margin: "0 auto",
         }}
       >
         {sizes.map((s) => (
@@ -758,7 +920,11 @@ function SizeSelectScreen({
             key={`${s.width}x${s.height}`}
             className="tile"
             onClick={() => onSelectSize(s.width, s.height)}
-            style={{ width: 160, height: 120 }}
+            style={{
+              width: 260,
+              height: 145,
+              padding: 20,
+            }}
           >
             <div
               style={{
@@ -770,7 +936,14 @@ function SizeSelectScreen({
             >
               {s.width} × {s.height}
             </div>
-            <div style={{ fontSize: 12, color: "var(--color-ink-faint)" }}>
+
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: 12,
+                color: "var(--color-ink-muted)",
+              }}
+            >
               {s.count} puzzle{s.count !== 1 ? "s" : ""}
             </div>
           </button>
@@ -919,23 +1092,7 @@ function PlayingScreen({
           zIndex: 200,
         }}
       >
-        <button
-          onClick={onMainMenu}
-          style={{
-            background: "none",
-            border: "none",
-            cursor: "pointer",
-            padding: 0,
-            color: "var(--color-ink-faint)",
-            fontSize: 13,
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-          }}
-        >
-          <Icon name="arrow-left" size={14} color="var(--color-ink-faint)" />
-          Main menu
-        </button>
+        <BackButton onClick={onMainMenu} label="Main menu" />
         <Logo size={22} />
         <div style={{ width: 100 }} />
       </div>
@@ -960,7 +1117,7 @@ function PlayingScreen({
           fontSize: 13,
         }}
       >
-        Left-click to fill · Right-click to mark empty
+        Use the switch to pick fill or cross · right-click always marks empty
       </p>
 
       <div
@@ -997,34 +1154,16 @@ function PlayingScreen({
           />
 
           {/* Sidebar */}
-          <div className="mp-game-sidebar-wrap" style={{ paddingTop: 0 }}>
-            <div
-              className="mp-mobile-action-mode"
-              role="group"
-              aria-label="Cell action"
-            >
-              <button
-                type="button"
-                className={actionMode === "fill" ? "is-active" : undefined}
-                onClick={() => setActionMode("fill")}
-                aria-pressed={actionMode === "fill"}
-                aria-label="Fill cells"
-                title="Fill cells"
-              >
-                <Icon name="check" size={22} />
-              </button>
-              <button
-                type="button"
-                className={actionMode === "cross" ? "is-active" : undefined}
-                onClick={() => setActionMode("cross")}
-                aria-pressed={actionMode === "cross"}
-                aria-label="Cross cells"
-                title="Cross cells"
-              >
-                <Icon name="x" size={22} />
-              </button>
-            </div>
-
+          <div
+            className="mp-game-sidebar-wrap"
+            style={{
+              paddingTop: 0,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
             <div
               className="mp-surface mp-game-sidebar"
               style={{
@@ -1099,6 +1238,33 @@ function PlayingScreen({
               >
                 Abandon
               </Button>
+            </div>
+
+            <div
+              className="mp-action-mode"
+              role="group"
+              aria-label="Cell action"
+            >
+              <button
+                type="button"
+                className={actionMode === "fill" ? "is-active" : undefined}
+                onClick={() => setActionMode("fill")}
+                aria-pressed={actionMode === "fill"}
+                aria-label="Fill cells"
+                title="Fill cells"
+              >
+                <Icon name="check" size={22} />
+              </button>
+              <button
+                type="button"
+                className={actionMode === "cross" ? "is-active" : undefined}
+                onClick={() => setActionMode("cross")}
+                aria-pressed={actionMode === "cross"}
+                aria-label="Cross cells"
+                title="Cross cells"
+              >
+                <Icon name="x" size={22} />
+              </button>
             </div>
           </div>
         </div>
