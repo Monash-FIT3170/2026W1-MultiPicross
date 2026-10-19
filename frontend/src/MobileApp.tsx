@@ -49,6 +49,9 @@ export function MobileApp() {
         <MobileNavLink to="/statistics" label="Stats">
           <Icon name="bar-chart" size={24} />
         </MobileNavLink>
+        <MobileNavLink to="/achievements" label="Awards">
+          <Icon name="trophy" size={24} />
+        </MobileNavLink>
         <MobileNavLink to="/settings" label="Settings">
           <Icon name="settings" size={24} />
         </MobileNavLink>

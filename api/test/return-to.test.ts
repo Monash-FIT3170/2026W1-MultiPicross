@@ -56,6 +56,7 @@ test("every allowlisted path resolves to itself", () => {
     "/multiplayer/casual",
     "/multiplayer/competitive",
     "/statistics",
+    "/achievements",
     "/tutorial",
     "/settings",
     "/welcome",
