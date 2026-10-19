@@ -71,7 +71,7 @@ export function AchievementToastStack({
         <div className="mp-achievement-toast-icon">
           <Icon name="trophy" size={16} color="#fff" />
         </div>
-        <div>
+        <div className="mp-achievement-toast-body">
           <div className="mp-achievement-toast-title">
             Achievement unlocked
             {multiple && (
@@ -81,7 +81,7 @@ export function AchievementToastStack({
             )}
           </div>
           <div className="mp-achievement-toast-name">
-            {def?.name ?? "Achievement unlocked"}
+            {def?.name ?? "New achievement"}
           </div>
           {def?.description && (
             <div className="mp-achievement-toast-desc">{def.description}</div>

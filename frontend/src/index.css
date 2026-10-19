@@ -317,12 +317,14 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(480px, calc(100vw - 32px));
   padding: 10px 16px;
-  background: #fff;
+  background: var(--color-surface);
   border: 1px solid var(--color-butter-100);
   border-radius: 12px;
   box-shadow: var(--shadow-md);
-  white-space: nowrap;
   animation: mp-achievement-toast-in var(--dur-base) var(--ease-out);
 }
 
@@ -335,6 +337,16 @@ body {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+/* butter-300 has no high-contrast override; keep the white icon legible */
+.high-contrast .mp-achievement-toast-icon {
+  background: var(--color-butter-500);
+}
+
+.mp-achievement-toast-body {
+  flex: 1;
+  min-width: 0;
 }
 
 .mp-achievement-toast-title {
@@ -358,11 +370,13 @@ body {
 
 .mp-achievement-toast-count {
   margin-left: 8px;
+  white-space: nowrap;
   font-weight: 600;
   letter-spacing: 0;
 }
 
 .mp-achievement-toast-controls {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 2px;
