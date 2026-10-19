@@ -7,6 +7,24 @@ import { GAMESERVER_BASE_URL } from "../colyseus";
 const SIZES = ["5 × 5", "10 × 10", "15 × 15", "20 × 20"] as const;
 const PUBLIC_ROOMS_POLL_MS = 5000;
 
+type GameMode = "1v1" | "1v1v1" | "1v1v1v1" | "2v2";
+
+const GAME_MODES: { mode: GameMode; players: number }[] = [
+  { mode: "1v1", players: 2 },
+  { mode: "1v1v1", players: 3 },
+  { mode: "1v1v1v1", players: 4 },
+  { mode: "2v2", players: 4 },
+];
+
+const FFA_SUBTITLE = "Free-for-All. First player to complete the puzzle wins.";
+
+const MODE_SUBTITLES: Record<GameMode, string> = {
+  "1v1": "1v1 head-to-head. First to fill every cell wins.",
+  "1v1v1": FFA_SUBTITLE,
+  "1v1v1v1": FFA_SUBTITLE,
+  "2v2": "Two teams of two. First team to complete its Team Board wins.",
+};
+
 function sizeToWH(size: string): { width: number; height: number } {
   const [w, h] = size.split(" × ").map(Number);
   return { width: w, height: h };
@@ -43,6 +61,7 @@ interface PublicRoom {
   roomId: string;
   width: number;
   height: number;
+  mode: GameMode;
   clients: number;
   maxClients: number;
 }
@@ -52,6 +71,7 @@ export function CasualMultiplayer() {
   const { playerName } = useAuth();
 
   const [createSize, setCreateSize] = useState<string>("10 × 10");
+  const [createMode, setCreateMode] = useState<GameMode>("1v1");
   const [isPublicCreate, setIsPublicCreate] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
   const [createLoading, setCreateLoading] = useState(false);
@@ -91,7 +111,7 @@ export function CasualMultiplayer() {
     try {
       const { width, height } = sizeToWH(createSize);
       const res = await fetch(
-        `${GAMESERVER_BASE_URL}/create-room?width=${width}&height=${height}&public=${isPublicCreate}`,
+        `${GAMESERVER_BASE_URL}/create-room?width=${width}&height=${height}&public=${isPublicCreate}&mode=${createMode}`,
         { method: "POST" },
       );
       if (!res.ok) {
@@ -172,7 +192,7 @@ export function CasualMultiplayer() {
             fontSize: 18,
           }}
         >
-          1v1 head-to-head. First to fill every cell wins.
+          {MODE_SUBTITLES[createMode]}
         </p>
 
         <div
@@ -262,6 +282,55 @@ export function CasualMultiplayer() {
                     }}
                   >
                     {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span
+                className="mp-eyebrow"
+                style={{
+                  fontSize: 14,
+                }}
+              >
+                Mode
+              </span>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {GAME_MODES.map(({ mode, players }) => (
+                  <button
+                    key={mode}
+                    onClick={() => setCreateMode(mode)}
+                    style={{
+                      padding: "4px 10px",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      background:
+                        createMode === mode
+                          ? "var(--color-blue-500)"
+                          : "var(--color-surface)",
+                      color:
+                        createMode === mode
+                          ? "var(--color-surface)"
+                          : "var(--color-ink-soft)",
+                      border: `1px solid ${createMode === mode ? "var(--color-blue-500)" : "var(--color-line)"}`,
+                      borderRadius: 12,
+                      cursor: "pointer",
+                      fontFamily: "var(--font-ui)",
+                      transition: "background 120ms ease, color 120ms ease",
+                    }}
+                  >
+                    <span style={{ fontSize: 16, fontWeight: 600 }}>
+                      {mode}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        opacity: 0.8,
+                      }}
+                    >
+                      {players} players
+                    </span>
                   </button>
                 ))}
               </div>
@@ -456,12 +525,13 @@ export function CasualMultiplayer() {
                         color: "var(--color-ink)",
                       }}
                     >
-                      {room.width} × {room.height}
+                      {room.mode} · {room.width} × {room.height}
                     </div>
                     <div
                       style={{ fontSize: 12, color: "var(--color-ink-muted)" }}
                     >
-                      {room.clients}/{room.maxClients} · waiting for opponent
+                      {room.clients}/{room.maxClients} players · waiting for
+                      more players
                     </div>
                   </div>
                 </div>
