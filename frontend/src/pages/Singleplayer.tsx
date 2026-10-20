@@ -302,34 +302,6 @@ export function Singleplayer() {
     }
   }
 
-  // async function continueAuthGame(completion: ActiveCompletion, token?: string) {
-  //   setPhase({ kind: "loading-puzzle" });
-  //   try {
-  //     const res = await apiFetch("/singleplayer/resume", {
-  //       method: "POST",
-  //       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  //     });
-  //     if (!res.ok) {
-  //       setPhase({ kind: "error", message: await parseApiError(res) });
-  //       return;
-  //     }
-  //     const { elapsedSeconds } = (await res.json()) as {
-  //       elapsedSeconds: number;
-  //     };
-  //     gameKeyRef.current++;
-  //     setPhase({
-  //       kind: "playing",
-  //       game: {
-  //         ...completionToGameState(completion, autoCrossSolvedLines),
-  //         baseElapsed: elapsedSeconds,
-  //       },
-  //       outcome: null,
-  //     });
-  //   } catch (e) {
-  //     setPhase({ kind: "error", message: String(e) });
-  //   }
-  // }
-
   async function startGuestGame(width: number, height: number) {
     setPhase({ kind: "loading-puzzle" });
     try {
