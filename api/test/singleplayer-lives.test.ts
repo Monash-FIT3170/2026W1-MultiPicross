@@ -131,4 +131,32 @@ if (!ready) {
     assert.equal(body.completion.livesEnabled, false);
     assert.deepEqual(body.completion.revealedEmpty, [false, true, true, true]);
   });
+
+  async function clearWithoutMistakes(livesEnabled: boolean) {
+    const cookie = await newAccountCookie();
+    await post(cookie, "/start", {
+      width: WIDTH,
+      height: HEIGHT,
+      livesEnabled,
+    });
+    const res = await post(cookie, "/action", { row: 0, col: 0, kind: "fill" });
+    assert.equal(res.status, 200);
+    return (await res.json()) as {
+      completed: boolean;
+      unlockedAchievements: string[];
+    };
+  }
+
+  test("a flawless clear with lives on is a perfect clear", async () => {
+    const result = await clearWithoutMistakes(true);
+    assert.equal(result.completed, true);
+    assert.ok(result.unlockedAchievements.includes("sp_perfect_clear"));
+  });
+
+  test("a clear with lives off is never a perfect clear", async () => {
+    const result = await clearWithoutMistakes(false);
+    assert.equal(result.completed, true);
+    assert.ok(result.unlockedAchievements.includes("sp_first_clear"));
+    assert.ok(!result.unlockedAchievements.includes("sp_perfect_clear"));
+  });
 }

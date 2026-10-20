@@ -19,6 +19,10 @@ import {
   Chip,
   ConfirmDialog,
 } from "../components/ui";
+import {
+  AchievementToastStack,
+  useAchievementToastQueue,
+} from "../components/AchievementToast";
 
 // ──── Types ─────────────────────────────────────────────────────────────────
 
@@ -79,6 +83,7 @@ interface ActionResponse {
   completed?: boolean;
   gameOver?: boolean;
   colors?: string[];
+  unlockedAchievements?: string[];
 }
 
 // ──── Helpers ────────────────────────────────────────────────────────────────
@@ -161,6 +166,7 @@ export function Singleplayer() {
   const [displaySeconds, setDisplaySeconds] = useState(0);
   const [mistakeFlash, setMistakeFlash] = useState(false);
   const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
+  const achievementToasts = useAchievementToastQueue();
 
   // Stable key for PlayingScreen, increments each time a fresh game starts
   const gameKeyRef = useRef(0);
@@ -403,6 +409,7 @@ export function Singleplayer() {
           if (!res.ok) return;
           const data = (await res.json()) as ActionResponse;
           // Side effects before functional update
+          achievementToasts.push(data.unlockedAchievements);
           if (data.result === "mistake" && !data.gameOver) flashMistake();
           // Functional update ensures concurrent drag responses apply on latest state
           setPhase((cur) => {
@@ -505,6 +512,7 @@ export function Singleplayer() {
           if (!res.ok) return;
           const data = (await res.json()) as ActionResponse;
           // Side effects before functional update
+          achievementToasts.push(data.unlockedAchievements);
           if (data.result === "mistake-cross") {
             setMistakeCrossIdx(idx);
             setTimeout(() => setMistakeCrossIdx(null), 450);
@@ -588,6 +596,10 @@ export function Singleplayer() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--color-paper)" }}>
+      <AchievementToastStack
+        queue={achievementToasts.queue}
+        onDismiss={achievementToasts.dismiss}
+      />
       {phase.kind === "loading" && <CenteredSpinner />}
       {phase.kind === "loading-puzzle" && <CenteredSpinner />}
 

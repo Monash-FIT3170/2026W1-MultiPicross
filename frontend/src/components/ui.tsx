@@ -379,7 +379,7 @@ const VARIANT_STYLES: Record<ButtonVariant, CSSProperties> = {
   },
   text: {
     background: "transparent",
-    color: "var(--color-blue-500)",
+    color: "var(--color-ink)",
     borderColor: "transparent",
   },
   "danger-soft": {

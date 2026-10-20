@@ -37,7 +37,7 @@ export function AppearanceSettings() {
             aria-pressed={theme === "light"}
             className={`rounded-xl border-2 p-3 text-left text-[var(--color-ink)] transition ${
               theme === "light"
-                ? "border-[var(--color-blue-500)]"
+                ? "border-[var(--color-blue-400)]"
                 : "border-[var(--color-line)] hover:border-[var(--color-blue-200)]"
             }`}
           >
@@ -60,7 +60,7 @@ export function AppearanceSettings() {
             aria-pressed={theme === "dark"}
             className={`rounded-xl border-2 p-3 text-left text-[var(--color-ink)] transition ${
               theme === "dark"
-                ? "border-[var(--color-blue-500)]"
+                ? "border-[var(--color-blue-400)]"
                 : "border-[var(--color-line)] hover:border-[var(--color-blue-200)]"
             }`}
           >
@@ -83,7 +83,7 @@ export function AppearanceSettings() {
             aria-pressed={theme === "high-contrast"}
             className={`rounded-xl border-2 p-3 text-left text-[var(--color-ink)] transition ${
               theme === "high-contrast"
-                ? "border-[var(--color-blue-500)]"
+                ? "border-[var(--color-blue-400)]"
                 : "border-[var(--color-line)] hover:border-[var(--color-blue-200)]"
             }`}
           >

@@ -42,7 +42,7 @@ export function GameplaySettings() {
                 text-left font-ui transition
                 ${
                   primaryClick === "fill"
-                    ? "border-[var(--color-blue-500)] bg-[var(--color-surface)]"
+                    ? "border-[var(--color-blue-400)] bg-[var(--color-surface)]"
                     : "border-[var(--color-line)] bg-[var(--color-surface)]"
                 }
               `}
@@ -65,7 +65,7 @@ export function GameplaySettings() {
                 text-left font-ui transition
                 ${
                   primaryClick === "cross"
-                    ? "border-[var(--color-blue-500)] bg-[var(--color-surface)]"
+                    ? "border-[var(--color-blue-400)] bg-[var(--color-surface)]"
                     : "border-[var(--color-line)] bg-[var(--color-surface)]"
                 }
               `}

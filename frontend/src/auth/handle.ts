@@ -9,6 +9,6 @@ export const HANDLE_MIN = 3;
 export const HANDLE_MAX = 20;
 
 export const handleInputCls =
-  "rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-[var(--color-accent-primary)] focus:ring-2 focus:ring-[var(--color-accent-primary)]/20";
+  "rounded-xl border border-[var(--color-line)] px-4 py-2 text-sm outline-none focus:border-[var(--color-accent-primary)] focus:ring-2 focus:ring-[var(--color-accent-primary)]/20 bg-[var(--color-surface-sunk)]";
 
-export const handleLabelCls = "text-sm font-medium text-gray-700";
+export const handleLabelCls = "text-sm font-medium text-[var(--color-ink)]";

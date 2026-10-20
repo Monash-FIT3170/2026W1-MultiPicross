@@ -12,8 +12,8 @@ import { useAuth } from "../auth/AuthContext";
 import { SSO_BUTTON_LABEL } from "../auth/ssoLabel";
 
 const inputCls =
-  "rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:border-[var(--color-accent-primary)] focus:ring-2 focus:ring-[var(--color-accent-primary)]/20";
-const labelCls = "text-sm font-medium text-gray-700";
+  "rounded-xl border border-[var(--color-line)] px-4 py-2 text-sm outline-none focus:border-[var(--color-accent-primary)] focus:ring-2 focus:ring-[var(--color-accent-primary)]/20 bg-[var(--color-surface-sunk)]";
+const labelCls = "text-sm font-medium text-[var(--color-ink-soft)]";
 
 // gap-4 = 1rem = 16px, cancelled via marginTop while the credentials block is
 // collapsed: flexbox `gap` still inserts space around a zero-height child.
@@ -269,7 +269,8 @@ export function AuthLayout() {
     <div className="mp-page mp-auth-page flex min-h-screen items-center justify-center bg-[var(--color-background)]">
       <div
         ref={cardRef}
-        className="mp-auth-card w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-lg"
+        className="mp-auth-card w-full max-w-sm overflow-hidden rounded-2xl 
+        bg-[var(--color-surface)] border border-[var(--color-line)] shadow-lg"
       >
         <form
           ref={wrapperRef}
@@ -277,7 +278,7 @@ export function AuthLayout() {
           noValidate
           className="mp-auth-form flex flex-col gap-4 px-8 py-10"
         >
-          <h2 className="text-center text-lg font-semibold text-gray-800">
+          <h2 className="text-center text-lg font-semibold text-[var(--color-ink)]">
             Sign in
           </h2>
 
@@ -288,7 +289,13 @@ export function AuthLayout() {
               setRedirecting(true);
               signIn(from);
             }}
-            className="flex items-center justify-center gap-2 rounded-xl bg-gray-900 py-2 font-semibold text-white shadow-sm transition duration-150 hover:bg-black hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 active:translate-y-px active:shadow-sm disabled:cursor-wait disabled:opacity-80 disabled:shadow-sm"
+            className="flex items-center justify-center gap-2 rounded-xl 
+            bg-[var(--color-blue-500)] border border-[var(--color-line)] py-2
+            font-semibold text-[var(--color-on-accent)] shadow-sm transition duration-150 
+            hover:bg-[var(--color-blue-600)] hover:shadow-md focus-visible:outline-2 
+            focus-visible:outline-offset-2 focus-visible:outline-gray-900 
+            active:translate-y-px active:shadow-sm disabled:cursor-wait 
+            disabled:opacity-80 disabled:shadow-sm"
           >
             {redirecting && (
               <svg
@@ -323,7 +330,7 @@ export function AuthLayout() {
             onClick={toggleExpanded}
             aria-expanded={expanded}
             aria-controls="service-account-form"
-            className="mx-auto flex items-center gap-1 text-xs font-medium text-gray-400 transition hover:text-gray-600"
+            className="mx-auto flex items-center gap-1 text-xs font-medium text-[var(--color-ink)] transition hover:text-[var(--color-ink-faint)]"
           >
             I&apos;m an admin
             <svg
@@ -402,7 +409,7 @@ export function AuthLayout() {
               {error && (
                 <div
                   ref={errorRef}
-                  className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700"
+                  className="rounded-lg bg-[var(--color-coral-50)] px-4 py-2 text-sm text-[var(--color-coral-500)]"
                 >
                   {error}
                 </div>
@@ -411,7 +418,9 @@ export function AuthLayout() {
               <button
                 type="submit"
                 disabled={loading}
-                className="rounded-xl border border-gray-300 py-2 font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-60"
+                className="rounded-xl border border-[var(--color-line)] py-2 font-semibold
+                bg-[var(--color-blue-500)] text-[var(--color-on-accent)] transition 
+                hover:bg-[var(--color-blue-600)] disabled:opacity-60"
               >
                 <span ref={buttonTextRef}>{buttonLabel}</span>
               </button>

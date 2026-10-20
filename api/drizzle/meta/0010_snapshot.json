@@ -1,9 +1,158 @@
 {
-  "id": "222a0c3a-f738-4c9c-858e-776b8af254d0",
-  "prevId": "479f2ec0-2037-4601-8b1b-ecdcfe403d7a",
+  "id": "7a082834-ad7d-43da-a682-bd7e0600b1c0",
+  "prevId": "0e2089dc-8096-4bd2-838b-239f40b2b569",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
+    "public.account_achievement_progress": {
+      "name": "account_achievement_progress",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "achievement_key": {
+          "name": "achievement_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "progress": {
+          "name": "progress",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "account_achievement_progress_account_key_idx": {
+          "name": "account_achievement_progress_account_key_idx",
+          "columns": [
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "achievement_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "account_achievement_progress_account_id_accounts_id_fk": {
+          "name": "account_achievement_progress_account_id_accounts_id_fk",
+          "tableFrom": "account_achievement_progress",
+          "tableTo": "accounts",
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.account_achievements": {
+      "name": "account_achievements",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "achievement_key": {
+          "name": "achievement_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unlocked_at": {
+          "name": "unlocked_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "account_achievements_account_key_idx": {
+          "name": "account_achievements_account_key_idx",
+          "columns": [
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "achievement_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "account_achievements_account_id_accounts_id_fk": {
+          "name": "account_achievements_account_id_accounts_id_fk",
+          "tableFrom": "account_achievements",
+          "tableTo": "accounts",
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.accounts": {
       "name": "accounts",
       "schema": "",
@@ -241,6 +390,117 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.mp_results": {
+      "name": "mp_results",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "puzzle_id": {
+          "name": "puzzle_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mode": {
+          "name": "mode",
+          "type": "mp_mode",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "solved": {
+          "name": "solved",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "won": {
+          "name": "won",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "elapsed_seconds": {
+          "name": "elapsed_seconds",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lives_left": {
+          "name": "lives_left",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "finished_at": {
+          "name": "finished_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "mp_results_account_puzzle_idx": {
+          "name": "mp_results_account_puzzle_idx",
+          "columns": [
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "puzzle_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "mp_results_account_id_accounts_id_fk": {
+          "name": "mp_results_account_id_accounts_id_fk",
+          "tableFrom": "mp_results",
+          "tableTo": "accounts",
+          "columnsFrom": ["account_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "mp_results_puzzle_id_nonograms_id_fk": {
+          "name": "mp_results_puzzle_id_nonograms_id_fk",
+          "tableFrom": "mp_results",
+          "tableTo": "nonograms",
+          "columnsFrom": ["puzzle_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.nonograms": {
       "name": "nonograms",
       "schema": "",
@@ -250,6 +510,12 @@
           "type": "text",
           "primaryKey": true,
           "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "width": {
           "name": "width",
@@ -374,6 +640,160 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.ranked_match_results": {
+      "name": "ranked_match_results",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "winner_account_id": {
+          "name": "winner_account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "loser_account_id": {
+          "name": "loser_account_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "winner_elo_before": {
+          "name": "winner_elo_before",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "winner_elo_after": {
+          "name": "winner_elo_after",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "loser_elo_before": {
+          "name": "loser_elo_before",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "loser_elo_after": {
+          "name": "loser_elo_after",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "winner_mistakes": {
+          "name": "winner_mistakes",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "loser_mistakes": {
+          "name": "loser_mistakes",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "board_size": {
+          "name": "board_size",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 15
+        },
+        "elo_multiplier_percent": {
+          "name": "elo_multiplier_percent",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 100
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "ranked_match_results_winner_idx": {
+          "name": "ranked_match_results_winner_idx",
+          "columns": [
+            {
+              "expression": "winner_account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ranked_match_results_loser_idx": {
+          "name": "ranked_match_results_loser_idx",
+          "columns": [
+            {
+              "expression": "loser_account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "ranked_match_results_completed_idx": {
+          "name": "ranked_match_results_completed_idx",
+          "columns": [
+            {
+              "expression": "completed_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "ranked_match_results_winner_account_id_accounts_id_fk": {
+          "name": "ranked_match_results_winner_account_id_accounts_id_fk",
+          "tableFrom": "ranked_match_results",
+          "tableTo": "accounts",
+          "columnsFrom": ["winner_account_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "ranked_match_results_loser_account_id_accounts_id_fk": {
+          "name": "ranked_match_results_loser_account_id_accounts_id_fk",
+          "tableFrom": "ranked_match_results",
+          "tableTo": "accounts",
+          "columnsFrom": ["loser_account_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.rated_waiting_list": {
       "name": "rated_waiting_list",
       "schema": "",
@@ -391,6 +811,13 @@
           "primaryKey": false,
           "notNull": true
         },
+        "board_size": {
+          "name": "board_size",
+          "type": "smallint",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 15
+        },
         "joined_at": {
           "name": "joined_at",
           "type": "timestamp",
@@ -399,7 +826,29 @@
           "default": "now()"
         }
       },
-      "indexes": {},
+      "indexes": {
+        "rated_waiting_list_account_board_size_unique": {
+          "name": "rated_waiting_list_account_board_size_unique",
+          "columns": [
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "board_size",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
       "foreignKeys": {
         "rated_waiting_list_account_id_accounts_id_fk": {
           "name": "rated_waiting_list_account_id_accounts_id_fk",
@@ -412,13 +861,7 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "rated_waiting_list_account_id_unique": {
-          "name": "rated_waiting_list_account_id_unique",
-          "nullsNotDistinct": false,
-          "columns": ["account_id"]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false
@@ -590,6 +1033,22 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "sp_completions_account_completed_idx": {
+          "name": "sp_completions_account_completed_idx",
+          "columns": [
+            {
+              "expression": "account_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "state = 'completed'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -624,6 +1083,11 @@
       "name": "account_kind",
       "schema": "public",
       "values": ["sso", "service"]
+    },
+    "public.mp_mode": {
+      "name": "mp_mode",
+      "schema": "public",
+      "values": ["unrated", "public", "ranked"]
     },
     "public.sp_completion_state": {
       "name": "sp_completion_state",
