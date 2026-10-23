@@ -330,6 +330,40 @@ describe("PicrossRoom", () => {
     assert.strictEqual(snapshot.players[bId].connected, false);
   });
 
+  // ── Settings ───────────────────────────────────────────────────────────────
+
+  it("only auto-crosses solved lines for players who left it on", async () => {
+    const room: ServerRoom = await colyseus.createRoom("picross_room", {
+      width: 3,
+      height: 3,
+    });
+    const clientA = await colyseus.connectTo(room, {
+      username: "A",
+      autoCross: false,
+    });
+    const seenByA = track(clientA);
+    const clientB = await colyseus.connectTo(room, { username: "B" });
+    track(clientB);
+    await seenByA.wait((s) => s.phase === "playing", "the match to start");
+
+    // Both players solve row 0 (# . #); its middle cell is the one to cross.
+    for (const client of [clientA, clientB]) {
+      fill(client, [0, 0]);
+      fill(client, [0, 2]);
+    }
+    const aId = clientA.sessionId;
+    const bId = clientB.sessionId;
+    const snapshot = await seenByA.wait(
+      (s) =>
+        s.players[aId]?.confirmedFilled?.[2] === true &&
+        s.players[bId]?.confirmedFilled?.[2] === true,
+      "both players to solve row 0",
+    );
+
+    assert.strictEqual(snapshot.players[aId]?.crosses?.[1], false);
+    assert.strictEqual(snapshot.players[bId]?.crosses?.[1], true);
+  });
+
   // ── D5 ─────────────────────────────────────────────────────────────────────
 
   it("issues invite codes that match the shared alphabet", async () => {

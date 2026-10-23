@@ -4,6 +4,7 @@ import type { Room as ColyseusRoom } from "@colyseus/sdk";
 import { gameserverClient } from "../colyseus";
 import { apiFetch } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
+import { useSettings } from "../components/settings/SettingsContext";
 import NonogramGrid, {
   type CellValue,
   autoCellSize,
@@ -233,6 +234,9 @@ export function Room() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { status, playerName } = useAuth();
+  const { primaryClick, autoCrossSolvedLines, confirmBeforeAbandoning } =
+    useSettings();
+
   const isRanked =
     searchParams.get("mode") === "competitive" ||
     searchParams.get("mode") === "ranked";
@@ -252,8 +256,8 @@ export function Room() {
   const intentionalLeaveRef = useRef(false);
   const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
   const mistakeCrossTimerRef = useRef<number | undefined>(undefined);
+  const [actionMode, setActionMode] = useState<"fill" | "cross">(primaryClick);
   const resultsNavigatedRef = useRef(false);
-  const [actionMode, setActionMode] = useState<"fill" | "cross">("fill");
   const [lifeLostNotice, setLifeLostNotice] = useState<{
     id: number;
     livesLeft: number;
@@ -280,6 +284,14 @@ export function Room() {
     authRef.current = { status, playerName };
   }, [status, playerName]);
 
+  // Sent with the join and fixed for the match, read through a ref for the
+  // same reason as auth: changing it must not reconnect.
+  const autoCrossRef = useRef(autoCrossSolvedLines);
+
+  useEffect(() => {
+    autoCrossRef.current = autoCrossSolvedLines;
+  }, [autoCrossSolvedLines]);
+
   // A one-way latch: flips false→true once when the auth bootstrap resolves,
   // giving the connect effect a dependency that does not re-fire on later
   // authenticated↔unauthenticated transitions.
@@ -295,7 +307,9 @@ export function Room() {
     async function connect() {
       try {
         const { status: authStatus, playerName: name } = authRef.current;
-        let joinOptions: { token: string } | { username: string };
+        let joinOptions: ({ token: string } | { username: string }) & {
+          autoCross?: boolean;
+        };
 
         if (authStatus === "authenticated") {
           const res = await apiFetch("/auth/room-token", { method: "POST" });
@@ -306,6 +320,7 @@ export function Room() {
           joinOptions = { username: name ?? "Guest" };
         }
 
+        joinOptions.autoCross = autoCrossRef.current;
         const room = await gameserverClient.joinById(roomId!, joinOptions);
 
         if (cancelled) {
@@ -555,10 +570,11 @@ export function Room() {
 
   // Leave the lobby. While the game is in progress the server counts any
   // departure as a forfeit (PicrossRoom.onLeave), so route the click through
-  // the confirm dialog first; otherwise just go.
+  // the confirm dialog first (unless turned off in settings); otherwise just go.
   function leaveRoom() {
     if (snapshot?.phase === "playing") {
-      setConfirmingAbandon(true);
+      if (confirmBeforeAbandoning) setConfirmingAbandon(true);
+      else handleAbandonConfirm();
     } else {
       navigate(lobbyPath);
     }
@@ -984,7 +1000,7 @@ export function Room() {
           fontSize: 13,
         }}
       >
-        Use the switch to pick fill or cross · right-click always marks empty
+        Use the switch to pick fill or cross · right-click does the other
       </p>
 
       <div

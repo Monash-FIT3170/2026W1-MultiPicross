@@ -71,6 +71,13 @@
       "when": 1792386744469,
       "tag": "0009_achievements",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792394158378,
+      "tag": "0010_sp_lives_enabled",
+      "breakpoints": true
     }
   ]
 }

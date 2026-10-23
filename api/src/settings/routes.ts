@@ -17,6 +17,22 @@ export const SettingsPatch = v.strictObject({
   animationLevel: v.optional(v.picklist(["full", "subtle", "off"])),
   cellFillPop: v.optional(v.boolean()),
   showOpponentProgress: v.optional(v.boolean()),
+  // Gameplay
+  primaryClick: v.optional(v.picklist(["fill", "cross"])),
+  dragToFill: v.optional(v.boolean()),
+  autoCrossSolvedLines: v.optional(v.boolean()),
+  confirmBeforeAbandoning: v.optional(v.boolean()),
+  singleplayerLives: v.optional(v.boolean()),
+  // Audio
+  volume: v.optional(
+    v.pipe(v.number(), v.integer(), v.minValue(0), v.maxValue(100)),
+  ),
+  cellFillSound: v.optional(v.boolean()),
+  crossSound: v.optional(v.boolean()),
+  // Accessibility
+  reducedMotion: v.optional(v.boolean()),
+  largerClueNumbers: v.optional(v.boolean()),
+  boldGridLines: v.optional(v.boolean()),
 });
 
 export type Settings = v.InferOutput<typeof SettingsPatch>;

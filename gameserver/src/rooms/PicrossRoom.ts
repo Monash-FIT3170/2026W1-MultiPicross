@@ -127,6 +127,8 @@ interface PlayerData {
   /** The player's own board in FFA; null in team modes (see teamBoards). */
   board: Board | null;
   livesLeft: number;
+  /** The player's "Auto-cross solved lines" setting, sent when joining. */
+  autoCross: boolean;
   done: boolean;
   won: boolean;
   finishedAt: number | null;
@@ -314,7 +316,7 @@ export class PicrossRoom extends Room {
     return `${base} (${suffix})`;
   }
 
-  onJoin(client: Client, options: { username?: string }) {
+  onJoin(client: Client, options: { username?: string; autoCross?: boolean }) {
     const player: PlayerData = {
       accountId: (client.auth as RoomAuth).accountId,
       username: this.resolveUsername(client, options.username),
@@ -322,6 +324,7 @@ export class PicrossRoom extends Room {
         ? null
         : emptyBoard(this.width * this.height),
       livesLeft: 3,
+      autoCross: options.autoCross !== false,
       done: false,
       won: false,
       finishedAt: null,
@@ -800,7 +803,7 @@ export class PicrossRoom extends Room {
     if (this.solution[idx] === 1) {
       board.confirmedFilled[idx] = true;
       board.crosses[idx] = false;
-      this.autoCross(board);
+      if (player.autoCross) this.autoCross(board);
       if (this.isSolved(board)) {
         this.handlePlayerWin(sessionId, player);
       }
@@ -837,7 +840,7 @@ export class PicrossRoom extends Room {
       board.crosses[idx] = false;
       board.mistakeCross[idx] = true;
       player.livesLeft = Math.max(0, player.livesLeft - 1);
-      this.autoCross(board);
+      if (player.autoCross) this.autoCross(board);
 
       // Solved is checked first: a mistake that reveals the final cell wins,
       // even when it also costs the player their last life.

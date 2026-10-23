@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
+import { useSettings } from "../components/settings/SettingsContext";
 import { apiFetch, parseApiError } from "../api/client";
 import NonogramGrid, {
   type CellValue,
@@ -43,6 +44,7 @@ interface ActiveCompletion {
   revealedEmpty: boolean[];
   mistakeCross: boolean[];
   livesLeft: number;
+  livesEnabled: boolean;
   elapsedSeconds: number;
 }
 
@@ -54,6 +56,8 @@ interface GameState {
   colClues: number[][];
   grid: CellValue[];
   livesLeft: number;
+  // Fixed when the game starts, from the "Singleplayer lives" setting.
+  livesEnabled: boolean;
   baseElapsed: number;
   isGuest: boolean;
   solution?: number[];
@@ -86,6 +90,7 @@ interface ActionResponse {
 
 // After a correct fill, cross out every remaining empty cell in any row or
 // column whose clue total is now satisfied. 0-clue lines satisfy immediately.
+// Only runs while the "Auto-cross solved lines" setting is on.
 //
 // Duplicated on purpose: PicrossRoom.ts runs the same algorithm over
 // boolean[] pairs. Separate Docker build contexts mean neither side can
@@ -121,15 +126,14 @@ function applyAutoComplete(
   return out;
 }
 
-function completionToGameState(c: ActiveCompletion): GameState {
+function completionToGameState(
+  c: ActiveCompletion,
+  autoCross: boolean,
+): GameState {
   const rawGrid = cellsToGrid(c.confirmedFilled, c.crosses, c.revealedEmpty);
-  const grid = applyAutoComplete(
-    rawGrid,
-    c.rowClues,
-    c.colClues,
-    c.width,
-    c.height,
-  );
+  const grid = autoCross
+    ? applyAutoComplete(rawGrid, c.rowClues, c.colClues, c.width, c.height)
+    : rawGrid;
   return {
     completionId: c.id,
     width: c.width,
@@ -138,6 +142,7 @@ function completionToGameState(c: ActiveCompletion): GameState {
     colClues: c.colClues,
     grid,
     livesLeft: c.livesLeft,
+    livesEnabled: c.livesEnabled,
     baseElapsed: c.elapsedSeconds,
     isGuest: false,
     mistakeCrossIndices: (c.mistakeCross as boolean[]).reduce<number[]>(
@@ -155,13 +160,13 @@ function completionToGameState(c: ActiveCompletion): GameState {
 export function Singleplayer() {
   const navigate = useNavigate();
   const { status } = useAuth();
+  const { autoCrossSolvedLines, singleplayerLives } = useSettings();
 
   const [phase, setPhase] = useState<Phase>({ kind: "loading" });
   const [displaySeconds, setDisplaySeconds] = useState(0);
   const [mistakeFlash, setMistakeFlash] = useState(false);
   const [mistakeCrossIdx, setMistakeCrossIdx] = useState<number | null>(null);
   const achievementToasts = useAchievementToastQueue();
-  const [confirmingAbandon, setConfirmingAbandon] = useState(false);
 
   // Stable key for PlayingScreen, increments each time a fresh game starts
   const gameKeyRef = useRef(0);
@@ -269,13 +274,21 @@ export function Singleplayer() {
   }, [runningCompletionId]);
 
   // ── Start game ─────────────────────────────────────────────────────────────
+  function autoComplete(grid: CellValue[], g: GameState): CellValue[] {
+    if (!autoCrossSolvedLines) return grid;
+    return applyAutoComplete(grid, g.rowClues, g.colClues, g.width, g.height);
+  }
 
   async function startAuthGame(width: number, height: number) {
     setPhase({ kind: "loading-puzzle" });
     try {
       const res = await apiFetch("/singleplayer/start", {
         method: "POST",
-        body: JSON.stringify({ width, height }),
+        body: JSON.stringify({
+          width,
+          height,
+          livesEnabled: singleplayerLives,
+        }),
       });
       if (!res.ok) {
         setPhase({ kind: "error", message: await parseApiError(res) });
@@ -287,32 +300,7 @@ export function Singleplayer() {
       gameKeyRef.current++;
       setPhase({
         kind: "playing",
-        game: completionToGameState(completion),
-        outcome: null,
-      });
-    } catch (e) {
-      setPhase({ kind: "error", message: String(e) });
-    }
-  }
-
-  async function continueAuthGame(completion: ActiveCompletion) {
-    setPhase({ kind: "loading-puzzle" });
-    try {
-      const res = await apiFetch("/singleplayer/resume", { method: "POST" });
-      if (!res.ok) {
-        setPhase({ kind: "error", message: await parseApiError(res) });
-        return;
-      }
-      const { elapsedSeconds } = (await res.json()) as {
-        elapsedSeconds: number;
-      };
-      gameKeyRef.current++;
-      setPhase({
-        kind: "playing",
-        game: {
-          ...completionToGameState(completion),
-          baseElapsed: elapsedSeconds,
-        },
+        game: completionToGameState(completion, autoCrossSolvedLines),
         outcome: null,
       });
     } catch (e) {
@@ -338,25 +326,21 @@ export function Singleplayer() {
         solution: number[];
         colors: string[];
       };
-      const game: GameState = {
+      const blank: GameState = {
         width: data.width,
         height: data.height,
         rowClues: data.rowClues,
         colClues: data.colClues,
-        grid: applyAutoComplete(
-          Array<CellValue>(data.width * data.height).fill(0),
-          data.rowClues,
-          data.colClues,
-          data.width,
-          data.height,
-        ),
+        grid: Array<CellValue>(data.width * data.height).fill(0),
         livesLeft: 3,
+        livesEnabled: singleplayerLives,
         baseElapsed: 0,
         isGuest: true,
         solution: data.solution,
         colors: data.colors,
         mistakeCrossIndices: [],
       };
+      const game = { ...blank, grid: autoComplete(blank.grid, blank) };
       gameKeyRef.current++;
       setPhase({ kind: "playing", game, outcome: null });
     } catch (e) {
@@ -396,13 +380,7 @@ export function Singleplayer() {
         const newGrid = [...g.grid] as CellValue[];
         if (g.solution![idx] === 1) {
           newGrid[idx] = 1;
-          const autoGrid = applyAutoComplete(
-            newGrid,
-            g.rowClues,
-            g.colClues,
-            g.width,
-            g.height,
-          );
+          const autoGrid = autoComplete(newGrid, g);
           const allDone = g.solution!.every(
             (s, i) => s === 0 || autoGrid[i] === 1,
           );
@@ -413,7 +391,7 @@ export function Singleplayer() {
           };
         } else {
           newGrid[idx] = 3;
-          const newLives = g.livesLeft - 1;
+          const newLives = g.livesEnabled ? g.livesLeft - 1 : g.livesLeft;
           return {
             kind: "playing",
             game: { ...g, grid: newGrid, livesLeft: Math.max(0, newLives) },
@@ -440,13 +418,7 @@ export function Singleplayer() {
             const newGrid = [...g.grid] as CellValue[];
             if (data.result === "correct") {
               newGrid[idx] = 1;
-              const autoGrid = applyAutoComplete(
-                newGrid,
-                g.rowClues,
-                g.colClues,
-                g.width,
-                g.height,
-              );
+              const autoGrid = autoComplete(newGrid, g);
               return {
                 kind: "playing",
                 game: {
@@ -482,7 +454,9 @@ export function Singleplayer() {
     if (game.isGuest) {
       if (markCross && game.solution![idx] === 1) {
         // Crossing a filled cell, mistake
-        const newLives = game.livesLeft - 1;
+        const newLives = game.livesEnabled
+          ? game.livesLeft - 1
+          : game.livesLeft;
         setMistakeCrossIdx(idx);
         setTimeout(() => setMistakeCrossIdx(null), 450);
         if (newLives > 0) {
@@ -499,14 +473,8 @@ export function Singleplayer() {
           const g = cur.game;
           const newGrid = [...g.grid] as CellValue[];
           newGrid[idx] = 1;
-          const autoGrid = applyAutoComplete(
-            newGrid,
-            g.rowClues,
-            g.colClues,
-            g.width,
-            g.height,
-          );
-          const lives = g.livesLeft - 1;
+          const autoGrid = autoComplete(newGrid, g);
+          const lives = g.livesEnabled ? g.livesLeft - 1 : g.livesLeft;
           const allDone = g.solution!.every(
             (s, i) => s === 0 || autoGrid[i] === 1,
           );
@@ -556,13 +524,7 @@ export function Singleplayer() {
             const newGrid = [...g.grid] as CellValue[];
             if (data.result === "mistake-cross") {
               newGrid[idx] = 1;
-              const autoGrid = applyAutoComplete(
-                newGrid,
-                g.rowClues,
-                g.colClues,
-                g.width,
-                g.height,
-              );
+              const autoGrid = autoComplete(newGrid, g);
               const newMCI = [...(g.mistakeCrossIndices ?? []), idx];
               if (data.completed) {
                 return {
@@ -689,7 +651,14 @@ export function Singleplayer() {
       {phase.kind === "active-choice" && (
         <ActiveChoiceScreen
           completion={phase.completion}
-          onContinue={() => void continueAuthGame(phase.completion)}
+          onContinue={() => {
+            const game = completionToGameState(
+              phase.completion,
+              autoCrossSolvedLines,
+            );
+            gameKeyRef.current++;
+            setPhase({ kind: "playing", game, outcome: null });
+          }}
           onNewGame={() =>
             setPhase({
               kind: "size-select",
@@ -713,19 +682,9 @@ export function Singleplayer() {
           interactive={phase.outcome === null}
           onFill={handleFill}
           onCross={handleCross}
-          onAbandon={() => setConfirmingAbandon(true)}
+          onAbandon={() => void handleAbandon()}
           onPlayAgain={handlePlayAgain}
           onMainMenu={() => navigate("/")}
-        />
-      )}
-
-      {confirmingAbandon && (
-        <AbandonConfirmModal
-          onCancel={() => setConfirmingAbandon(false)}
-          onConfirm={() => {
-            setConfirmingAbandon(false);
-            void handleAbandon();
-          }}
         />
       )}
     </div>
@@ -748,84 +707,6 @@ function CenteredSpinner() {
     >
       <Icon name="refresh" size={18} color="var(--color-ink-faint)" />
       <span style={{ fontSize: 14 }}>Loading…</span>
-    </div>
-  );
-}
-
-function AbandonConfirmModal({
-  onCancel,
-  onConfirm,
-}: {
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  useEffect(() => {
-    function handleKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onCancel();
-    }
-    document.addEventListener("keydown", handleKey);
-    return () => document.removeEventListener("keydown", handleKey);
-  }, [onCancel]);
-
-  return (
-    <div
-      onClick={onCancel}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(28,28,30,0.35)",
-        backdropFilter: "blur(4px)",
-        WebkitBackdropFilter: "blur(4px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 300,
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="mp-surface"
-        style={{
-          padding: 32,
-          maxWidth: 380,
-          width: "calc(100% - 32px)",
-          textAlign: "center",
-        }}
-      >
-        <Icon
-          name="info"
-          size={32}
-          color="var(--color-coral-400)"
-          style={{ margin: "0 auto 16px" }}
-        />
-        <h2
-          style={{
-            margin: "0 0 8px",
-            fontSize: 20,
-            fontWeight: 700,
-            color: "var(--color-ink)",
-          }}
-        >
-          Abandon game?
-        </h2>
-        <p
-          style={{
-            margin: "0 0 24px",
-            color: "var(--color-ink-muted)",
-            fontSize: 14,
-          }}
-        >
-          You'll lose your progress on this puzzle. This can't be undone.
-        </p>
-        <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-          <Button variant="ghost" size="sm" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button variant="danger-soft" size="sm" onClick={onConfirm}>
-            Abandon
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }
@@ -1018,8 +899,9 @@ function ActiveChoiceScreen({
             }}
           >
             You have an unfinished {completion.width}×{completion.height} puzzle
-            with {completion.livesLeft}{" "}
-            {completion.livesLeft === 1 ? "life" : "lives"} remaining.
+            {completion.livesEnabled
+              ? ` with ${completion.livesLeft} ${completion.livesLeft === 1 ? "life" : "lives"} remaining.`
+              : "."}
           </p>
           <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
             <Button variant="ghost" size="sm" onClick={onNewGame}>
@@ -1067,9 +949,16 @@ function PlayingScreen({
   const sidebarGap = 32;
   const groupOffset = (sidebarWidth + sidebarGap - rowClueWidth) / 2;
 
-  // Abandoning discards the in-progress puzzle, so make the player confirm first.
+  const { primaryClick, confirmBeforeAbandoning } = useSettings();
+  // Abandoning discards the in-progress puzzle, so make the player confirm
+  // first (unless they turned that off in settings).
   const [confirmingAbandon, setConfirmingAbandon] = useState(false);
-  const [actionMode, setActionMode] = useState<"fill" | "cross">("fill");
+  const [actionMode, setActionMode] = useState<"fill" | "cross">(primaryClick);
+
+  function requestAbandon() {
+    if (confirmBeforeAbandoning) setConfirmingAbandon(true);
+    else onAbandon();
+  }
 
   return (
     <div
@@ -1117,7 +1006,7 @@ function PlayingScreen({
           fontSize: 13,
         }}
       >
-        Use the switch to pick fill or cross · right-click always marks empty
+        Use the switch to pick fill or cross · right-click does the other
       </p>
 
       <div
@@ -1189,27 +1078,33 @@ function PlayingScreen({
                 </span>
               </StatTile>
 
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
+              {game.livesEnabled && (
                 <div
                   style={{
                     display: "flex",
+                    flexDirection: "column",
                     alignItems: "center",
-                    gap: 6,
+                    gap: 8,
                   }}
                 >
-                  <Icon name="heart" size={13} color="var(--color-ink-faint)" />
-                  <span className="mp-eyebrow">Lives</span>
-                </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <Icon
+                      name="heart"
+                      size={13}
+                      color="var(--color-ink-faint)"
+                    />
+                    <span className="mp-eyebrow">Lives</span>
+                  </div>
 
-                <LivesPips lives={game.livesLeft} />
-              </div>
+                  <LivesPips lives={game.livesLeft} />
+                </div>
+              )}
 
               <div
                 style={{
@@ -1233,7 +1128,7 @@ function PlayingScreen({
               <Button
                 variant="danger-soft"
                 size="sm"
-                onClick={() => setConfirmingAbandon(true)}
+                onClick={requestAbandon}
                 disabled={outcome !== null}
               >
                 Abandon
@@ -1287,7 +1182,11 @@ function PlayingScreen({
       {mistakeFlash && (
         <div className="mp-toast">
           <Icon name="x" size={14} color="var(--color-coral-500)" />
-          <span>Not that one, one life used.</span>
+          <span>
+            {game.livesEnabled
+              ? "Not that one, one life used."
+              : "Not that one."}
+          </span>
         </div>
       )}
 
@@ -1334,9 +1233,11 @@ function PlayingScreen({
             >
               Solved in {fmtSeconds(displaySeconds)}!
             </div>
-            <div style={{ fontSize: 12, color: "var(--color-sage-500)" }}>
-              {game.livesLeft}/3 lives remaining.
-            </div>
+            {game.livesEnabled && (
+              <div style={{ fontSize: 12, color: "var(--color-sage-500)" }}>
+                {game.livesLeft}/3 lives remaining.
+              </div>
+            )}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <Button variant="ghost" size="sm" onClick={onPlayAgain}>

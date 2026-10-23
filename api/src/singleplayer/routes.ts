@@ -43,6 +43,9 @@ const GuestPuzzleQuery = v.object({
 const StartBody = v.object({
   width: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1))),
   height: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1))),
+  // The player's "Singleplayer lives" setting. Off means mistakes are still
+  // recorded but never cost a life or end the game.
+  livesEnabled: v.optional(v.boolean()),
 });
 
 const ActionBody = v.object({
@@ -190,6 +193,7 @@ sp.get(
         revealedEmpty: spCompletions.revealedEmpty,
         mistakeCross: spCompletions.mistakeCross,
         livesLeft: spCompletions.livesLeft,
+        livesEnabled: spCompletions.livesEnabled,
         elapsedSeconds: spCompletions.elapsedSeconds,
         lastResumedAt: spCompletions.lastResumedAt,
         width: nonograms.width,
@@ -220,6 +224,7 @@ sp.get(
         revealedEmpty: row.revealedEmpty,
         mistakeCross: row.mistakeCross,
         livesLeft: row.livesLeft,
+        livesEnabled: row.livesEnabled,
         elapsedSeconds: computeElapsed(row.elapsedSeconds, row.lastResumedAt),
       },
     });
@@ -336,6 +341,7 @@ sp.post(
         revealedEmpty: Array(cellCount).fill(false),
         mistakeCross: Array(cellCount).fill(false),
         livesLeft: 3,
+        livesEnabled: body?.livesEnabled ?? true,
         elapsedSeconds: 0,
         lastResumedAt: now,
       });
@@ -364,6 +370,7 @@ sp.post(
         revealedEmpty: created.revealedEmpty,
         mistakeCross: created.mistakeCross,
         livesLeft: created.livesLeft,
+        livesEnabled: created.livesEnabled,
         elapsedSeconds: 0,
       },
     });
@@ -416,6 +423,7 @@ sp.post(
           revealedEmpty: spCompletions.revealedEmpty,
           mistakeCross: spCompletions.mistakeCross,
           livesLeft: spCompletions.livesLeft,
+          livesEnabled: spCompletions.livesEnabled,
           elapsedSeconds: spCompletions.elapsedSeconds,
           lastResumedAt: spCompletions.lastResumedAt,
           // Computed in the DB: created_at is a timestamp without time zone
@@ -455,6 +463,8 @@ sp.post(
       const revealedEmpty = gameRow.revealedEmpty as boolean[];
       const mistakeCross = gameRow.mistakeCross as boolean[];
       const solution = gameRow.solution as number[];
+      // With lives off a mistake is still revealed, it just costs nothing.
+      const lifeCost = gameRow.livesEnabled ? 1 : 0;
 
       if (confirmedFilled[idx] || revealedEmpty[idx]) {
         return { status: 400, body: { error: "Cell is already locked" } };
@@ -482,7 +492,7 @@ sp.post(
           newCrosses[idx] = false;
           const newMistakeCross = [...mistakeCross];
           newMistakeCross[idx] = true;
-          const newLives = (gameRow.livesLeft as number) - 1;
+          const newLives = (gameRow.livesLeft as number) - lifeCost;
 
           if (newLives <= 0) {
             const finalElapsed = computeElapsed(
@@ -537,6 +547,7 @@ sp.post(
               accountId,
               {
                 livesLeft: newLives,
+                livesEnabled: gameRow.livesEnabled,
                 elapsedSeconds: finalElapsed,
                 wallSeconds: gameRow.wallSeconds,
                 width: gameRow.width,
@@ -616,6 +627,7 @@ sp.post(
             accountId,
             {
               livesLeft: gameRow.livesLeft,
+              livesEnabled: gameRow.livesEnabled,
               elapsedSeconds: finalElapsed,
               wallSeconds: gameRow.wallSeconds,
               width: gameRow.width,
@@ -648,7 +660,7 @@ sp.post(
         };
       } else {
         // Mistake
-        const newLives = (gameRow.livesLeft as number) - 1;
+        const newLives = (gameRow.livesLeft as number) - lifeCost;
         const newRevealedEmpty = [...revealedEmpty];
         newRevealedEmpty[idx] = true;
 

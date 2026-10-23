@@ -86,6 +86,33 @@ if (!ready) {
     assert.deepEqual(row.settings, {});
   });
 
+  test("PATCH saves gameplay, audio and accessibility settings", async () => {
+    const { cookie } = await newAccount();
+    const body = {
+      primaryClick: "cross",
+      dragToFill: false,
+      autoCrossSolvedLines: false,
+      confirmBeforeAbandoning: false,
+      singleplayerLives: false,
+      volume: 25,
+      cellFillSound: false,
+      crossSound: false,
+      reducedMotion: true,
+      largerClueNumbers: true,
+      boldGridLines: true,
+    };
+    const res = await patch(cookie, body);
+    assert.equal(res.status, 200);
+    assert.deepEqual(await res.json(), body);
+  });
+
+  test("PATCH rejects a volume outside 0-100", async () => {
+    const { cookie } = await newAccount();
+    assert.equal((await patch(cookie, { volume: 101 })).status, 400);
+    assert.equal((await patch(cookie, { volume: -1 })).status, 400);
+    assert.equal((await patch(cookie, { volume: 50.5 })).status, 400);
+  });
+
   test("PATCH without the CSRF header is rejected", async () => {
     const { cookie } = await newAccount();
     const res = await app.request("/settings", {
