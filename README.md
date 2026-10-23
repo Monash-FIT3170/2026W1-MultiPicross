@@ -4,6 +4,7 @@ MultiPicross is a real-time multiplayer Picross (nonogram) puzzle game developed
 for FIT3170 at Monash University.
 
 This document records the information required to assume development and operation of the project.
+The plan for the project after the end of the unit is in [MAINTENANCE.md](MAINTENANCE.md).
 
 ## Contents
 
@@ -13,7 +14,9 @@ This document records the information required to assume development and operati
 4. [Authentication](#4-authentication)
 5. [Provisioning the production environment](#5-provisioning-the-production-environment)
 6. [Deployment and operation](#6-deployment-and-operation)
-7. [Team](#7-team)
+7. [Contributing](#7-contributing)
+8. [Versioning and releases](#8-versioning-and-releases)
+9. [Team](#9-team)
 
 ## 1. Architecture
 
@@ -66,7 +69,7 @@ required to run and deploy them. Each service is containerised with Docker.
 | Docker with Compose v2         | All services execute in containers                   |
 | git                            | Source control                                       |
 | `just` (optional)              | Task runner. Recipes are defined in the `justfile`   |
-| Node.js 22 or later (optional) | Required only to run a service outside its container |
+| Node.js 25 or later (optional) | Required only to run a service outside its container |
 
 The following host ports must be available: 80 (Traefik), 8080 (Traefik
 dashboard), 5432 (PostgreSQL), 3001 (API), and 2567 (game server).
@@ -106,7 +109,7 @@ packages.
 
 ```bash
 # Development
-brew install git just node@24
+brew install git just node
 brew install --cask docker # Docker Desktop
 
 # Deployment
@@ -244,6 +247,10 @@ cd gameserver && npm test
 
 The database-dependent API tests are skipped automatically when PostgreSQL is
 unreachable, so `npm test` can still be run without a running database. The game server tests require a running database.
+The frontend has no test suite.
+
+CI additionally runs `npm run typecheck` (which covers the test files) and
+`npm run db:migrate` before the API tests.
 
 ## 4. Authentication
 
@@ -653,7 +660,110 @@ To revert a migration, restore the database disk snapshot. No down migrations
 exist, so this constitutes the only available recovery path. A snapshot is taken
 immediately before each rollout, and the ten most recent snapshots are retained.
 
-## 7. Team
+## 7. Contributing
+
+Every change to `main` must go through a pull request. Branch protection on
+`main` enforces the rules below and prevents direct pushes.
+
+### 7.1 Branches
+
+Create a branch from an up-to-date `main`, named `<type>/<short-description>`
+in kebab case.
+
+| Type        | Use                                                  |
+| ----------- | ---------------------------------------------------- |
+| `feature/`  | New functionality, e.g. `feature/ranked-leaderboard` |
+| `fix/`      | Bug fixes, e.g. `fix/timer-after-leave`              |
+| `refactor/` | Restructuring without behavioural change             |
+| `docs/`     | Documentation only                                   |
+| `chore/`    | Dependencies, tooling, and release bumps             |
+| `infra/`    | OpenTofu, workflows, and deployment configuration    |
+
+### 7.2 Before opening a pull request
+
+1. Rebase onto, or merge, the latest `main`.
+2. Run `just format` and `just lint`.
+3. Run the test suites described in Section 3.5.
+4. If the schema changed, generate the migration (Section 3.4) and commit it.
+   Never edit a migration that has already been merged.
+
+### 7.3 Opening a pull request
+
+Open the pull request against `main`. Use a draft pull request for work that is
+not yet ready for review. The description should state:
+
+- what changed and why
+- how the change was tested
+- screenshots or recordings, for UI changes
+- any database migrations, new environment variables or secrets, or
+  infrastructure changes, since these require action from the operator
+
+### 7.4 Review and merge
+
+A pull request may be merged only when:
+
+- it has **two approving reviews**
+- every required CI check passes (see `.github/workflows/ci.yml`)
+- any files covered by `.github/CODEOWNERS` have been approved by their code
+  owner
+
+Pull requests are **squash-merged**, so the pull request title becomes the commit
+message on `main`. Write it in the imperative mood (e.g. "Add ranked
+leaderboard"). Delete the branch after merging.
+
+Every merge to `main` deploys to production (Section 6.1), so `main` must always
+be in a releasable state.
+
+## 8. Versioning and releases
+
+MultiPicross uses [Semantic Versioning 2.0.0](https://semver.org). The API,
+game server, and frontend share one version number. The current version is the
+`version` field in each service's `package.json`.
+
+### 8.1 Version increments
+
+The project is pre-1.0, so the public interface is not yet considered stable.
+
+| Change                                                                                                                    | Pre-1.0 | From 1.0.0 |
+| ------------------------------------------------------------------------------------------------------------------------- | ------- | ---------- |
+| Breaking change: incompatible API or room protocol, a migration requiring data changes, a new required variable or secret | MINOR   | MAJOR      |
+| Backward-compatible feature                                                                                               | MINOR   | MINOR      |
+| Bug fix                                                                                                                   | PATCH   | PATCH      |
+
+Version 1.0.0 marks the first stable public release with a production identity
+provider.
+
+### 8.2 Release process
+
+1. Open a `chore/release-vX.Y.Z` pull request that bumps the version in all three
+   services. Run the following in each of `api/`, `gameserver/`, and `frontend/`,
+   which also updates the lockfile.
+
+   ```bash
+   npm version X.Y.Z --no-git-tag-version
+   ```
+
+2. Once merged, tag the resulting commit on `main` and push the tag.
+
+   ```bash
+   git tag -a vX.Y.Z -m "vX.Y.Z" <commit-sha>
+   git push origin vX.Y.Z
+   ```
+
+3. Create a GitHub Release from the tag. Its notes summarise the squash-merged
+   pull request titles since the previous tag.
+
+### 8.3 Relationship to deployment
+
+Images are tagged with the commit SHA rather than the version, because deployment
+and rollback (Section 6.4) operate on commits. A version tag identifies the commit
+to redeploy when reverting to a release, as shown below.
+
+```bash
+./tools/mpx.py --env prod deploy --skip-build --tag "$(git rev-parse vX.Y.Z^{commit})"
+```
+
+## 9. Team
 
 | Name      | GitHub        | Email                             |
 | --------- | ------------- | --------------------------------- |

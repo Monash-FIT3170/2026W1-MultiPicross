@@ -1,5 +1,6 @@
 {
   "name": "api",
+  "version": "0.4.0",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
@@ -26,10 +27,13 @@
     "valibot": "^1.4.0"
   },
   "devDependencies": {
-    "@types/node": "^20.11.17",
+    "@types/node": "^25.9.9",
     "@types/pngjs": "^6.0.5",
     "drizzle-kit": "^0.31.10",
     "tsx": "^4.7.1",
     "typescript": "^5.8.3"
+  },
+  "engines": {
+    "node": ">=25"
   }
 }

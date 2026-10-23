@@ -1,12 +1,12 @@
 {
   "private": true,
   "name": "my-app",
-  "version": "0.17.0",
+  "version": "0.4.0",
   "description": "npm init template for bootstrapping an empty Colyseus project",
   "type": "module",
   "main": "build/index.js",
   "engines": {
-    "node": ">= 20.9.0"
+    "node": ">=25"
   },
   "scripts": {
     "start": "tsx watch src/index.ts",
